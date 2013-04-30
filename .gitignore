@@ -23,3 +23,4 @@ pkg
 
 # Added by ROR Lab.
 .DS_Store
+vendor/bundle
