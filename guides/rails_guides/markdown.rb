@@ -87,10 +87,10 @@ module RailsGuides
                 case node.name
                 when 'h3'
                   hierarchy = [node]
-                  @headings_for_index << [1, node, node.inner_html]
+                  @headings_for_index << [1, node, node.inner_html.gsub(/\[.*\]\s*/, "")]
                 when 'h4'
                   hierarchy = hierarchy[0, 1] + [node]
-                  @headings_for_index << [2, node, node.inner_html]
+                  @headings_for_index << [2, node, node.inner_html.gsub(/\[.*\]\s*/, "")]
                 when 'h5'
                   hierarchy = hierarchy[0, 2] + [node]
                 when 'h6'
@@ -98,7 +98,7 @@ module RailsGuides
                 end
 
                 node[:id] = dom_id(hierarchy)
-                node.inner_html = "#{node_index(hierarchy)} #{node.inner_html}"
+                node.inner_html = "#{node_index(hierarchy)} #{node.inner_html.gsub(/\[.*\]\s*/, "")}"
               end
             end
           end.to_html
