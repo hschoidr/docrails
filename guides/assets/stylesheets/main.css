@@ -707,3 +707,22 @@ table td, table th { padding: 9px 10px; text-align: left; }
   table.responsive th:first-child, table.responsive td:first-child, table.responsive td:first-child, table.responsive.pinned td { display: none; }
 
 }
+
+.original-text {
+  display:none;
+  color:#000;
+  background-color: #d5e9f6;
+  border:1px solid #81b0c3;
+  margin-top:-1em;
+  padding:.3em .5em;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+}
+
+a.original-link {
+  font-size:10px;
+  margin-top:-2em;
+  text-decoration:none !important;
+
+}
