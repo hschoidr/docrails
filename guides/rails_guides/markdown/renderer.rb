@@ -85,11 +85,8 @@ HTML
                         else
                           $1.downcase
                         end
-            if $2 =~ /^(.+)\[\[\[(.+)\]\]\]$/            
-              original_text = convert_original($2) 
-            else
-              original_text = $2           
-            end
+            original_text = $2
+            original_text = convert_original(original_text) if original_text =~ /^(.+)\[\[\[(.+)\]\]\]$/ 
             %(<div class="#{css_class}"><p>#{original_text}</p></div>)
           end
         end
