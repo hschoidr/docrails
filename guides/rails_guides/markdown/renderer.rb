@@ -87,7 +87,7 @@ HTML
                         end
             original_text = $2
             original_text = convert_original(original_text) if original_text =~ /^(.+)\[\[\[(.+)\]\]\]$/ 
-            %(<div class="#{css_class}"><p>#{original_text}</p></div>)
+            %(<div class="#{css_class}">#{original_text}</div>)
           end
         end
     end
