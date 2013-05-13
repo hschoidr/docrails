@@ -86,7 +86,11 @@ HTML
                           $1.downcase
                         end
             original_text = $2
-            original_text = convert_original(original_text) if original_text =~ /^(.+)\[\[\[(.+)\]\]\]$/ 
+            if original_text =~ /^(.+)\[\[\[(.+)\]\]\]$/ 
+              original_text = convert_original(original_text) 
+            else
+              original_text = "<p>#{original_text}</p>"
+            end
             %(<div class="#{css_class}">#{original_text}</div>)
           end
         end
