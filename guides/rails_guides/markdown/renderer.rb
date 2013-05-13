@@ -42,7 +42,7 @@ HTML
 
         def convert_original(text)
           text.gsub(/^(.+)\[\[\[(.+)\]\]\]$/) do
-            linkback = %(<a href="#" class="original-link" onclick="$(this).parent().parent().next().toggle();return false;">[원문보기]</a>)
+            linkback = %(<a href="#" class="original-link" onclick="$(this).parent().parent().next().toggle();return false;">[원문</a>·<a href='#' class="original-link" onclick="$('.original-text').toggle();return false;">전체]</a>)
             %(<p>#{$1} <sup>#{linkback}</sup></p><p class="original-text">#{$2}</p>)
           end
         end
