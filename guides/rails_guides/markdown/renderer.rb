@@ -86,9 +86,9 @@ HTML
                           $1.downcase
                         end
             if $2 =~ /^(.+)\[\[\[(.+)\]\]\]$/            
-              original_text = convert_original($2.strip) 
+              original_text = convert_original($2) 
             else
-              original_text = $2.strip           
+              original_text = $2           
             end
             %(<div class="#{css_class}"><p>#{original_text}</p></div>)
           end
