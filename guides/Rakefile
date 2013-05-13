@@ -20,7 +20,7 @@ namespace :guides do
         ENV["WARN_BROKEN_LINKS"] = "1" # authors can't disable this
         ENV["GUIDES_LANGUAGE"] = "ko"
         ENV["EDGE"] = "1"
-        ENV["ALL"] = "1"
+        # ENV["ALL"] = "1"
         ruby "rails_guides.rb"
       end
       namespace :ko do
