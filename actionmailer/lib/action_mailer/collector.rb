@@ -2,8 +2,8 @@ require 'abstract_controller/collector'
 require 'active_support/core_ext/hash/reverse_merge'
 require 'active_support/core_ext/array/extract_options'
 
-module ActionMailer
-  class Collector
+module ActionMailer # :nodoc:
+  class Collector # :nodoc: all
     include AbstractController::Collector
     attr_reader :responses
 

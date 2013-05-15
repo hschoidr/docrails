@@ -1,6 +1,6 @@
 require 'tmpdir'
 
-module ActionMailer
+module ActionMailer # :nodoc:
   # This module handles everything related to mail delivery, from registering
   # new delivery methods to configuring the mail object to be sent.
   module DeliveryMethods
@@ -38,6 +38,7 @@ module ActionMailer
       add_delivery_method :test, Mail::TestMailer
     end
 
+    # Helpers for creating and wrapping delivery behavior, used by DeliveryMethods.
     module ClassMethods
       # Provides a list of emails that have been delivered by Mail::TestMailer
       delegate :deliveries, :deliveries=, to: Mail::TestMailer
