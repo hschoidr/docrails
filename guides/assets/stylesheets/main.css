@@ -708,17 +708,35 @@ table td, table th { padding: 9px 10px; text-align: left; }
 
 }
 
-p.original-text {
+
+/* Added by ROR Lab. */
+#feature .wrapper ul li p {
+  font-size:1em;
+  margin-bottom:0;
+}
+#feature .wrapper ul li p.original-text {
+  margin-top:.2em;
+}
+#feature .wrapper p.original-text {
+  margin-top:-.5em;
+}
+.original-text, .original-text-h {
   display:none;
   color:black;
   background-color: #e0d389;
   border:1px solid #cccccc;
-  margin-top:-1em;
+  margin-top:-1.2em;
   padding:.3em .5em;
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
   border-radius: 3px;
 } 
+.original-text-h {
+  border:0;
+  background-color: transparent;
+  padding:0;
+  margin-left: 5px;
+}
 
 a.original-link {
   font-size:10px;
@@ -726,3 +744,8 @@ a.original-link {
   text-decoration:none !important;
 
 }
+.chapters span, .chapters .original-link {
+  display:none;
+}
+
+
