@@ -26,12 +26,14 @@ HTML
       end
 
       def paragraph(text)
+        text = text.gsub(/\n/, " ")
         if text =~ /^(TIP|IMPORTANT|CAUTION|WARNING|NOTE|INFO|TODO)[.:](.*?)/
           convert_notes(text)
         elsif text =~ /^\[<sup>(\d+)\]:<\/sup> (.+)$/
           linkback = %(<a href="#footnote-#{$1}-ref"><sup>#{$1}</sup></a>)
           %(<p class="footnote" id="footnote-#{$1}">#{linkback} #{$2}</p>)
-        elsif text =~ /^(.*)\[\[\[(.+)\]\]\]\s*$/
+        elsif text =~ /\n*(.+?)\s*\[{3}(.+?)\]{3}\s*/
+        # elsif text =~ /(.*)\s\[\[\[(.+)\]\]\]\s*/
           convert_original(text)
         else
           text = convert_footnotes(text)
@@ -49,7 +51,8 @@ HTML
         end
 
         def convert_original(text)
-          text.gsub(/^(.*)\[{3}(.+)\]{3}\s*$/) do
+          text = text.gsub(/\n/, " ")
+          text.gsub(/\n*(.+?)\s*\[{3}(.+?)\]{3}\s*/) do
             linkback = %(<a href="#" class="original-link" onclick="$(this).parent().parent().next().toggle();return false;">{원문</a><a href="#" class="original-link">·</a><a href='#' class="original-link" onclick="$('.original-text').toggle();return false;">전체}</a>)
             %(<p>#{$1} <sup>#{linkback}</sup></p><p class="original-text">#{$2}</p>)
           end
