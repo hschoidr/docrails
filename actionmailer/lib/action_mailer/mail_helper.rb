@@ -1,4 +1,4 @@
-module ActionMailer # :nodoc:
+module ActionMailer
   # Provides helper methods for ActionMailer::Base that can be used for easily
   # formatting messages, accessing mailer or message instances, and the
   # attachments list.
@@ -49,8 +49,9 @@ module ActionMailer # :nodoc:
         end
       end
 
+      indentation = " " * indent
       sentences.map { |sentence|
-        "#{" " * indent}#{sentence.join(' ')}"
+        "#{indentation}#{sentence.join(' ')}"
       }.join "\n"
     end
   end

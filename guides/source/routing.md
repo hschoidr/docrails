@@ -36,7 +36,7 @@ the request is dispatched to the `patients` controller's `show` action with `{ i
 
 ### Generating Paths and URLs from Code
 
-You can also generate paths and URLs.  If the route above is modified to be:
+You can also generate paths and URLs. If the route above is modified to be:
 
 ```ruby
 get '/patients/:id', to: 'patients#show', as: 'patient'
@@ -170,6 +170,12 @@ A singular resourceful route generates these helpers:
 * `geocoder_path` returns `/geocoder`
 
 As with plural resources, the same helpers ending in `_url` will also include the host, port and path prefix.
+
+WARNING: A [long-standing bug](https://github.com/rails/rails/issues/1769) prevents `form_for` from working automatically with singular resources. As a workaround, specify the URL for the form directly, like so:
+
+```
+form_for @geocoder, url: geocoder_path do |f|
+```
 
 ### Controller Namespaces and Routing
 
@@ -803,7 +809,7 @@ You should put the `root` route at the top of the file, because it is the most p
 
 NOTE: The `root` route only routes `GET` requests to the action.
 
-You can also use root inside namespaces and scopes as well.  For example:
+You can also use root inside namespaces and scopes as well. For example:
 
 ```ruby
 namespace :admin do

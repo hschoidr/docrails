@@ -146,12 +146,6 @@ module ActionView
       handle_render_error(view, e)
     end
 
-    def mime_type
-      message = 'Template#mime_type is deprecated and will be removed in Rails 4.1. Please use type method instead.'
-      ActiveSupport::Deprecation.warn message
-      @mime_type ||= Mime::Type.lookup_by_extension(@formats.first.to_s) if @formats.first
-    end
-
     def type
       @type ||= Types[@formats.first] if @formats.first
     end
@@ -273,7 +267,7 @@ module ActionView
         method_name = self.method_name
         code = @handler.call(self)
 
-        # Make sure that the resulting String to be evalled is in the
+        # Make sure that the resulting String to be eval'd is in the
         # encoding of the code
         source = <<-end_src
           def #{method_name}(local_assigns, output_buffer)
