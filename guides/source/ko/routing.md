@@ -114,7 +114,7 @@ resources :photos
 | PATCH/PUT | /photos/:id      | update  | update a specific photo                      |
 | DELETE    | /photos/:id      | destroy | delete a specific photo                      |
 
-노트: 라우터는 HTTP verb와 URL을 인바운드 요청에 매치하기 위해 사용하기 때문에, 네 가지 URL은 일곱 가지 다른 액션에 매핑됩니다.[[[NOTE: Because the router uses the HTTP verb and URL to match inbound requests, four URLs map to seven different actions.]]]
+NOTE: 라우터는 HTTP verb와 URL을 인바운드 요청에 매치하기 위해 사용하기 때문에, 네 가지 URL은 일곱 가지 다른 액션에 매핑됩니다.[[[NOTE: Because the router uses the HTTP verb and URL to match inbound requests, four URLs map to seven different actions.]]]
 
 레일스 라우트는 명시된 순서에 따라 매치됩니다. 그래서 `get 'photos/poll'` 위에 `resources :photos`가 있다면 `resources` 행을 위한 `show` 액션의 라우트는 `get` 행보다 먼저 매칭됩니다.[[[NOTE: Rails routes are matched in the order they are specified, so if you have a `resources :photos` above a `get 'photos/poll'` the `show` action's route for the `resources` line will be matched before the `get` line.]]]
 이것을 바로잡기 위해서는 `get` 행을 `resources` 행 위로 옮겨서 먼저 매치되도록 해야 합니다.[[[To fix this, move the `get` line **above** the `resources` line so that it is matched first.]]]
@@ -183,7 +183,7 @@ resource :geocoder
 | PATCH/PUT | /geocoder      | update  | update the one and only geocoder resource     |
 | DELETE    | /geocoder      | destroy | delete the geocoder resource                  |
 
-노트: 단수형 라우트 (`/account`)와 복수형 라우트 (`/accounts/45`)를 위해 동일 컨트롤러를 사용하고자 할 수 있기 때문에, 단수형 리소스는 복수 컨트롤러에 매핑됩니다. [[[NOTE: Because you might want to use the same controller for a singular route (`/account`) and a plural route (`/accounts/45`), singular resources map to plural controllers.]]]
+NOTE: 단수형 라우트 (`/account`)와 복수형 라우트 (`/accounts/45`)를 위해 동일 컨트롤러를 사용하고자 할 수 있기 때문에, 단수형 리소스는 복수 컨트롤러에 매핑됩니다. [[[NOTE: Because you might want to use the same controller for a singular route (`/account`) and a plural route (`/accounts/45`), singular resources map to plural controllers.]]]
 그래서, 예를 들어, `resource :photo` 와 `resources :photos`는 동일 컨트롤러 (`PhotosController`)에 매핑되는 단수형과 복수형 라우트를 함께 생성합니다. [[[So that, for example, `resource :photo` and `resources :photos` creates both singular and plural routes that map to the same controller (`PhotosController`).]]]
 
 단수형 리소스풀 라우트는 다음과 같은 헬퍼들을 생성합니다. [[[A singular resourceful route generates these helpers:]]]
@@ -262,7 +262,7 @@ resources :posts, path: '/admin/posts'
 | PATCH/PUT | /admin/posts/:id      | update  | post_path(:id)      |
 | DELETE    | /admin/posts/:id      | destroy | post_path(:id)      |
 
-### [Nested Resources] 중첩 리소스
+### [Nested Resources] 내포 리소스
 
 논리적으로 다른 리소스의 자식인 리소스를 갖는 것은 일반적인 일입니다. [[[It's common to have resources that are logically children of other resources.]]]
 예를 들어, 응용프로그램이 다음과 같은 모델을 포함하고 있다고 가정합니다.[[[For example, suppose your application includes these models:]]]
@@ -277,7 +277,7 @@ class Ad < ActiveRecord::Base
 end
 ```
 
-중첩 라우트는 라우팅의 관계를 캡쳐할 수 있게 해줍니다. [[[Nested routes allow you to capture this relationship in your routing.]]]
+내포 라우트는 라우팅의 관계를 캡쳐할 수 있게 해줍니다. [[[Nested routes allow you to capture this relationship in your routing.]]]
 이 경우, 다음과 같은 라우트선언을 포함할 수 있습니다. [[[In this case, you could include this route declaration:]]]
 
 ```ruby
@@ -302,9 +302,9 @@ ad URL은 magazine을 필요로 합니다.[[[The ad URLs require a magazine:]]]
 이것은 또한 `magazine_ads_url`와 `edit_magazine_ad_path` 같은 라우팅 펠퍼를 생성할 것입니다. [[[This will also create routing helpers such as `magazine_ads_url` and `edit_magazine_ad_path`.]]] 
 이러한 헬퍼들은 첫 번째 파라미터로서 Magazine의 인스턴스를 갖습니다. (`magazine_ads_url(@magazine)`)[[[These helpers take an instance of Magazine as the first parameter (`magazine_ads_url(@magazine)`).]]]
 
-#### [[[Limits to Nesting]]] 중첨의 제한
+#### [[[Limits to Nesting]]] 내포의 제한
 
-만약 원한다면, 다른 충첩된 리소스 안에 리소스를 중첩할 수 있습니다. [[[You can nest resources within other nested resources if you like.]]]
+만약 원한다면, 다른 충첩된 리소스 안에 리소스를 내포할 수 있습니다. [[[You can nest resources within other nested resources if you like.]]]
 예를 들면: [[[For example:]]]
 
 ```ruby
@@ -315,7 +315,7 @@ resources :publishers do
 end
 ```
 
-깊게-중첩된 리소스는 급속도로 복잡해집니다. [[[Deeply-nested resources quickly become cumbersome.]]]
+깊게-내포된 리소스는 급속도로 복잡해집니다. [[[Deeply-nested resources quickly become cumbersome.]]]
 이 경우, 예를 들면, 응용프로그램은 경로를 다음과 같이 인식할 것입니다.[[[In this case, for example, the application would recognize paths such as:]]]
 
 ```
@@ -325,11 +325,11 @@ end
 이에 대응하는 라우트 헬퍼는 `publisher_magazine_photo_url`가 될 것이고, 이 헬퍼는 세 레벨의 객체 모두를 지정해야  합니다. [[[The corresponding route helper would be `publisher_magazine_photo_url`, requiring you to specify objects at all three levels.]]]
 실제로 이 상황은 유명한 [article](http://weblog.jamisbuck.org/2007/2/5/nesting-resources)에서 제이미스 벅이 제안한 좋은 레일스 디자인을 위한 주먹구구식 방법만큼이나 혼란스럽습니다. [[[[Indeed, this situation is confusing enough that a popular [article](http://weblog.jamisbuck.org/2007/2/5/nesting-resources) by Jamis Buck proposes a rule of thumb for good Rails design:]]]
 
-팁: 리소스는 1 레벨 이상으로 중첩되어서는 안됩니다. [[[TIP: _Resources should never be nested more than 1 level deep._]]]
+TIP: 리소스는 1 레벨 이상으로 내포되어서는 안됩니다. [[[TIP: _Resources should never be nested more than 1 level deep._]]]
 
 #### Shallow Nesting
 
-(위에서 추천한 바와 같이) 깊은 중첩을 피하는 한 가지 방법은 부모 아래 범주화된(scoped) 액션의 컬렉션을 생성하여 멤버 액션을 중첩하지 않고, 계층의 의미를 갖는 것입니다.[[[One way to avoid deep nesting (as recommended above) is to generate the collection actions scoped under the parent, so as to get a sense of the hierarchy, but to not nest the member actions.]]]
+(위에서 추천한 바와 같이) 깊은 내포를 피하는 한 가지 방법은 부모 아래 범주화된(scoped) 액션의 컬렉션을 생성하여 멤버 액션을 내포하지 않고, 계층의 의미를 갖는 것입니다.[[[One way to avoid deep nesting (as recommended above) is to generate the collection actions scoped under the parent, so as to get a sense of the hierarchy, but to not nest the member actions.]]]
 다시 말해, 단지 최소한의 정보로 고유하게 리소스를 식별하는 라우트를 만들는 방법은 다음과 같습니다:[[[In other words, to only build routes with the minimal amount of information to uniquely identify the resource, like this:]]]
 
 ```ruby
@@ -339,7 +339,7 @@ end
 resources :comments, only: [:show, :edit, :update, :destroy]
 ```
 
-본 아이디어는 기술적인 라우트(descriptive routes)와 깊은 중첩 사이에서 절충합니다. [[[This idea strikes a balance between descriptive routes and deep nesting.]]]
+본 아이디어는 기술적인 라우트(descriptive routes)와 깊은 내포 사이에서 절충합니다. [[[This idea strikes a balance between descriptive routes and deep nesting.]]]
 그렇게 하기 위한 축약 문법이 있는데, `:shallow` 옵션으로 할 수 있습니다.[[[There exists shorthand syntax to achieve just that, via the `:shallow` option:]]]
 
 ```ruby
@@ -349,7 +349,7 @@ end
 ```
 
 이 코드는 첫 번째 예제와 완전히 동일한 라우트를 생성할 것입니다. [[[This will generate the exact same routes as the first example.]]] 
-또한 `:shallow` 옵션을 부모 리소스에 지정할 수 있는데, 이 경우 모든 중첩된 리소스들은 얕아지게 됩니다:[[[You can also specify the `:shallow` option in the parent resource, in which case all of the nested resources will be shallow:]]]
+또한 `:shallow` 옵션을 부모 리소스에 지정할 수 있는데, 이 경우 모든 내포된 리소스들은 얕아지게 됩니다:[[[You can also specify the `:shallow` option in the parent resource, in which case all of the nested resources will be shallow:]]]
 
 ```ruby
 resources :posts, shallow: true do
@@ -359,7 +359,7 @@ resources :posts, shallow: true do
 end
 ```
 
-DSL의 `shallow` 메서드는 모든 중첩이 얕아진 범위를 내부에 만듭니다. [[[The `shallow` method of the DSL creates a scope inside of which every nesting is shallow.]]]
+DSL의 `shallow` 메서드는 모든 내포가 얕아진 범위를 내부에 만듭니다. [[[The `shallow` method of the DSL creates a scope inside of which every nesting is shallow.]]]
 이것은 이전 예제와 같은 라우트를 생성합니다. [[[This generates the same routes as the previous example:]]]
 
 ```ruby
@@ -573,7 +573,7 @@ end
 이것은 레일스가 GET 방식으로 `/comments/new/preview`와 같은 경로를 인식할 수 있게 해 주고, `CommentsController`의 `preview` 액션으로 라우트할 수 있게 해 줍니다. [[[This will enable Rails to recognize paths such as `/comments/new/preview` with GET, and route to the `preview` action of `CommentsController`.]]]
 또한 `preview_new_comment_url`과 `preview_new_comment_path` 라우트 헬퍼를 생성할 것입니다. [[[It will also create the `preview_new_comment_url` and `preview_new_comment_path` route helpers.]]]
 
-팁: 만약 리소스풀 라우트에 많은 추가 액션을 추가하고 있다면, 그것을 중단하고 다른 리소스를 숨기고 있는지 반문해야 합니다. [[[TIP: If you find yourself adding many extra actions to a resourceful route, it's time to stop and ask yourself whether you're disguising the presence of another resource.]]]
+TIP: 만약 리소스풀 라우트에 많은 추가 액션을 추가하고 있다면, 그것을 중단하고 다른 리소스를 숨기고 있는지 반문해야 합니다. [[[TIP: If you find yourself adding many extra actions to a resourceful route, it's time to stop and ask yourself whether you're disguising the presence of another resource.]]]
 
 [Non-Resourceful Routes] 비-리소스풀 라우트
 ----------------------
@@ -613,126 +613,139 @@ get ':controller/:action/:id/:user_id'
 `/photos/show/1/2`의 들어오는 경로는 `PhotosController`의 `show` 액션에 보내질 것입니다. [[[An incoming path of `/photos/show/1/2` will be dispatched to the `show` action of the `PhotosController`.]]]
 `params[:id]`는 `"1"`, `params[:user_id]`는 2가 될 것입니다. [[[`params[:id]` will be `"1"`, and `params[:user_id]` will be `"2"`.]]]
 
-NOTE: You can't use `:namespace` or `:module` with a `:controller` path segment. If you need to do this then use a constraint on :controller that matches the namespace you require. e.g:
+NOTE: `:controller` 경로 세그먼트와 함께 `:namespace` 혹은 `:module`을 사용할 수 있습니다. 이렇게 해야한다면, 다음과 같이 필요로 하는 네임스페이스와 일치하는 :controller상에 제약을 사용합니다. [[[NOTE: You can't use `:namespace` or `:module` with a `:controller` path segment. If you need to do this then use a constraint on :controller that matches the namespace you require. e.g:]]]
 
 ```ruby
 get ':controller(/:action(/:id))', controller: /admin\/[^\/]+/
 ```
 
-TIP: By default, dynamic segments don't accept dots - this is because the dot is used as a separator for formatted routes. If you need to use a dot within a dynamic segment, add a constraint that overrides this – for example, `id: /[^\/]+/` allows anything except a slash.
+TIP: 기본값으로, 동적 세그먼트는 구두점(.)을 받아들이지 않습니다. 왜냐하면 구두점은 형식화된 라우트를 위한 구분자로 사용되기 때문입니다. [[[TIP: By default, dynamic segments don't accept dots - this is because the dot is used as a separator for formatted routes.]]]
+만약 동적 세그먼트 안에 구두점을 사용할 필요가 있다면, 이것을 오버라이드하는 제약을 추가하십시오. 예를 들어, `id: /[^\/]+/`는 슬래시(/) 이외의 모든 것을 허용합니다. [[[If you need to use a dot within a dynamic segment, add a constraint that overrides this – for example, `id: /[^\/]+/` allows anything except a slash.]]]
 
-### Static Segments
+### [Static Segments] 정적 세그먼트
 
-You can specify static segments when creating a route by not prepending a colon to a fragment:
+분절의 앞에 콜론을 추가하지 않고 라우트를 만들면 정적 세그먼트를 명시할 수 있습니다. [[[You can specify static segments when creating a route by not prepending a colon to a fragment:]]]
 
 ```ruby
 get ':controller/:action/:id/with_user/:user_id'
 ```
 
-This route would respond to paths such as `/photos/show/1/with_user/2`. In this case, `params` would be `{ controller: 'photos', action: 'show', id: '1', user_id: '2' }`.
+위 라우트는 `/photos/show/1/with_user/2`와 같은 경로에 응답할 것입니다.[[[This route would respond to paths such as `/photos/show/1/with_user/2`.]]]
+이 경우에, `params`는 `{ controller: 'photos', action: 'show', id: '1', user_id: '2' }`가 될 것입니다. [[[In this case, `params` would be `{ controller: 'photos', action: 'show', id: '1', user_id: '2' }`.]]]
 
-### The Query String
+### [The Query String] 질의 문자열
 
-The `params` will also include any parameters from the query string. For example, with this route:
+`params`은 또한 질의 문자열로부터 어떤 매개변수라도 포함할 것입니다. [[[The `params` will also include any parameters from the query string.]]]
+다음 라우트를 예로 들면: [[[For example, with this route:]]]
 
 ```ruby
 get ':controller/:action/:id'
 ```
 
-An incoming path of `/photos/show/1?user_id=2` will be dispatched to the `show` action of the `Photos` controller. `params` will be `{ controller: 'photos', action: 'show', id: '1', user_id: '2' }`.
+`/photos/show/1?user_id=2`로 들어오는 경로는 `Photos` 컨트롤러의 `show` 액션으로 보내질 것입니다. [[[An incoming path of `/photos/show/1?user_id=2` will be dispatched to the `show` action of the `Photos` controller.]]]
+`params`는 `{ controller: 'photos', action: 'show', id: '1', user_id: '2' }`가 될 것입니다.[[[`params` will be `{ controller: 'photos', action: 'show', id: '1', user_id: '2' }`.]]]
 
-### Defining Defaults
+### [Defining Defaults] 기본값 정의하기
 
-You do not need to explicitly use the `:controller` and `:action` symbols within a route. You can supply them as defaults:
+라우트에서 `:controller`과 `:action`을 명시적으로 사용할 필요는 없습니다. [[[You do not need to explicitly use the `:controller` and `:action` symbols within a route.]]]
+기본값으로 그들을 제공할 수 있습니다. [[[You can supply them as defaults:]]]
 
 ```ruby
 get 'photos/:id', to: 'photos#show'
 ```
 
-With this route, Rails will match an incoming path of `/photos/12` to the `show` action of `PhotosController`.
+위 라우트로, 레일스는 유입되는 경로 `/photos/12`를 `PhotosController`의 `show` 액션에 매칭할 것입니다. [[[With this route, Rails will match an incoming path of `/photos/12` to the `show` action of `PhotosController`.]]]
 
-You can also define other defaults in a route by supplying a hash for the `:defaults` option. This even applies to parameters that you do not specify as dynamic segments. For example:
+또한 `:defaults` 옵션의 해시를 제공하여 라우트에 다른 기본값을 정의할 수 있습니다. [[[You can also define other defaults in a route by supplying a hash for the `:defaults` option.]]]
+이것도 동적 세그먼트로 지정하지 않은 매개변수에 적용됩니다. 예를 들어: [[[This even applies to parameters that you do not specify as dynamic segments. For example:]]]
 
 ```ruby
 get 'photos/:id', to: 'photos#show', defaults: { format: 'jpg' }
 ```
 
-Rails would match `photos/12` to the `show` action of `PhotosController`, and set `params[:format]` to `"jpg"`.
+레일스는 `photos/12`를 `PhotosController`의 `show` 액션에 매칭하고 `params[:format]`을 `"jpg"`로 설정할 것입니다.[[[Rails would match `photos/12` to the `show` action of `PhotosController`, and set `params[:format]` to `"jpg"`.]]]
 
-### Naming Routes
+### [Naming Routes] 명명된 라우트
 
-You can specify a name for any route using the `:as` option:
+`:as` 옵션을 사용하면 어떤 라우트에도 이름을 지정할 수 있습니다: [[[You can specify a name for any route using the `:as` option:]]]
 
 ```ruby
 get 'exit', to: 'sessions#destroy', as: :logout
 ```
 
-This will create `logout_path` and `logout_url` as named helpers in your application. Calling `logout_path` will return `/exit`
+이것은 응용프로그램에 명명된 헬퍼로서 `logout_path`와 `logout_url`을 생성할 것입니다. [[[This will create `logout_path` and `logout_url` as named helpers in your application.]]] 
+`logout_path`를 호출하면 `/exit`를 반환할 것입니다. [[[Calling `logout_path` will return `/exit`]]]
 
-You can also use this to override routing methods defined by resources, like this:
+또한 다음과 같이 리소스에 의해 정의된 라우팅 메서드를 오버라이드하기 위해 이것을 사용할 수 있습니다. [[[You can also use this to override routing methods defined by resources, like this:]]]
 
 ```ruby
 get ':username', to: 'users#show', as: :user
 ```
 
-This will define a `user_path` method that will be available in controllers, helpers and views that will go to a route such as `/bob`. Inside the `show` action of `UsersController`, `params[:username]` will contain the username for the user. Change `:username` in the route definition if you do not want your parameter name to be `:username`.
+이것은 `user_path` 메서드를 정의할 것이고 컨트롤러, `/bob`처럼 라우트로 갈 헬퍼 그리고 뷰에서 사용 가능할 것입니다. [[[This will define a `user_path` method that will be available in controllers, helpers and views that will go to a route such as `/bob`.]]]
+`UsersController`의 `show` 액션 내부에서, `params[:username]`는 user의 username을 포함할 것입니다. [[[Inside the `show` action of `UsersController`, `params[:username]` will contain the username for the user.]]]
+매개변수 이름이 `:username`이 되기를 원하지 않는다면 라우트 정의에 있는 `:username`을 변경하십시오. [[[Change `:username` in the route definition if you do not want your parameter name to be `:username`.]]]
 
-### HTTP Verb Constraints
+### [HTTP Verb Constraints] HTTP Verb 제약
 
-In general, you should use the `get`, `post`, `put` and `delete` methods to constrain a route to a particular verb. You can use the `match` method with the `:via` option to match multiple verbs at once:
+일반적으로 특정 verb로 라우트를 제한하기 위해 `get`, `post`, `put` 그리고 `delete`를 사용해야 합니다. [[[In general, you should use the `get`, `post`, `put` and `delete` methods to constrain a route to a particular verb.]]]
+한번에 여러 verb를 매칭하려면 `match` 메서드를 `:via` 옵션과 함께 사용할 수 있습니다: [[[You can use the `match` method with the `:via` option to match multiple verbs at once:]]]
 
 ```ruby
 match 'photos', to: 'photos#show', via: [:get, :post]
 ```
 
-You can match all verbs to a particular route using `via: :all`:
+`via: :all`을 사용하여 모든 verb를 특정 라우트에 매칭시킬 수 있습니다. [[[You can match all verbs to a particular route using `via: :all`:]]]
 
 ```ruby
 match 'photos', to: 'photos#show', via: :all
 ```
 
-NOTE: Routing both `GET` and `POST` requests to a single action has security implications. In general, you should avoid routing all verbs to an action unless you have a good reason to.
+NOTE: `GET`과 `POST` 두 방식의 요청을 모두 단일 액션에 라우팅하는 것은 보안 문제가 있습니다. [[[NOTE: Routing both `GET` and `POST` requests to a single action has security implications.]]]
+일반적으로, 좋은 이유가 있는 것이 아니라면 모든 verb를 액션에 라우팅하는 것은 피해야 합니다. [[[In general, you should avoid routing all verbs to an action unless you have a good reason to.]]]
 
-### Segment Constraints
+### [Segment Constraints] 세그먼트 제약
 
-You can use the `:constraints` option to enforce a format for a dynamic segment:
+동적 세그먼트를 위한 형식을 강제하기 위해 `:constraints` 옵션을 사용할 수 있습니다.: [[[You can use the `:constraints` option to enforce a format for a dynamic segment:]]]
 
 ```ruby
 get 'photos/:id', to: 'photos#show', constraints: { id: /[A-Z]\d{5}/ }
 ```
 
-This route would match paths such as `/photos/A12345`, but not `/photos/893`. You can more succinctly express the same route this way:
+이것은 `/photos/A12345`와 같은 경로를 매칭할 것이지만, `/photos/893`은 그렇지 않을 것입니다.: [[[This route would match paths such as `/photos/A12345`, but not `/photos/893`.]]]
+좀더 간결하게 이런 방식으로 같은 라우트를 표현할 수 있습니다.: [[[You can more succinctly express the same route this way:]]]
 
 ```ruby
 get 'photos/:id', to: 'photos#show', id: /[A-Z]\d{5}/
 ```
 
-`:constraints` takes regular expressions with the restriction that regexp anchors can't be used. For example, the following route will not work:
+`:constraints`는 정규 표현식을 갖는데, regexp 앵커(역자주: ^, $, \A, \Z, \z, \G, \b, \B 등)는 사용될 수 없습니다. [[[`:constraints` takes regular expressions with the restriction that regexp anchors can't be used.]]]
+예를 들어 다음의 라우트는 작동하지 않을 것입니다. [[[For example, the following route will not work:]]]
 
 ```ruby
 get '/:id', to: 'posts#show', constraints: {id: /^\d/}
 ```
 
-However, note that you don't need to use anchors because all routes are anchored at the start.
+하지만, 모든 라우트는 시작점에 고정되어 있기 때문에, 앵커를 사용할 필요가 없다는 점을 주의하십시오. [[[However, note that you don't need to use anchors because all routes are anchored at the start.]]]
 
-For example, the following routes would allow for `posts` with `to_param` values like `1-hello-world` that always begin with a number and `users` with `to_param` values like `david` that never begin with a number to share the root namespace:
+예를 들어, 다음의 라우트들은 루트 네임스페이스를 공유하기 위해 `1-hello-world`처럼 항상 숫자로 시작하는 `to_param` 값을 `posts`을 위해 허용하며, `david`처럼 절대 숫자로 시작하지 않는 `to_param` 값을 `users`을 위해 허용할 것입니다. [[[For example, the following routes would allow for `posts` with `to_param` values like `1-hello-world` that always begin with a number and `users` with `to_param` values like `david` that never begin with a number to share the root namespace:]]]
 
 ```ruby
 get '/:id', to: 'posts#show', constraints: { id: /\d.+/ }
 get '/:username', to: 'users#show'
 ```
 
-### Request-Based Constraints
+### [Request-Based Constraints] 요청-기반 제약
 
-You can also constrain a route based on any method on the <a href="action_controller_overview.html#the-request-object">Request</a> object that returns a `String`.
+`String`을 반환하는 <a href="action_controller_overview.html#the-request-object">요청</a> 객체상의 어떤 메서드에 기반한 라우트를 제한할 수도 있습니다. [[[You can also constrain a route based on any method on the <a href="action_controller_overview.html#the-request-object">Request</a> object that returns a `String`.]]]
 
-You specify a request-based constraint the same way that you specify a segment constraint:
+세그먼트 제약을 명시하는 것과 같은 방법으로 요청-기반의 제약을 명시할 수 있습니다. [[[You specify a request-based constraint the same way that you specify a segment constraint:]]]
 
 ```ruby
 get 'photos', constraints: {subdomain: 'admin'}
 ```
 
-You can also specify constraints in a block form:
+또한 블록 형태의 제한을 지정할 수도 있습니다. [[[You can also specify constraints in a block form:]]]
 
 ```ruby
 namespace :admin do
@@ -742,9 +755,10 @@ namespace :admin do
 end
 ```
 
-### Advanced Constraints
+### [Advanced Constraints] 고급 제약
 
-If you have a more advanced constraint, you can provide an object that responds to `matches?` that Rails should use. Let's say you wanted to route all users on a blacklist to the `BlacklistController`. You could do:
+더 고급의 제약을 하고 싶다면, 레일스가 사용할 `matches?`에 응답하는 객체를 제공할 수 있습니다. [[[If you have a more advanced constraint, you can provide an object that responds to `matches?` that Rails should use.]]]
+블랙리스트에 있는 모든 사용자를 `BlacklistController`에 라우트하고 싶다고 할 때, 다음과 같이 할 수 있습니다.: [[[Let's say you wanted to route all users on a blacklist to the `BlacklistController`. You could do:]]]
 
 ```ruby
 class BlacklistConstraint
@@ -763,7 +777,7 @@ TwitterClone::Application.routes.draw do
 end
 ```
 
-You can also specify constraints as a lambda:
+또한 제약을 람다로 명시할 수 있습니다: [[[You can also specify constraints as a lambda:]]]
 
 ```ruby
 TwitterClone::Application.routes.draw do
@@ -772,41 +786,44 @@ TwitterClone::Application.routes.draw do
 end
 ```
 
-Both the `matches?` method and the lambda gets the `request` object as an argument.
+`matches?` 메서드와 람다 양쪽 모두 인수로 `request` 객체를 가져옵니다. [[[Both the `matches?` method and the lambda gets the `request` object as an argument.]]]
 
-### Route Globbing and Wildcard Segments
+### [Route Globbing and Wildcard Segments] 패턴매칭(Globbing) 라우트와 와일드카드 세그먼트
 
-Route globbing is a way to specify that a particular parameter should be matched to all the remaining parts of a route. For example:
+패턴매칭 라우트(Route globbing)은 라우트의 잔여 부분 전체에 매칭되는 특정 매개변수를 지정할 수 있는 방법입니다. 예를 들면: [[[Route globbing is a way to specify that a particular parameter should be matched to all the remaining parts of a route. For example:]]]
 
 ```ruby
 get 'photos/*other', to: 'photos#unknown'
 ```
 
-This route would match `photos/12` or `/photos/long/path/to/12`, setting `params[:other]` to `"12"` or `"long/path/to/12"`. The fragments prefixed with a star are called "wildcard segments".
+본 라우트는 `photos/12`나 `/photos/long/path/to/12`를 매칭할 것이고, `params[:other]`에 `"12"`나 `"long/path/to/12"`를 설정할 것입니다. [[[This route would match `photos/12` or `/photos/long/path/to/12`, setting `params[:other]` to `"12"` or `"long/path/to/12"`.]]]
+별표(*)로 접두 표기된 조각을 "와일드카드 세그먼트"라 부릅니다. [[[The fragments prefixed with a star are called "wildcard segments".]]]
 
-Wildcard segments can occur anywhere in a route. For example:
+와일드카드 세그먼트는 라우트의 어떤 곳에도 넣을 수 있습니다. 예를 들면: [[[Wildcard segments can occur anywhere in a route. For example:]]]
 
 ```ruby
 get 'books/*section/:title', to: 'books#show'
 ```
 
-would match `books/some/section/last-words-a-memoir` with `params[:section]` equals `'some/section'`, and `params[:title]` equals `'last-words-a-memoir'`.
+위 라우트는 `books/some/section/last-words-a-memoir`의 `params[:section]`가 `'some/section'`와 같은 것으로, `params[:title]`가 `'last-words-a-memoir'`와 같은 것으로 하여 매칭됩니다. [[[would match `books/some/section/last-words-a-memoir` with `params[:section]` equals `'some/section'`, and `params[:title]` equals `'last-words-a-memoir'`.]]]
 
-Technically, a route can have even more than one wildcard segment. The matcher assigns segments to parameters in an intuitive way. For example:
+기술적으로, 라우트는 하나 이상의 와일드카드 세그먼트도 가질 수 있습니다. [[[Technically, a route can have even more than one wildcard segment.]]]
+연결자(matcher)는 직관적인 방식으로 세그먼트를 매개변수에 할당합니다. 예를 들면: [[[The matcher assigns segments to parameters in an intuitive way. For example:]]]
 
 ```ruby
 get '*a/foo/*b', to: 'test#index'
 ```
 
-would match `zoo/woo/foo/bar/baz` with `params[:a]` equals `'zoo/woo'`, and `params[:b]` equals `'bar/baz'`.
+위 라우트는 `params[:a]`를 `'zoo/woo'`와 같은 것으로, `params[:b]`를 `'bar/baz'`와 같은 것으로 하여 `zoo/woo/foo/bar/baz`를 매칭할 것입니다. [[[would match `zoo/woo/foo/bar/baz` with `params[:a]` equals `'zoo/woo'`, and `params[:b]` equals `'bar/baz'`.]]]
 
-NOTE: By requesting `'/foo/bar.json'`, your `params[:pages]` will be equals to `'foo/bar'` with the request format of JSON. If you want the old 3.0.x behavior back, you could supply `format: false` like this:
+NOTE: `'/foo/bar.json'`를 요청하면, `params[:pages]`는 `'foo/bar'`와 같은 것으로 JSON 형식 요청으로 매칭됩니다. [[[NOTE: By requesting `'/foo/bar.json'`, your `params[:pages]` will be equals to `'foo/bar'` with the request format of JSON.]]]
+이전 3.0.x 행동으로 되돌리길 원한다면, 다음과 같이 `format:false`를 제공할 수 있습니다.: [[[If you want the old 3.0.x behavior back, you could supply `format: false` like this:]]]
 
 ```ruby
 get '*pages', to: 'pages#show', format: false
 ```
 
-NOTE: If you want to make the format segment mandatory, so it cannot be omitted, you can supply `format: true` like this:
+NOTE: 형식 세그먼트를 필수로 하고, 생략될 수 없게 하고자 한다면, 다음과 같이 `format: true`를 제공할 수 있습니다.: [[[NOTE: If you want to make the format segment mandatory, so it cannot be omitted, you can supply `format: true` like this:]]]
 
 ```ruby
 get '*pages', to: 'pages#show', format: true
@@ -814,55 +831,57 @@ get '*pages', to: 'pages#show', format: true
 
 ### Redirection
 
-You can redirect any path to another path using the `redirect` helper in your router:
+라우터에 `redirect` 헬퍼를 사용하면 어떤 경로든 다른 경로로 리다이렉트할 수 있습니다.: [[[You can redirect any path to another path using the `redirect` helper in your router:]]]
 
 ```ruby
 get '/stories', to: redirect('/posts')
 ```
 
-You can also reuse dynamic segments from the match in the path to redirect to:
+경로에 리다이렉트될 곳을 매칭하기 위해 동적 세그면트를 재사용할 수도 있습니다.[[[You can also reuse dynamic segments from the match in the path to redirect to:]]]
 
 ```ruby
 get '/stories/:name', to: redirect('/posts/%{name}')
 ```
 
-You can also provide a block to redirect, which receives the params and the request object:
+리다이렉트에 params와 request 객체를 수신하는 블록을 제공할 수도 있습니다.: [[[You can also provide a block to redirect, which receives the params and the request object:]]]
 
 ```ruby
 get '/stories/:name', to: redirect {|params, req| "/posts/#{params[:name].pluralize}" }
 get '/stories', to: redirect {|p, req| "/posts/#{req.subdomain}" }
 ```
 
-Please note that this redirection is a 301 "Moved Permanently" redirect. Keep in mind that some web browsers or proxy servers will cache this type of redirect, making the old page inaccessible.
+이 리다이렉션은 301 "Moved Permanently" 리다이렉트임을 주지하십시오. [[[Please note that this redirection is a 301 "Moved Permanently" redirect.]]]
+일부 웹브라우저와 프록시 서버가 이 유형의 리다이렉트를 캐시하고 예전 페이지에 접근하지 못하게 될 수 있음을 명심하십시오. [[[Keep in mind that some web browsers or proxy servers will cache this type of redirect, making the old page inaccessible.]]]
 
-In all of these cases, if you don't provide the leading host (`http://www.example.com`), Rails will take those details from the current request.
+이러한 모든 경우에, 선행 호스트(`http://www.example.com`)을 제공하지 않으면, 레일스는 현재 요청에서 그 내용을 취할 것입니다. [[[In all of these cases, if you don't provide the leading host (`http://www.example.com`), Rails will take those details from the current request.]]]
 
 ### Routing to Rack Applications
 
-Instead of a String like `'posts#index'`, which corresponds to the `index` action in the `PostsController`, you can specify any <a href="rails_on_rack.html">Rack application</a> as the endpoint for a matcher:
+`PostsController`의 `index` 액션에 대응하는 `'posts#index'`와 같은 문자열 대신, 연결자(matcher)를 위한 엔드포인트로서 특정 <a href="rails_on_rack.html">Rack application</a>를 지정할 수 있습니다.: [[[Instead of a String like `'posts#index'`, which corresponds to the `index` action in the `PostsController`, you can specify any <a href="rails_on_rack.html">Rack application</a> as the endpoint for a matcher:]]]
 
 ```ruby
 match '/application.js', to: Sprockets, via: :all
 ```
 
-As long as `Sprockets` responds to `call` and returns a `[status, headers, body]`, the router won't know the difference between the Rack application and an action. This is an appropriate use of `via: :all`, as you will want to allow your Rack application to handle all verbs as it considers appropriate.
+`Sprockets`가 `call`에 응답하고, `[status, headers, body]`를 반환하는 동안, Rack 응용프로그램과 액션의 차이에 대해 라우터는 알지 못합니다. [[[As long as `Sprockets` responds to `call` and returns a `[status, headers, body]`, the router won't know the difference between the Rack application and an action.]]]
+Rack 응용프로그램이 모든 verbs를 적절하게 고려하여 다루도록 허용하기를 바라는 것이 `via: :all`의 적절한 용법입니다. [[[This is an appropriate use of `via: :all`, as you will want to allow your Rack application to handle all verbs as it considers appropriate.]]]
 
-NOTE: For the curious, `'posts#index'` actually expands out to `PostsController.action(:index)`, which returns a valid Rack application.
+NOTE: `'posts#index'`는 실제로 `PostsController.action(:index)`로 확장되어, 유효한 Rack 응용프로그램을 반환합니다. [[[NOTE: For the curious, `'posts#index'` actually expands out to `PostsController.action(:index)`, which returns a valid Rack application.]]]
 
-### Using `root`
+### [Using `root`] `root` 사용하기
 
-You can specify what Rails should route `'/'` to with the `root` method:
+`root` 메서드를 사용하여 레일스가 `'/'`를 라우트할 지점을 지정할 수 있습니다.: [[[You can specify what Rails should route `'/'` to with the `root` method:]]]
 
 ```ruby
 root to: 'pages#main'
 root 'pages#main' # shortcut for the above
 ```
 
-You should put the `root` route at the top of the file, because it is the most popular route and should be matched first.
+`root` 라우트는 파일의 맨 처음에 두어야 하는데, 이것이 가장 일반적인 라우트이고 처음 매칭되어야 하는 것이기 때문입니다. [[[You should put the `root` route at the top of the file, because it is the most popular route and should be matched first.]]]
 
-NOTE: The `root` route only routes `GET` requests to the action.
+NOTE: `root` 라우트는 `GET` 요청만 액션으로 라우트합니다. [[[NOTE: The `root` route only routes `GET` requests to the action.]]]
 
-You can also use root inside namespaces and scopes as well.  For example:
+네임스페이스나 스코프 안에 root를 사용할 수도 있습니다. 예를 들면: [[[You can also use root inside namespaces and scopes as well.  For example:]]]
 
 ```ruby
 namespace :admin do
@@ -872,9 +891,9 @@ end
 root to: "home#index"
 ```
 
-### Unicode character routes
+### [Unicode character routes] 유니코드 캐릭터 라우트
 
-You can specify unicode character routes directly. For example:
+다음과 같이, 직접적으로 유니코드 캐릭터 라우트를 지정할 수 있습니다.: [[[You can specify unicode character routes directly. For example:]]]
 
 ```ruby
 get 'こんにちは', to: 'welcome#index'
@@ -883,17 +902,18 @@ get 'こんにちは', to: 'welcome#index'
 Customizing Resourceful Routes
 ------------------------------
 
-While the default routes and helpers generated by `resources :posts` will usually serve you well, you may want to customize them in some way. Rails allows you to customize virtually any generic part of the resourceful helpers.
+`resources :posts`에 의해 생성된 기본 라우트와 헬버는 일반적으로 잘 돌아갈 것이지만, 어떤 점에서는 그들을 커스터마이즈 하길 원할 수 있습니다. [[[While the default routes and helpers generated by `resources :posts` will usually serve you well, you may want to customize them in some way.]]]
+레일스는 리소스 헬퍼의 거의 모든 일반적인 부분들을 가상적으로 커스터마이즈 할 수 있습니다. [[[Rails allows you to customize virtually any generic part of the resourceful helpers.]]]
 
-### Specifying a Controller to Use
+### [Specifying a Controller to Use] 사용할 컨트롤러 지정하기
 
-The `:controller` option lets you explicitly specify a controller to use for the resource. For example:
+`:controller` 옵션은 리소스에 사용할 컨트롤러를 명시적으로 지정할 수 있게 합니다. 예를 들면: [[[The `:controller` option lets you explicitly specify a controller to use for the resource. For example:]]]
 
 ```ruby
 resources :photos, controller: 'images'
 ```
 
-will recognize incoming paths beginning with `/photos` but route to the `Images` controller:
+위 라우트는 `/photos`로 시작하는 유입 경로를 인식하지만, `Images` 컨트롤러로 라우트합니다. [[[will recognize incoming paths beginning with `/photos` but route to the `Images` controller:]]]
 
 | HTTP Verb | Path             | Action  | Named Helper         |
 | --------- | ---------------- | ------- | -------------------- |
@@ -905,32 +925,31 @@ will recognize incoming paths beginning with `/photos` but route to the `Images`
 | PATCH/PUT | /photos/:id      | update  | photo_path(:id)      |
 | DELETE    | /photos/:id      | destroy | photo_path(:id)      |
 
-NOTE: Use `photos_path`, `new_photo_path`, etc. to generate paths for this resource.
+NOTE: 이 리소스의 경로를 생성하기 위해 `photos_path`, `new_photo_path` 등을 사용하십시오. [[[NOTE: Use `photos_path`, `new_photo_path`, etc. to generate paths for this resource.]]]
 
-For namespaced controllers you can use the directory notation. For example:
+네임스페이스 컨트롤러의 경우 디렉터리 표기를 사용할 수 있습니다. 예를 들면: [[[For namespaced controllers you can use the directory notation. For example:]]]
 
 ```ruby
 resources :user_permissions, controller: 'admin/user_permissions'
 ```
 
-This will route to the `Admin::UserPermissions` controller.
+이것은 `Admin::UserPermissions` 컨트롤러로 라우트할 것입니다. [[[This will route to the `Admin::UserPermissions` controller.]]]
 
-NOTE: Only the directory notation is supported. Specifying the
-controller with ruby constant notation (eg. `:controller =>
-'Admin::UserPermissions'`) can lead to routing problems and results in
-a warning.
+NOTE: 디렉터리 표기만 지원됩니다. 루비 상수 표기법(예. `:controller => 'Admin::UserPermissions'`)으로 컨트롤러를 지정하면 라우팅 문제와 경고 결과를 초래할 수 있습니다. [[[NOTE: Only the directory notation is supported. Specifying the controller with ruby constant notation (eg. `:controller => 'Admin::UserPermissions'`) can lead to routing problems and results in a warning.]]]
 
-### Specifying Constraints
+### [Specifying Constraints] 제약 지정하기
 
-You can use the `:constraints` option to specify a required format on the implicit `id`. For example:
+암시적 `id`에 필요한 형식을 지정하기 위해 `:constraints` 옵션을 사용할 수 있습니다. 예를 들면: [[[You can use the `:constraints` option to specify a required format on the implicit `id`. For example:]]]
 
 ```ruby
 resources :photos, constraints: {id: /[A-Z][A-Z][0-9]+/}
 ```
 
-This declaration constrains the `:id` parameter to match the supplied regular expression. So, in this case, the router would no longer match `/photos/1` to this route. Instead, `/photos/RR27` would match.
+이 선언은 제공된 정규 표현식에 일치하는 `:id` 매개변수를 제한합니다. [[[This declaration constrains the `:id` parameter to match the supplied regular expression.]]]
+그래서 이 경우에, 라우터는 더이상 `/photos/1`을 이 라우트에 매치하지 않을 것입니다. [[[So, in this case, the router would no longer match `/photos/1` to this route.]]]
+대신, `/photos/RR27`은 매치될 것입니다. [[[Instead, `/photos/RR27` would match.]]]
 
-You can specify a single constraint to apply to a number of routes by using the block form:
+블록 형식을 사용하여 여러 라우트에 적용할 단일 제약을 지정할 수 있습니다.: [[[You can specify a single constraint to apply to a number of routes by using the block form:]]]
 
 ```ruby
 constraints(id: /[A-Z][A-Z][0-9]+/) do
@@ -939,19 +958,19 @@ constraints(id: /[A-Z][A-Z][0-9]+/) do
 end
 ```
 
-NOTE: Of course, you can use the more advanced constraints available in non-resourceful routes in this context.
+NOTE: 물론, 이 문맥에서 비-리소스풀 라우트 내에 보다 향상된 제약을 사용할 수도 있습니다. [[[NOTE: Of course, you can use the more advanced constraints available in non-resourceful routes in this context.]]]
 
-TIP: By default the `:id` parameter doesn't accept dots - this is because the dot is used as a separator for formatted routes. If you need to use a dot within an `:id` add a constraint which overrides this - for example `id: /[^\/]+/` allows anything except a slash.
+TIP: 기본적으로 `:id` 매개변수는 구두점(.)을 허용하지 않습니다. 이것은 구두점이 형식화된 라우트에서 구분자로 사용되기 때문입니다. 만약 `:id` 내에 구두점을 사용해야 할 필요가 있다면 이것을 오버라이드한 제약을 추가하십시오. 예를 들어 `id: /[^\/]+/`는 슬래시(/)를 제외한 모든 것을 허용합니다. [[[TIP: By default the `:id` parameter doesn't accept dots - this is because the dot is used as a separator for formatted routes. If you need to use a dot within an `:id` add a constraint which overrides this - for example `id: /[^\/]+/` allows anything except a slash.]]]
 
-### Overriding the Named Helpers
+### [Overriding the Named Helpers] 명명된 헬퍼 오버리이드하기
 
-The `:as` option lets you override the normal naming for the named route helpers. For example:
+`:as` 옵션은 명명된 라우트 헬퍼의 평범한 작명을 오버라이드할 수 있게 해줍니다. 예를 들면: [[[The `:as` option lets you override the normal naming for the named route helpers. For example:]]]
 
 ```ruby
 resources :photos, as: 'images'
 ```
 
-will recognize incoming paths beginning with `/photos` and route the requests to `PhotosController`, but use the value of the :as option to name the helpers.
+이것은 `/photos`로 시작하는 유입 경로를 인식하여 요청을 `PhotosController`로 라우트합니다. 그러나 :as 옵션의 값을 사용하여 헬퍼의 이름을 짓습니다. [[[will recognize incoming paths beginning with `/photos` and route the requests to `PhotosController`, but use the value of the :as option to name the helpers.]]]
 
 | HTTP Verb | Path             | Action  | Named Helper         |
 | --------- | ---------------- | ------- | -------------------- |
@@ -963,24 +982,24 @@ will recognize incoming paths beginning with `/photos` and route the requests to
 | PATCH/PUT | /photos/:id      | update  | image_path(:id)      |
 | DELETE    | /photos/:id      | destroy | image_path(:id)      |
 
-### Overriding the `new` and `edit` Segments
+### [Overriding the `new` and `edit` Segments] `new`와 `edit` 세그먼트 오버라이드하기
 
-The `:path_names` option lets you override the automatically-generated "new" and "edit" segments in paths:
+`:path_names` 옵션은 경로상 자동 생성된 "new"와 "edit" 세그먼트를 오버라이드할 수 있게 합니다. [[[The `:path_names` option lets you override the automatically-generated "new" and "edit" segments in paths:]]]
 
 ```ruby
 resources :photos, path_names: { new: 'make', edit: 'change' }
 ```
 
-This would cause the routing to recognize paths such as:
+이것은 라우팅을 다음과 같은 경로로 인식하게 합니다. [[[This would cause the routing to recognize paths such as:]]]
 
 ```
 /photos/make
 /photos/1/change
 ```
 
-NOTE: The actual action names aren't changed by this option. The two paths shown would still route to the `new` and `edit` actions.
+NOTE: 실제 액션명은 이 옵션에 의해 변경되지 않습니다. 두 경로는 여전히 `new`와 `edit` 액션으로 라우트될 것입니다. [[[NOTE: The actual action names aren't changed by this option. The two paths shown would still route to the `new` and `edit` actions.]]]
 
-TIP: If you find yourself wanting to change this option uniformly for all of your routes, you can use a scope.
+TIP: 만약 모든 라우트를 이 옵션으로 동일하게 변경하고 싶다면, 스코프를 사용할 수 있습니다. [[[TIP: If you find yourself wanting to change this option uniformly for all of your routes, you can use a scope.]]]
 
 ```ruby
 scope path_names: { new: 'make' } do
@@ -988,9 +1007,10 @@ scope path_names: { new: 'make' } do
 end
 ```
 
-### Prefixing the Named Route Helpers
+### [Prefixing the Named Route Helpers] 명명된 라우트 헬퍼에 접두어 붙이기
 
-You can use the `:as` option to prefix the named route helpers that Rails generates for a route. Use this option to prevent name collisions between routes using a path scope. For example:
+레일스가 라우트를 위해 생성한 명명된 라우트 헬퍼에 접두어를 붙이기 위해 `:as` 옵션을 사용할 수 있습니다. [[[You can use the `:as` option to prefix the named route helpers that Rails generates for a route.]]]
+라우트와 경로 스코프간의 이름 충돌을 방지하려면 이 옵션을 사용하십시오. 예를 들면: [[[Use this option to prevent name collisions between routes using a path scope. For example:]]]
 
 ```ruby
 scope 'admin' do
@@ -1000,9 +1020,9 @@ end
 resources :photos
 ```
 
-This will provide route helpers such as `admin_photos_path`, `new_admin_photo_path` etc.
+이것은 `admin_photos_path`, `new_admin_photo_path` 등과 같은 라우트 헬퍼를 제공할 것입니다. [[[This will provide route helpers such as `admin_photos_path`, `new_admin_photo_path` etc.]]]
 
-To prefix a group of route helpers, use `:as` with `scope`:
+라우트 헬퍼 집합에 접두어를 붙이려면, `scope:`와 함께 `:as`를 사용하십시오. [[[To prefix a group of route helpers, use `:as` with `scope`:]]]
 
 ```ruby
 scope 'admin', as: 'admin' do
@@ -1012,9 +1032,9 @@ end
 resources :photos, :accounts
 ```
 
-This will generate routes such as `admin_photos_path` and `admin_accounts_path` which map to `/admin/photos` and `/admin/accounts` respectively.
+이것은 `/admin/photos`와 `/admin/accounts`에 매핑되는 `admin_photos_path`와 `admin_accounts_path` 같은 라우트를 생성할 것입니다. [[[This will generate routes such as `admin_photos_path` and `admin_accounts_path` which map to `/admin/photos` and `/admin/accounts` respectively.]]]
 
-NOTE: The `namespace` scope will automatically add `:as` as well as `:module` and `:path` prefixes.
+NOTE: `namespace` 스코프는 `:module`과 `:path` 접두어와 마찬가지로 `:as`를 자동적으로 추가할 것입니다. [[[NOTE: The `namespace` scope will automatically add `:as` as well as `:module` and `:path` prefixes.]]]
 
 You can prefix routes with a named parameter also:
 
@@ -1024,31 +1044,33 @@ scope ':username' do
 end
 ```
 
-This will provide you with URLs such as `/bob/posts/1` and will allow you to reference the `username` part of the path as `params[:username]` in controllers, helpers and views.
+이것은 `/bob/posts/1`과 같은 URL을 제공할 것이고, 컨트롤러, 헬퍼 그리고 뷰에서 `params[:username]` 경로의 `username`을 참조할 수 있게 할 것입니다. [[[This will provide you with URLs such as `/bob/posts/1` and will allow you to reference the `username` part of the path as `params[:username]` in controllers, helpers and views.]]]
 
-### Restricting the Routes Created
+### [Restricting the Routes Created] 라우트 생성 제한하기
 
-By default, Rails creates routes for the seven default actions (index, show, new, create, edit, update, and destroy) for every RESTful route in your application. You can use the `:only` and `:except` options to fine-tune this behavior. The `:only` option tells Rails to create only the specified routes:
+기본값으로, 레일스는 응용프로그램 내의 모든 레스트풀 라우트를 위한 일곱 개의 기본 액션(index, show, new, create, edit, update, and destroy) 라우트를 생성합니다.[[[By default, Rails creates routes for the seven default actions (index, show, new, create, edit, update, and destroy) for every RESTful route in your application.]]]
+`:only`와 `:except` 옵션을 사용하여 이 행동을 미세 조정할 수 있습니다. [[[You can use the `:only` and `:except` options to fine-tune this behavior.]]]
+`:only` 옵션은 레일스에게 지정된 라우트만 생성하도록 요청합니다. [[[The `:only` option tells Rails to create only the specified routes:]]]
 
 ```ruby
 resources :photos, only: [:index, :show]
 ```
 
-Now, a `GET` request to `/photos` would succeed, but a `POST` request to `/photos` (which would ordinarily be routed to the `create` action) will fail.
+이제 `/photos`로의 `GET` 요청은 성공할 것이지만, `/photos`로의 `POST` 요청(일반적으로 `create` 액션으로 라우트되는)은 실패할 것입니다. [[[Now, a `GET` request to `/photos` would succeed, but a `POST` request to `/photos` (which would ordinarily be routed to the `create` action) will fail.]]]
 
-The `:except` option specifies a route or list of routes that Rails should _not_ create:
+`:except` 옵션은 레일스가 생성하지 않아야 할 라우트의 목록을 지정합니다.: [[[The `:except` option specifies a route or list of routes that Rails should _not_ create:]]]
 
 ```ruby
 resources :photos, except: :destroy
 ```
 
-In this case, Rails will create all of the normal routes except the route for `destroy` (a `DELETE` request to `/photos/:id`).
+이 경우, 레일스는 `destroy`로의 라우트(`/photos/:id`로의 `DELETE` 요청)를 제외한 모든 일반 라우트를 생성할 것입니다. [[[In this case, Rails will create all of the normal routes except the route for `destroy` (a `DELETE` request to `/photos/:id`).]]]
 
-TIP: If your application has many RESTful routes, using `:only` and `:except` to generate only the routes that you actually need can cut down on memory use and speed up the routing process.
+TIP: 만약 응용프로그램이 많은 레스트풀 라우트를 가지고 있다면, `:only`와 `:except`를 사용하여 살제로 필요한 라우트만 생성하는 것은 메모리 사용량을 줄이고 라우팅 프로세서의 속도를 높일 수 있습니다.: [[[TIP: If your application has many RESTful routes, using `:only` and `:except` to generate only the routes that you actually need can cut down on memory use and speed up the routing process.]]]
 
-### Translated Paths
+### [Translated Paths] 번역된 경로
 
-Using `scope`, we can alter path names generated by resources:
+`scope`를 사용하면, 리소스에 의해 생성된 경로명을 변경할 수 있습니다.: [[[Using `scope`, we can alter path names generated by resources:]]]
 
 ```ruby
 scope(path_names: { new: 'neu', edit: 'bearbeiten' }) do
@@ -1056,7 +1078,7 @@ scope(path_names: { new: 'neu', edit: 'bearbeiten' }) do
 end
 ```
 
-Rails now creates routes to the `CategoriesController`.
+레일스는 이제 `CategoriesController`로의 라우트를 생성합니다. [[[Rails now creates routes to the `CategoriesController`.]]]
 
 | HTTP Verb | Path                       | Action  | Used for                |
 | --------- | -------------------------- | ------- | ----------------------- |
@@ -1068,9 +1090,9 @@ Rails now creates routes to the `CategoriesController`.
 | PATCH/PUT | /kategorien/:id            | update  | category_path(:id)      |
 | DELETE    | /kategorien/:id            | destroy | category_path(:id)      |
 
-### Overriding the Singular Form
+### [Overriding the Singular Form] 단수 형식 오버라이드하기
 
-If you want to define the singular form of a resource, you should add additional rules to the `Inflector`:
+만약 리소스의 단수 형식을 정의하길 원한다면, `Inflector`에 부가 규칙을 더해야 합니다. [[[If you want to define the singular form of a resource, you should add additional rules to the `Inflector`:]]]
 
 ```ruby
 ActiveSupport::Inflector.inflections do |inflect|
@@ -1078,9 +1100,9 @@ ActiveSupport::Inflector.inflections do |inflect|
 end
 ```
 
-### Using `:as` in Nested Resources
+### [Using `:as` in Nested Resources] 내포 리소스에 `:as` 사용하기
 
-The `:as` option overrides the automatically-generated name for the resource in nested route helpers. For example:
+`:as` 옵션은 내포 라우트 헬퍼를 위해 자동 생성된 이름을 오버라이드합니다. 예를 들면: [[[The `:as` option overrides the automatically-generated name for the resource in nested route helpers. For example:]]]
 
 ```ruby
 resources :magazines do
@@ -1088,25 +1110,30 @@ resources :magazines do
 end
 ```
 
-This will create routing helpers such as `magazine_periodical_ads_url` and `edit_magazine_periodical_ad_path`.
+이것은 `magazine_periodical_ads_url`과 `edit_magazine_periodical_ad_path` 같은 라우팅 헬퍼를 만듭니다. [[[This will create routing helpers such as `magazine_periodical_ads_url` and `edit_magazine_periodical_ad_path`.]]]
 
-Inspecting and Testing Routes
+[Inspecting and Testing Routes] 라우트를 검사하고 테스트하기
 -----------------------------
 
-Rails offers facilities for inspecting and testing your routes.
+레일스는 라우트를 검사하고 테스트하기 위한 기능을 제공합니다. [[[Rails offers facilities for inspecting and testing your routes.]]]
 
-### Listing Existing Routes
+### [Listing Existing Routes] 기존 라우트 목록보기
 
-To get a complete list of the available routes in your application, visit `http://localhost:3000/rails/info/routes` in your browser while your server is running in the **development** environment. You can also execute the `rake routes` command in your terminal to produce the same output.
+응용프로그램에서 사용가능한 전체 목록을 얻으려면, 서버가 **개발** 환경에서 구동되는 동안 부라우저로 `http://localhost:3000/rails/info/routes`를 방문하십시오. [[[To get a complete list of the available routes in your application, visit `http://localhost:3000/rails/info/routes` in your browser while your server is running in the **development** environment.]]]
+또한 터미널에서 `rake routes`를 실행하면 동일한 출력을 만들 수 있습니다. [[[You can also execute the `rake routes` command in your terminal to produce the same output.]]]
 
-Both methods will list all of your routes, in the same order that they appear in `routes.rb`. For each route, you'll see:
+두 메서드는 `routes.rb` 내에 나타나는 동일 순서대로 전체 라우트의 목록을 보여줄 것입니다. [[[Both methods will list all of your routes, in the same order that they appear in `routes.rb`.]]]
+각각의 라우트에서 다음 내용을 확인할 수 있습니다.:[[[For each route, you'll see:]]]
 
-* The route name (if any)
-* The HTTP verb used (if the route doesn't respond to all verbs)
-* The URL pattern to match
-* The routing parameters for the route
+* 라우트 이름 (만약 있다면) [[[The route name (if any)]]]
 
-For example, here's a small section of the `rake routes` output for a RESTful route:
+* 사용되는 HTTP verb (만약 라우트가 모든 verb에 응답하는 것이 아니라면) [[[The HTTP verb used (if the route doesn't respond to all verbs)]]]
+
+* 매칭될 URL 패턴 [[[The URL pattern to match]]]
+
+* 라우트를 위한 라우팅 매개변수들 [[[The routing parameters for the route]]]
+
+예를 들어, 아래 레스트풀 라우트를 위한 `rake routes`의 작은 부분이 있습니다. [[[For example, here's a small section of the `rake routes` output for a RESTful route:]]]
 
 ```
     users GET    /users(.:format)          users#index
@@ -1115,48 +1142,51 @@ For example, here's a small section of the `rake routes` output for a RESTful ro
 edit_user GET    /users/:id/edit(.:format) users#edit
 ```
 
-You may restrict the listing to the routes that map to a particular controller setting the `CONTROLLER` environment variable:
+`CONTROLLER` 환경 변수를 설정하여 특정 컨트롤러로 매핑되는 라우트의 목록으로 한정할 수 있습니다. [[[You may restrict the listing to the routes that map to a particular controller setting the `CONTROLLER` environment variable:]]]
 
 ```bash
 $ CONTROLLER=users rake routes
 ```
 
-TIP: You'll find that the output from `rake routes` is much more readable if you widen your terminal window until the output lines don't wrap.
+TIP: 터미널 창을 행이 줄바꿈하지 않을 때까지 넓히면 `rake routes`의 출력은 더 읽기 쉬워짐을 확인할 것입니다. [[[TIP: You'll find that the output from `rake routes` is much more readable if you widen your terminal window until the output lines don't wrap.]]]
 
-### Testing Routes
+### [Testing Routes] 라우트 테스트하기
 
-Routes should be included in your testing strategy (just like the rest of your application). Rails offers three [built-in assertions](http://api.rubyonrails.org/classes/ActionDispatch/Assertions/RoutingAssertions.html) designed to make testing routes simpler:
+라우트는 (응용 프로그램의 다른 부분과 마찬가지로) 테스팅 전략에 포함되어야 합니다. [[[Routes should be included in your testing strategy (just like the rest of your application).]]]
+레일스는 테스트를 보다 간단하게 할 수 있도록 설계된 세 가지 [내장 assertion]을 제공합니다.: (http://api.rubyonrails.org/classes/ActionDispatch/Assertions/RoutingAssertions.html)[[[Rails offers three [built-in assertions](http://api.rubyonrails.org/classes/ActionDispatch/Assertions/RoutingAssertions.html) designed to make testing routes simpler:]]]
 
 * `assert_generates`
 * `assert_recognizes`
 * `assert_routing`
 
-#### The `assert_generates` Assertion
+#### [The `assert_generates` Assertion] `assert_generates` Assertion
 
-`assert_generates` asserts that a particular set of options generate a particular path and can be used with default routes or custom routes. For example:
+`assert_generates`는 옵션의 특정 셋이 특정 경로를 생성하고 기본 라우트 혹은 커스텀 라우트와 함께 사용될 수 있음을 assert 합니다. 예를 들면:[[[`assert_generates` asserts that a particular set of options generate a particular path and can be used with default routes or custom routes. For example:]]]
 
 ```ruby
 assert_generates '/photos/1', { controller: 'photos', action: 'show', id: '1' }
 assert_generates '/about', controller: 'pages', action: 'about'
 ```
 
-#### The `assert_recognizes` Assertion
+#### [The `assert_recognizes` Assertion] `assert_recognizes` Assertion
 
-`assert_recognizes` is the inverse of `assert_generates`. It asserts that a given path is recognized and routes it to a particular spot in your application. For example:
+`assert_recognizes`는 `assert_generates`의 반대입니다. [[[`assert_recognizes` is the inverse of `assert_generates`.]]]
+주어진 경로가 응용프로그램의 특정 지점을 인식하고 라우트함을 assert 합니다. 예를 들면: [[[It asserts that a given path is recognized and routes it to a particular spot in your application. For example:]]]
 
 ```ruby
 assert_recognizes({ controller: 'photos', action: 'show', id: '1' }, '/photos/1')
 ```
 
-You can supply a `:method` argument to specify the HTTP verb:
+`:method` 인수를 제공하여 HTTP verb를 지정할 수 있습니다.: [[[You can supply a `:method` argument to specify the HTTP verb:]]]
 
 ```ruby
 assert_recognizes({ controller: 'photos', action: 'create' }, { path: 'photos', method: :post })
 ```
 
-#### The `assert_routing` Assertion
+#### [The `assert_routing` Assertion] `assert_routing` Assertion
 
-The `assert_routing` assertion checks the route both ways: it tests that the path generates the options, and that the options generate the path. Thus, it combines the functions of `assert_generates` and `assert_recognizes`:
+`assert_routing`은 양쪽 방법 모두로 라우트를 점검합니다: 이것은 경로가 옵션을 생성하는 것을, 그리고 옵션이 경로를 생성하는 것을 테스트합니다. [[[The `assert_routing` assertion checks the route both ways: it tests that the path generates the options, and that the options generate the path.]]]
+따라서, 이것은 `assert_generates`와 `assert_recognizes`의 기능을 합친 것입니다. [[[Thus, it combines the functions of `assert_generates` and `assert_recognizes`:]]]
 
 ```ruby
 assert_routing({ path: 'photos', method: :post }, { controller: 'photos', action: 'create' })
