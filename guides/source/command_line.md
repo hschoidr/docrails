@@ -222,7 +222,7 @@ We will set up a simple resource called "HighScore" that will keep track of our 
 ```bash
 $ rails generate scaffold HighScore game:string score:integer
     invoke  active_record
-    create    db/migrate/20120528060026_create_high_scores.rb
+    create    db/migrate/20130717151933_create_high_scores.rb
     create    app/models/high_score.rb
     invoke    test_unit
     create      test/models/high_score_test.rb
@@ -244,18 +244,21 @@ $ rails generate scaffold HighScore game:string score:integer
     create      app/helpers/high_scores_helper.rb
     invoke      test_unit
     create        test/helpers/high_scores_helper_test.rb
+    invoke    jbuilder
+    create      app/views/high_scores/index.json.jbuilder
+    create      app/views/high_scores/show.json.jbuilder
     invoke  assets
     invoke    coffee
     create      app/assets/javascripts/high_scores.js.coffee
     invoke    scss
     create      app/assets/stylesheets/high_scores.css.scss
     invoke  scss
-    create    app/assets/stylesheets/scaffolds.css.scss
+   identical    app/assets/stylesheets/scaffolds.css.scss
 ```
 
 The generator checks that there exist the directories for models, controllers, helpers, layouts, functional and unit tests, stylesheets, creates the views, controller, model and database migration for HighScore (creating the `high_scores` table and fields), takes care of the route for the **resource**, and new tests for everything.
 
-The migration requires that we **migrate**, that is, run some Ruby code (living in that `20120528060026_create_high_scores.rb`) to modify the schema of our database. Which database? The sqlite3 database that Rails will create for you when we run the `rake db:migrate` command. We'll talk more about Rake in-depth in a little while.
+The migration requires that we **migrate**, that is, run some Ruby code (living in that `20130717151933_create_high_scores.rb`) to modify the schema of our database. Which database? The sqlite3 database that Rails will create for you when we run the `rake db:migrate` command. We'll talk more about Rake in-depth in a little while.
 
 ```bash
 $ rake db:migrate
@@ -378,13 +381,14 @@ About your application's environment
 Ruby version              1.9.3 (x86_64-linux)
 RubyGems version          1.3.6
 Rack version              1.3
-Rails version             4.0.0
+Rails version             4.1.0
 JavaScript Runtime        Node.js (V8)
-Active Record version     4.0.0
-Action Pack version       4.0.0
-Action Mailer version     4.0.0
-Active Support version    4.0.0
-Middleware                ActionDispatch::Static, Rack::Lock, Rack::Runtime, Rack::MethodOverride, ActionDispatch::RequestId, Rails::Rack::Logger, ActionDispatch::ShowExceptions, ActionDispatch::DebugExceptions, ActionDispatch::RemoteIp, ActionDispatch::Reloader, ActionDispatch::Callbacks, ActiveRecord::Migration::CheckPending, ActiveRecord::ConnectionAdapters::ConnectionManagement, ActiveRecord::QueryCache, ActionDispatch::Cookies, ActionDispatch::Session::EncryptedCookieStore, ActionDispatch::Flash, ActionDispatch::ParamsParser, Rack::Head, Rack::ConditionalGet, Rack::ETag
+Active Record version     4.1.0
+Action Pack version       4.1.0
+Action View version       4.1.0
+Action Mailer version     4.1.0
+Active Support version    4.1.0
+Middleware                Rack::Sendfile, ActionDispatch::Static, Rack::Lock, #<ActiveSupport::Cache::Strategy::LocalCache::Middleware:0x007ffd131a7c88>, Rack::Runtime, Rack::MethodOverride, ActionDispatch::RequestId, Rails::Rack::Logger, ActionDispatch::ShowExceptions, ActionDispatch::DebugExceptions, ActionDispatch::RemoteIp, ActionDispatch::Reloader, ActionDispatch::Callbacks, ActiveRecord::Migration::CheckPending, ActiveRecord::ConnectionAdapters::ConnectionManagement, ActiveRecord::QueryCache, ActionDispatch::Cookies, ActionDispatch::Session::EncryptedCookieStore, ActionDispatch::Flash, ActionDispatch::ParamsParser, Rack::Head, Rack::ConditionalGet, Rack::ETag
 Application root          /home/foobar/commandsapp
 Environment               development
 Database adapter          sqlite3
@@ -474,12 +478,13 @@ Rails comes with a test suite called `Test::Unit`. Rails owes its stability to t
 
 The `Rails.root/tmp` directory is, like the *nix /tmp directory, the holding place for temporary files like sessions (if you're using a file store for files), process id files, and cached actions.
 
-The `tmp:` namespaced tasks will help you clear the `Rails.root/tmp` directory:
+The `tmp:` namespaced tasks will help you clear and create the `Rails.root/tmp` directory:
 
 * `rake tmp:cache:clear` clears `tmp/cache`.
 * `rake tmp:sessions:clear` clears `tmp/sessions`.
 * `rake tmp:sockets:clear` clears `tmp/sockets`.
 * `rake tmp:clear` clears all the three: cache, sessions and sockets.
+* `rake tmp:create` creates tmp directories for sessions, cache, sockets, and pids.
 
 ### Miscellaneous
 

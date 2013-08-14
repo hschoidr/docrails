@@ -234,8 +234,8 @@ workflow with the [rails-dev-box](https://github.com/rails/rails-dev-box).
 
 As a compromise, test what your code obviously affects, and if the change is
 not in railties run the whole test suite of the affected component. If all is
-green that's enough to propose your contribution. We have [Travis CI](https
-://travis-ci.org/) as a safety net for catching unexpected breakages
+green that's enough to propose your contribution. We have [Travis CI](https://travis-ci.org/rails/rails)
+as a safety net for catching unexpected breakages
 elsewhere.
 
 TIP: Changes that are cosmetic in nature and do not add anything substantial to the stability, functionality, or testability of Rails will generally not be accepted.
@@ -264,7 +264,7 @@ The CHANGELOG is an important part of every release. It keeps the list of change
 
 You should add an entry to the CHANGELOG of the framework that you modified if you're adding or removing a feature, committing a bug fix or adding deprecation notices. Refactorings and documentation changes generally should not go to the CHANGELOG.
 
-A CHANGELOG entry should summarize what was changed and should end with author's name. You can use multiple lines if you need more space and you can attach code examples indented with 4 spaces. If a change is related to a specific issue, you should attach issue's number. Here is an example CHANGELOG entry:
+A CHANGELOG entry should summarize what was changed and should end with author's name and it should go on top of a CHANGELOG. You can use multiple lines if you need more space and you can attach code examples indented with 4 spaces. If a change is related to a specific issue, you should attach issue's number. Here is an example CHANGELOG entry:
 
 ```
 *   Summary of a change that briefly describes what was changed. You can use multiple

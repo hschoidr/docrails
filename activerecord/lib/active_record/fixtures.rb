@@ -379,12 +379,6 @@ module ActiveRecord
 
     @@all_cached_fixtures = Hash.new { |h,k| h[k] = {} }
 
-    def self.find_table_name(fixture_set_name) # :nodoc:
-      ActiveSupport::Deprecation.warn(
-        "ActiveRecord::Fixtures.find_table_name is deprecated and shall be removed from future releases.  Use ActiveRecord::Fixtures.default_fixture_model_name instead.")
-      default_fixture_model_name(fixture_set_name)
-    end
-
     def self.default_fixture_model_name(fixture_set_name) # :nodoc:
       ActiveRecord::Base.pluralize_table_names ?
         fixture_set_name.singularize.camelize :
@@ -841,8 +835,6 @@ module ActiveRecord
     end
 
     def setup_fixtures
-      return if ActiveRecord::Base.configurations.blank?
-
       if pre_loaded_fixtures && !use_transactional_fixtures
         raise RuntimeError, 'pre_loaded_fixtures requires use_transactional_fixtures'
       end
@@ -875,8 +867,6 @@ module ActiveRecord
     end
 
     def teardown_fixtures
-      return if ActiveRecord::Base.configurations.blank?
-
       # Rollback changes if a transaction is active.
       if run_in_transaction?
         @fixture_connections.each do |connection|
