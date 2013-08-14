@@ -15,7 +15,7 @@
 [The Hard Way] 어려운 방법
 ------------
 
-위에서 본 것과 같이 레일스 개발 백스를 사용할 수 없디면, 루비 온 레일스 코어 개발을 위한 개발 박스를 수동으로 구축하는 단계가 다음에 있습니다. [[[In case you can't use the Rails development box, see section above, these are the steps to manually build a development box for Ruby on Rails core development.]]]
+위에서 본 것과 같이 레일스 개발 박스를 사용할 수 없디면, 루비 온 레일스 코어 개발을 위한 개발 박스를 수동으로 구축하는 단계가 다음에 있습니다. [[[In case you can't use the Rails development box, see section above, these are the steps to manually build a development box for Ruby on Rails core development.]]]
 
 ### [Install Git] Git 설치
 
@@ -33,7 +33,7 @@
 
 * [Pro Git](http://git-scm.com/book)은 크리에이티브 커먼스 라이센스로 제공되는 Git에 대한 온전한 책입니다. [[[[Pro Git](http://git-scm.com/book) is an entire book about Git with a Creative Commons license.]]]
 
-### [Clone the Ruby on Rails Repository] 루비 온 레일스 리파지토리 복제
+### [Clone the Ruby on Rails Repository] 루비 온 레일스 저장소 복제
 
 루비 온 레일스 소스 코드를 위치시키고자 하는 폴더로 이동하여(이 작업은 `rails` 서브디렉터리를 만듭니다) 다음을 실행합니다.: [[[Navigate to the folder where you want the Ruby on Rails source code (it will create its own `rails` subdirectory) and run:]]]
 
