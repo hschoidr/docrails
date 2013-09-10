@@ -953,7 +953,7 @@ end
 
 ##### `includes`
 
-You can use the `includes` method let you specify second-order associations that should be eager-loaded when this association is used. For example, consider these models:
+You can use the `includes` method to specify second-order associations that should be eager-loaded when this association is used. For example, consider these models:
 
 ```ruby
 class LineItem < ActiveRecord::Base
@@ -2171,7 +2171,7 @@ You're not limited to the functionality that Rails automatically builds into ass
 class Customer < ActiveRecord::Base
   has_many :orders do
     def find_by_order_prefix(order_number)
-      find_by_region_id(order_number[0..2])
+      find_by(region_id: order_number[0..2])
     end
   end
 end
