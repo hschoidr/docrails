@@ -68,7 +68,7 @@ module Rails
       directory "bin" do |content|
         "#{shebang}\n" + content
       end
-      chmod "bin", 0755, verbose: false
+      chmod "bin", 0755 & ~File.umask, verbose: false
     end
 
     def config
@@ -151,17 +151,11 @@ module Rails
                              desc: "Show Rails version number and quit"
 
       def initialize(*args)
-        if args[0].blank?
-          if args[1].blank?
-            # rails new
-            raise Error, "Application name should be provided in arguments. For details run: rails --help"
-          else
-            # rails new --skip-bundle my_new_application
-            raise Error, "Options should be given after the application name. For details run: rails --help"
-          end
-        end
-
         super
+
+        unless app_path
+          raise Error, "Application name should be provided in arguments. For details run: rails --help"
+        end
 
         if !options[:skip_active_record] && !DATABASES.include?(options[:database])
           raise Error, "Invalid value for --database option. Supported for preconfiguration are: #{DATABASES.join(", ")}."
@@ -341,7 +335,7 @@ module Rails
 
         def handle_rails_rc!
           unless argv.delete("--no-rc")
-            insert_railsrc(railsrc)
+            insert_railsrc_into_argv!(railsrc)
           end
         end
 
@@ -353,7 +347,7 @@ module Rails
           end
         end
 
-        def insert_railsrc(railsrc)
+        def insert_railsrc_into_argv!(railsrc)
           if File.exist?(railsrc)
             extra_args_string = File.read(railsrc)
             extra_args = extra_args_string.split(/\n+/).map {|l| l.split}.flatten

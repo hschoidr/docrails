@@ -11,13 +11,6 @@ require 'active_support/core_ext/string/strip'
 require 'active_support/core_ext/string/output_safety'
 require 'active_support/core_ext/string/indent'
 
-module Ace
-  module Base
-    class Case
-    end
-  end
-end
-
 class StringInflectionsTest < ActiveSupport::TestCase
   include InflectorTestCases
   include ConstantizeTestCases
@@ -276,6 +269,11 @@ class StringInflectionsTest < ActiveSupport::TestCase
 
   def test_truncate_should_not_be_html_safe
     assert !"Hello World!".truncate(12).html_safe?
+  end
+  
+  def test_remove
+    assert_equal "Summer", "Fast Summer".remove(/Fast /)
+    assert_equal "Summer", "Fast Summer".remove!(/Fast /)
   end
 
   def test_constantize

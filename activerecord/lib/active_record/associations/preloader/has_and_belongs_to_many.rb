@@ -12,7 +12,7 @@ module ActiveRecord
         # Unlike the other associations, we want to get a raw array of rows so that we can
         # access the aliased column on the join table
         def records_for(ids)
-          scope = super
+          scope = query_scope ids
           klass.connection.select_all(scope.arel, 'SQL', scope.bind_values)
         end
 
@@ -33,11 +33,22 @@ module ActiveRecord
         # Once we have used the join table column (in super), we manually instantiate the
         # actual records, ensuring that we don't create more than one instances of the same
         # record
-        def associated_records_by_owner
-          records = {}
-          super.each_value do |rows|
-            rows.map! { |row| records[row[klass.primary_key]] ||= klass.instantiate(row) }
-          end
+        def load_slices(slices)
+          identity_map = {}
+          caster = nil
+          name = association_key_name
+
+          records_to_keys = slices.flat_map { |slice|
+            records = records_for(slice)
+            caster ||= records.column_types.fetch(name, records.identity_type)
+            records.map! { |row|
+              record = identity_map[row[klass.primary_key]] ||= klass.instantiate(row)
+              [record, caster.type_cast(row[name])]
+            }
+          }
+          @preloaded_records = records_to_keys.map(&:first)
+
+          records_to_keys
         end
 
         def build_scope

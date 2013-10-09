@@ -671,5 +671,20 @@ module ApplicationTests
         end
       end
     end
+
+    test "config.log_level with custom logger" do
+      make_basic_app do |app|
+        app.config.logger = Logger.new(STDOUT)
+        app.config.log_level = :info
+      end
+      assert_equal Logger::INFO, Rails.logger.level
+    end
+
+    test "respond_to? accepts include_private" do
+      make_basic_app
+
+      assert_not Rails.configuration.respond_to?(:method_missing)
+      assert Rails.configuration.respond_to?(:method_missing, true)
+    end
   end
 end

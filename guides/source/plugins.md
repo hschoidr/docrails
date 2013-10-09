@@ -5,7 +5,7 @@ A Rails plugin is either an extension or a modification of the core framework. P
 
 * a way for developers to share bleeding-edge ideas without hurting the stable code base
 * a segmented architecture so that units of code can be fixed or updated on their own release schedule
-* an outlet for the core developers so that they don’t have to include every cool new feature under the sun
+* an outlet for the core developers so that they don't have to include every cool new feature under the sun
 
 After reading this guide, you will know:
 
@@ -15,7 +15,7 @@ After reading this guide, you will know:
 This guide describes how to build a test-driven plugin that will:
 
 * Extend core Ruby classes like Hash and String.
-* Add methods to ActiveRecord::Base in the tradition of the 'acts_as' plugins.
+* Add methods to `ActiveRecord::Base` in the tradition of the `acts_as` plugins.
 * Give you information about where to put generators in your plugin.
 
 For the purpose of this guide pretend for a moment that you are an avid bird watcher.
@@ -126,8 +126,8 @@ $ rails console
 Add an "acts_as" Method to Active Record
 ----------------------------------------
 
-A common pattern in plugins is to add a method called 'acts_as_something' to models. In this case, you
-want to write a method called 'acts_as_yaffle' that adds a 'squawk' method to your Active Record models.
+A common pattern in plugins is to add a method called `acts_as_something` to models. In this case, you
+want to write a method called `acts_as_yaffle` that adds a `squawk` method to your Active Record models.
 
 To begin, set up your files so that you have:
 
@@ -162,9 +162,9 @@ end
 
 ### Add a Class Method
 
-This plugin will expect that you've added a method to your model named 'last_squawk'. However, the
-plugin users might have already defined a method on their model named 'last_squawk' that they use
-for something else. This plugin will allow the name to be changed by adding a class method called 'yaffle_text_field'.
+This plugin will expect that you've added a method to your model named `last_squawk`. However, the
+plugin users might have already defined a method on their model named `last_squawk` that they use
+for something else. This plugin will allow the name to be changed by adding a class method called `yaffle_text_field`.
 
 To start out, write a failing test that shows the behavior you'd like:
 

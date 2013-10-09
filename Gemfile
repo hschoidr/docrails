@@ -8,7 +8,7 @@ gemspec
 gem 'mocha', '~> 0.14', require: false
 
 gem 'rack-cache', '~> 1.2'
-gem 'bcrypt-ruby', '~> 3.1.0'
+gem 'bcrypt-ruby', '~> 3.1.2'
 gem 'jquery-rails', '~> 2.2.0'
 gem 'turbolinks'
 gem 'coffee-rails', '~> 4.0.0'
@@ -61,11 +61,12 @@ platforms :ruby do
 end
 
 platforms :jruby do
-  gem 'activerecord-jdbcsqlite3-adapter', '>= 1.2.7'
+  gem 'json'
+  gem 'activerecord-jdbcsqlite3-adapter', '>= 1.3.0'
 
   group :db do
-    gem 'activerecord-jdbcmysql-adapter', '>= 1.2.7'
-    gem 'activerecord-jdbcpostgresql-adapter', '>= 1.2.7'
+    gem 'activerecord-jdbcmysql-adapter', '>= 1.3.0'
+    gem 'activerecord-jdbcpostgresql-adapter', '>= 1.3.0'
   end
 end
 
