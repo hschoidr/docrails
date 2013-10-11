@@ -45,16 +45,18 @@ module ActiveRecord
   module ConnectionAdapters
     # PostgreSQL-specific extensions to column definitions in a table.
     class PostgreSQLColumn < Column #:nodoc:
-      attr_accessor :array
+      attr_accessor :array, :default_function
       # Instantiates a new PostgreSQL column definition in a table.
       def initialize(name, default, oid_type, sql_type = nil, null = true)
         @oid_type = oid_type
+        default_value     = self.class.extract_value_from_default(default)
+        @default_function = default if !default_value && default && default =~ /.+\(.*\)/
         if sql_type =~ /\[\]$/
           @array = true
-          super(name, self.class.extract_value_from_default(default), sql_type[0..sql_type.length - 3], null)
+          super(name, default_value, sql_type[0..sql_type.length - 3], null)
         else
           @array = false
-          super(name, self.class.extract_value_from_default(default), sql_type, null)
+          super(name, default_value, sql_type, null)
         end
       end
 
@@ -126,6 +128,14 @@ module ActiveRecord
             # Anything else is blank, some user type, or some function
             # and we can't know the value of that, so return nil.
             nil
+        end
+      end
+
+      def type_cast_for_write(value)
+        if @oid_type.respond_to?(:type_cast_for_write)
+          @oid_type.type_cast_for_write(value)
+        else
+          super
         end
       end
 
@@ -373,15 +383,11 @@ module ActiveRecord
           self
         end
 
-        def xml(options = {})
-          column(args[0], :text, options)
-        end
-
         private
 
-        def create_column_definition(name, type)
-          ColumnDefinition.new name, type
-        end
+          def create_column_definition(name, type)
+            ColumnDefinition.new name, type
+          end
       end
 
       class Table < ActiveRecord::ConnectionAdapters::Table
@@ -435,6 +441,7 @@ module ActiveRecord
       def prepare_column_options(column, types)
         spec = super
         spec[:array] = 'true' if column.respond_to?(:array) && column.array
+        spec[:default] = "\"#{column.default_function}\"" if column.respond_to?(:default_function) && column.default_function
         spec
       end
 
@@ -527,6 +534,7 @@ module ActiveRecord
         super(connection, logger)
 
         if self.class.type_cast_config_to_boolean(config.fetch(:prepared_statements) { true })
+          @prepared_statements = true
           @visitor = Arel::Visitors::PostgreSQL.new self
         else
           @visitor = unprepared_visitor

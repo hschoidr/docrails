@@ -153,8 +153,6 @@ Rails 4.0 no longer supports loading plugins from `vendor/plugins`. You must rep
 
 * In Rails 4.0 when a column or a table is renamed the related indexes are also renamed. If you have migrations which rename the indexes, they are no longer needed.
 
-* Rails 4.0 has changed how orders get stacked in `ActiveRecord::Relation`. In previous versions of Rails, the new order was applied after the previously defined order. But this is no longer true. Check [Active Record Query guide](active_record_querying.html#ordering) for more information.
-
 * Rails 4.0 has changed `serialized_attributes` and `attr_readonly` to class methods only. You shouldn't use instance methods since it's now deprecated. You should change them to use class methods, e.g. `self.serialized_attributes` to `self.class.serialized_attributes`.
 
 * Rails 4.0 has removed `attr_accessible` and `attr_protected` feature in favor of Strong Parameters. You can use the [Protected Attributes gem](https://github.com/rails/protected_attributes) for a smooth upgrade path.
@@ -172,7 +170,26 @@ this gem such as `whitelist_attributes` or `mass_assignment_sanitizer` options.
 ```
 
 * Rails 4.0 has deprecated `ActiveRecord::Fixtures` in favor of `ActiveRecord::FixtureSet`.
+
 * Rails 4.0 has deprecated `ActiveRecord::TestCase` in favor of `ActiveSupport::TestCase`.
+
+* Rails 4.0 has deprecated the old-style hash based finder API. This means that
+  methods which previously accepted "finder options" no longer do.
+
+* All dynamic methods except for `find_by_...` and `find_by_...!` are deprecated.
+  Here's how you can handle the changes:
+
+      * `find_all_by_...`           becomes `where(...)`.
+      * `find_last_by_...`          becomes `where(...).last`.
+      * `scoped_by_...`             becomes `where(...)`.
+      * `find_or_initialize_by_...` becomes `find_or_initialize_by(...)`.
+      * `find_or_create_by_...`     becomes `find_or_create_by(...)`.
+
+* Note that `where(...)` returns a relation, not an array like the old finders. If you require an `Array`, use `where(...).to_a`.
+
+* These equivalent methods may not execute the same SQL as the previous implementation.
+
+* To re-enable the old finders, you can use the [activerecord-deprecated_finders gem](https://github.com/rails/activerecord-deprecated_finders).
 
 ### Active Resource
 

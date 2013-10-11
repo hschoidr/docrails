@@ -301,11 +301,12 @@ braces. You can use the following modifiers:
 * `precision`    Defines the precision for the `decimal` fields
 * `scale`        Defines the scale for the `decimal` fields
 * `polymorphic`  Adds a `type` column for `belongs_to` associations
+* `null`         Allows or disallows `NULL` values in the column.
 
 For instance, running
 
 ```bash
-$ rails generate migration AddDetailsToProducts price:decimal{5,2} supplier:references{polymorphic}
+$ rails generate migration AddDetailsToProducts 'price:decimal{5,2}' supplier:references{polymorphic}
 ```
 
 will produce a migration that looks like this
@@ -313,7 +314,7 @@ will produce a migration that looks like this
 ```ruby
 class AddDetailsToProducts < ActiveRecord::Migration
   def change
-    add_column :products, :price, precision: 5, scale: 2
+    add_column :products, :price, :decimal, precision: 5, scale: 2
     add_reference :products, :supplier, polymorphic: true, index: true
   end
 end
@@ -692,15 +693,20 @@ Neither of these Rake tasks do anything you could not do with `db:migrate`. They
 are simply more convenient, since you do not need to explicitly specify the
 version to migrate to.
 
+### Setup the Database
+
+The `rake db:setup` task will create the database, load the schema and initialize
+it with the seed data.
+
 ### Resetting the Database
 
-The `rake db:reset` task will drop the database, recreate it and load the
-current schema into it.
+The `rake db:reset` task will drop the database and set it up again. This is
+functionally equivalent to `rake db:drop db:setup`.
 
 NOTE: This is not the same as running all the migrations. It will only use the
-contents of the current schema.rb file. If a migration can't be rolled back,
-'rake db:reset' may not help you. To find out more about dumping the schema see
-'[schema dumping and you](#schema-dumping-and-you).'
+contents of the current `schema.rb` file. If a migration can't be rolled back,
+`rake db:reset` may not help you. To find out more about dumping the schema see
+[Schema Dumping and You](#schema-dumping-and-you) section.
 
 ### Running Specific Migrations
 
@@ -829,8 +835,7 @@ which contains a `Product` model:
 Bob goes on vacation.
 
 Alice creates a migration for the `products` table which adds a new column and
-initializes it. She also adds a validation to the `Product` model for the new
-column.
+initializes it:
 
 ```ruby
 # db/migrate/20100513121110_add_flag_to_product.rb
@@ -845,6 +850,8 @@ class AddFlagToProduct < ActiveRecord::Migration
 end
 ```
 
+She also adds a validation to the `Product` model for the new column:
+
 ```ruby
 # app/models/product.rb
 
@@ -853,9 +860,8 @@ class Product < ActiveRecord::Base
 end
 ```
 
-Alice adds a second migration which adds and initializes another column to the
-`products` table and also adds a validation to the `Product` model for the new
-column.
+Alice adds a second migration which adds another column to the `products`
+table and initializes it:
 
 ```ruby
 # db/migrate/20100515121110_add_fuzz_to_product.rb
@@ -869,6 +875,8 @@ class AddFuzzToProduct < ActiveRecord::Migration
   end
 end
 ```
+
+She also adds a validation to the `Product` model for the new column:
 
 ```ruby
 # app/models/product.rb
@@ -903,7 +911,7 @@ A fix for this is to create a local model within the migration. This keeps
 Rails from running the validations, so that the migrations run to completion.
 
 When using a local model, it's a good idea to call
-`Product.reset_column_information` to refresh the `ActiveRecord` cache for the
+`Product.reset_column_information` to refresh the Active Record cache for the
 `Product` model prior to updating data in the database.
 
 If Alice had done this instead, there would have been no problem:
@@ -956,7 +964,7 @@ other product attributes.
 These migrations run just fine, but when Bob comes back from his vacation
 and calls `rake db:migrate` to run all the outstanding migrations, he gets a
 subtle bug: The descriptions have defaults, and the `fuzz` column is present,
-but `fuzz` is nil on all products.
+but `fuzz` is `nil` on all products.
 
 The solution is again to use `Product.reset_column_information` before
 referencing the Product model in a migration, ensuring the Active Record's
@@ -1032,8 +1040,8 @@ this, then you should set the schema format to `:sql`.
 Instead of using Active Record's schema dumper, the database's structure will
 be dumped using a tool specific to the database (via the `db:structure:dump`
 Rake task) into `db/structure.sql`. For example, for PostgreSQL, the `pg_dump`
-utility is used. For MySQL, this file will contain the output of `SHOW CREATE
-TABLE` for the various tables.
+utility is used. For MySQL, this file will contain the output of
+`SHOW CREATE TABLE` for the various tables.
 
 Loading these schemas is simply a question of executing the SQL statements they
 contain. By definition, this will create a perfect copy of the database's

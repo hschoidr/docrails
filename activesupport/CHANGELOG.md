@@ -1,3 +1,78 @@
+*   Disable the ability to iterate over Range of AS::TimeWithZone 
+    due to significant performance issues.
+
+    *Bogdan Gusiev*
+
+*   Allow attaching event subscribers to ActiveSupport::Notifications namespaces
+    before they're defined. Essentially, this means instead of this:
+
+        class JokeSubscriber < ActiveSupport::Subscriber
+          def sql(event)
+            puts "A rabbi and a priest walk into a bar..."
+          end
+
+          # This call needs to happen *after* defining the methods.
+          attach_to "active_record"
+        end
+
+    You can do this:
+
+      class JokeSubscriber < ActiveSupport::Subscriber
+        # This is much easier to read!
+        attach_to "active_record"
+
+        def sql(event)
+          puts "A rabbi and a priest walk into a bar..."
+        end
+      end
+
+    This should make it easier to read and understand these subscribers.
+
+    *Daniel Schierbeck*
+
+*   Add `Date#middle_of_day`, `DateTime#middle_of_day` and `Time#middle_of_day` methods.
+
+    Also added `midday`, `noon`, `at_midday`, `at_noon` and `at_middle_of_day` as aliases.
+
+    *Anatoli Makarevich*
+
+*   Fix ActiveSupport::Cache::FileStore#cleanup to no longer rely on missing each_key method.
+
+    *Murray Steele*
+
+*   Ensure that autoloaded constants in all-caps nestings are marked as
+    autoloaded.
+
+    *Simon Coffey*
+
+*   Add String#remove(pattern) as a short-hand for the common pattern of String#gsub(pattern, '')
+
+    *DHH*
+
+*   Adds a new deprecation behaviour that raises an exception. Throwing this
+    line into +config/environments/development.rb+
+
+        ActiveSupport::Deprecation.behavior = :raise
+
+    will cause the application to raise an +ActiveSupport::DeprecationException+
+    on deprecations.
+
+    Use this for aggressive deprecation cleanups.
+
+    *Xavier Noria*
+
+*   Remove 'cow' => 'kine' irregular inflection from default inflections.
+
+    *Andrew White*
+
+*   Add `DateTime#to_s(:iso8601)` and `Date#to_s(:iso8601)` for consistency.
+
+    *Andrew White*
+
+*   Add `Time#to_s(:iso8601)` for easy conversion of times to the iso8601 format for easy Javascript date parsing.
+
+    *DHH*
+
 *   Improve `ActiveSupport::Cache::MemoryStore` cache size calculation.
     The memory used by a key/entry pair is calculated via `#cached_size`:
 

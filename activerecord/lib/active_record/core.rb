@@ -134,13 +134,12 @@ module ActiveRecord
 
       # Returns the Arel engine.
       def arel_engine
-        @arel_engine ||= begin
+        @arel_engine ||=
           if Base == self || connection_handler.retrieve_connection_pool(self)
             self
           else
             superclass.arel_engine
           end
-        end
       end
 
       private
@@ -164,19 +163,22 @@ module ActiveRecord
     # ==== Example:
     #   # Instantiates a single new object
     #   User.new(first_name: 'Jamie')
-    def initialize(attributes = nil)
+    def initialize(attributes = nil, options = {})
       defaults = self.class.column_defaults.dup
       defaults.each { |k, v| defaults[k] = v.dup if v.duplicable? }
 
       @attributes   = self.class.initialize_attributes(defaults)
-      @columns_hash = self.class.column_types.dup
+      @column_types_override = nil
+      @column_types = self.class.column_types
 
       init_internals
       init_changed_attributes
       ensure_proper_type
       populate_with_current_scope_attributes
 
-      assign_attributes(attributes) if attributes
+      # +options+ argument is only needed to make protected_attributes gem easier to hook.
+      # Remove it when we drop support to this gem.
+      init_attributes(attributes, options) if attributes
 
       yield self if block_given?
       run_callbacks :initialize unless _initialize_callbacks.empty?
@@ -194,7 +196,8 @@ module ActiveRecord
     #   post.title # => 'hello world'
     def init_with(coder)
       @attributes   = self.class.initialize_attributes(coder['attributes'])
-      @columns_hash = self.class.column_types.merge(coder['column_types'] || {})
+      @column_types_override = coder['column_types']
+      @column_types = self.class.column_types
 
       init_internals
 
@@ -283,7 +286,7 @@ module ActiveRecord
     def ==(comparison_object)
       super ||
         comparison_object.instance_of?(self.class) &&
-        id.present? &&
+        id &&
         comparison_object.id == id
     end
     alias :eql? :==
@@ -305,13 +308,6 @@ module ActiveRecord
     # Returns +true+ if the attributes hash has been frozen.
     def frozen?
       @attributes.frozen?
-    end
-
-    # Allows sort on objects
-    def <=>(other_object)
-      if other_object.is_a?(self.class)
-        self.to_key <=> other_object.to_key
-      end
     end
 
     # Returns +true+ if the record is read only. Records loaded through joins with piggy-back
@@ -347,7 +343,7 @@ module ActiveRecord
 
     # Returns a hash of the given methods with their names as keys and returned values as values.
     def slice(*methods)
-      Hash[methods.map { |method| [method, public_send(method)] }].with_indifferent_access
+      Hash[methods.map! { |method| [method, public_send(method)] }].with_indifferent_access
     end
 
     def set_transaction_state(state) # :nodoc:
@@ -417,8 +413,6 @@ module ActiveRecord
       @aggregation_cache        = {}
       @association_cache        = {}
       @attributes_cache         = {}
-      @previously_changed       = {}
-      @changed_attributes       = {}
       @readonly                 = false
       @destroyed                = false
       @marked_for_destruction   = false
@@ -435,8 +429,14 @@ module ActiveRecord
       # optimistic locking) won't get written unless they get marked as changed
       self.class.columns.each do |c|
         attr, orig_value = c.name, c.default
-        @changed_attributes[attr] = orig_value if _field_changed?(attr, orig_value, @attributes[attr])
+        changed_attributes[attr] = orig_value if _field_changed?(attr, orig_value, @attributes[attr])
       end
+    end
+
+    # This method is needed to make protected_attributes gem easier to hook.
+    # Remove it when we drop support to this gem.
+    def init_attributes(attributes, options)
+      assign_attributes(attributes)
     end
   end
 end

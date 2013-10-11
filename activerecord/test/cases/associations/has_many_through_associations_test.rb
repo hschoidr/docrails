@@ -28,12 +28,143 @@ require 'models/club'
 class HasManyThroughAssociationsTest < ActiveRecord::TestCase
   fixtures :posts, :readers, :people, :comments, :authors, :categories, :taggings, :tags,
            :owners, :pets, :toys, :jobs, :references, :companies, :members, :author_addresses,
-           :subscribers, :books, :subscriptions, :developers, :categorizations, :essays
+           :subscribers, :books, :subscriptions, :developers, :categorizations, :essays,
+           :categories_posts, :clubs, :memberships
 
   # Dummies to force column loads so query counts are clean.
   def setup
     Person.create :first_name => 'gummy'
     Reader.create :person_id => 0, :post_id => 0
+  end
+
+  def test_preload_sti_rhs_class
+    developers = Developer.includes(:firms).all.to_a
+    assert_no_queries do
+      developers.each { |d| d.firms }
+    end
+  end
+
+  def test_preload_sti_middle_relation
+    club = Club.create!(name: 'Aaron cool banana club')
+    member1 = Member.create!(name: 'Aaron')
+    member2 = Member.create!(name: 'Cat')
+
+    SuperMembership.create! club: club, member: member1
+    CurrentMembership.create! club: club, member: member2
+
+    club1 = Club.includes(:members).find_by_id club.id
+    assert_equal [member1, member2].sort_by(&:id),
+                 club1.members.sort_by(&:id)
+  end
+
+  def make_model(name)
+    Class.new(ActiveRecord::Base) { define_singleton_method(:name) { name } }
+  end
+
+  def test_ordered_habtm
+    person_prime = Class.new(ActiveRecord::Base) do
+      def self.name; 'Person'; end
+
+      has_many :readers
+      has_many :posts, -> { order('posts.id DESC') }, :through => :readers
+    end
+    posts = person_prime.includes(:posts).first.posts
+
+    assert_operator posts.length, :>, 1
+    posts.each_cons(2) do |left,right|
+      assert_operator left.id, :>, right.id
+    end
+  end
+
+  def test_singleton_has_many_through
+    book         = make_model "Book"
+    subscription = make_model "Subscription"
+    subscriber   = make_model "Subscriber"
+
+    subscriber.primary_key = 'nick'
+    subscription.belongs_to :book,       class: book
+    subscription.belongs_to :subscriber, class: subscriber
+
+    book.has_many :subscriptions, class: subscription
+    book.has_many :subscribers, through: :subscriptions, class: subscriber
+
+    anonbook = book.first
+    namebook = Book.find anonbook.id
+
+    assert_operator anonbook.subscribers.count, :>, 0
+    anonbook.subscribers.each do |s|
+      assert_instance_of subscriber, s
+    end
+    assert_equal namebook.subscribers.map(&:id).sort,
+                 anonbook.subscribers.map(&:id).sort
+  end
+
+  def test_no_pk_join_table_append
+    lesson, _, student = make_no_pk_hm_t
+
+    sicp = lesson.new(:name => "SICP")
+    ben = student.new(:name => "Ben Bitdiddle")
+    sicp.students << ben
+    assert sicp.save!
+  end
+
+  def test_no_pk_join_table_delete
+    lesson, lesson_student, student = make_no_pk_hm_t
+
+    sicp = lesson.new(:name => "SICP")
+    ben = student.new(:name => "Ben Bitdiddle")
+    louis = student.new(:name => "Louis Reasoner")
+    sicp.students << ben
+    sicp.students << louis
+    assert sicp.save!
+
+    sicp.students.reload
+    assert_operator lesson_student.count, :>=, 2
+    assert_no_difference('student.count') do
+      assert_difference('lesson_student.count', -2) do
+        sicp.students.destroy(*student.all.to_a)
+      end
+    end
+  end
+
+  def test_no_pk_join_model_callbacks
+    lesson, lesson_student, student = make_no_pk_hm_t
+
+    after_destroy_called = false
+    lesson_student.after_destroy do
+      after_destroy_called = true
+    end
+
+    sicp = lesson.new(:name => "SICP")
+    ben = student.new(:name => "Ben Bitdiddle")
+    sicp.students << ben
+    assert sicp.save!
+
+    sicp.students.reload
+    sicp.students.destroy(*student.all.to_a)
+    assert after_destroy_called, "after destroy should be called"
+  end
+
+  def make_no_pk_hm_t
+    lesson = make_model 'Lesson'
+    student = make_model 'Student'
+
+    lesson_student = make_model 'LessonStudent'
+    lesson_student.table_name = 'lessons_students'
+
+    lesson_student.belongs_to :lesson, :class => lesson
+    lesson_student.belongs_to :student, :class => student
+    lesson.has_many :lesson_students, :class => lesson_student
+    lesson.has_many :students, :through => :lesson_students, :class => student
+    [lesson, lesson_student, student]
+  end
+
+  def test_pk_is_not_required_for_join
+    post  = Post.includes(:scategories).first
+    post2 = Post.includes(:categories).first
+
+    assert_operator post.categories.length, :>, 0
+    assert_equal post2.categories, post.categories
   end
 
   def test_include?
@@ -91,6 +222,13 @@ class HasManyThroughAssociationsTest < ActiveRecord::TestCase
     end
   end
 
+  def test_concat
+    person = people(:david)
+    post   = posts(:thinking)
+    post.people.concat [person]
+    assert_equal 1, post.people.size
+    assert_equal 1, post.people(true).size
+  end
 
   def test_associate_existing_record_twice_should_add_to_target_twice
     post   = posts(:thinking)
@@ -647,7 +785,7 @@ class HasManyThroughAssociationsTest < ActiveRecord::TestCase
     sarah = Person.create!(:first_name => 'Sarah', :primary_contact_id => people(:susan).id, :gender => 'F', :number1_fan_id => 1)
     john = Person.create!(:first_name => 'John', :primary_contact_id => sarah.id, :gender => 'M', :number1_fan_id => 1)
     assert_equal sarah.agents, [john]
-    assert_equal people(:susan).agents.flat_map(&:agents), people(:susan).agents_of_agents
+    assert_equal people(:susan).agents.map(&:agents).flatten, people(:susan).agents_of_agents
   end
 
   def test_associate_existing_with_nonstandard_primary_key_on_belongs_to

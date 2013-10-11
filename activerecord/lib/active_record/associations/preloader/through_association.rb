@@ -2,7 +2,6 @@ module ActiveRecord
   module Associations
     class Preloader
       module ThroughAssociation #:nodoc:
-
         def through_reflection
           reflection.through_reflection
         end
@@ -11,34 +10,66 @@ module ActiveRecord
           reflection.source_reflection
         end
 
-        def associated_records_by_owner
-          through_records = through_records_by_owner
+        def associated_records_by_owner(preloader)
+          preloader.preload(owners,
+                            through_reflection.name,
+                            through_scope)
 
-          Preloader.new(through_records.values.flatten, source_reflection.name, reflection_scope).run
+          through_records = owners.map do |owner, h|
+            association = owner.association through_reflection.name
 
-          through_records.each do |owner, records|
-            records.map! { |r| r.send(source_reflection.name) }.flatten!
-            records.compact!
+            [owner, Array(association.reader)]
           end
+
+          reset_association owners, through_reflection.name
+
+          middle_records = through_records.map { |(_,rec)| rec }.flatten
+
+          preloaders = preloader.preload(middle_records,
+                                         source_reflection.name,
+                                         reflection_scope)
+
+          middle_to_pl = preloaders.each_with_object({}) do |pl,h|
+            pl.owners.each { |middle|
+              h[middle] = pl
+            }
+          end
+
+          through_records.each_with_object({}) { |(lhs,center),records_by_owner|
+            pl_to_middle = center.group_by { |record| middle_to_pl[record] }
+
+            records_by_owner[lhs] = pl_to_middle.flat_map do |pl, middles|
+              rhs_records = middles.flat_map { |r|
+                r.send(source_reflection.name)
+              }.compact
+
+              loaded_records = pl.preloaded_records
+              i = 0
+              record_index = loaded_records.each_with_object({}) { |r,indexes|
+                indexes[r] = i
+                i += 1
+              }
+              records = rhs_records.sort_by { |rhs| record_index[rhs] }
+              @preloaded_records.concat rhs_records
+              records
+            end
+          }
         end
 
         private
 
-        def through_records_by_owner
-          Preloader.new(owners, through_reflection.name, through_scope).run
+        def reset_association(owners, association_name)
+          should_reset = (through_scope != through_reflection.klass.unscoped) ||
+             (reflection.options[:source_type] && through_reflection.collection?)
 
-          Hash[owners.map do |owner|
-            through_records = Array.wrap(owner.send(through_reflection.name))
-
-            # Dont cache the association - we would only be caching a subset
-            if (through_scope != through_reflection.klass.unscoped) ||
-               (reflection.options[:source_type] && through_reflection.collection?)
-              owner.association(through_reflection.name).reset
-            end
-
-            [owner, through_records]
-          end]
+          # Dont cache the association - we would only be caching a subset
+          if should_reset
+            owners.each { |owner|
+              owner.association(association_name).reset
+            }
+          end
         end
+
 
         def through_scope
           scope = through_reflection.klass.unscoped

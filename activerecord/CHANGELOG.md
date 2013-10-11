@@ -1,3 +1,223 @@
+*   Fixed `ActiveRecord::Associations::CollectionAssociation#find`
+    when using `has_many` association with `:inverse_of` and finding an array of one element,
+    it should return an array of one element too.
+
+    *arthurnn*
+
+*   Callbacks on has_many should access the in memory parent if a inverse_of is set.
+
+    *arthurnn*
+
+*   `ActiveRecord::ConnectionAdapters.string_to_time` respects
+    string with timezone (e.g. Wed, 04 Sep 2013 20:30:00 JST).
+
+    Fixes: #12278
+
+    *kennyj*
+
+*   Calling `update_attributes` will now throw an `ArgumentError` whenever it
+    gets a `nil` argument. More specifically, it will throw an error if the
+    argument that it gets passed does not respond to to `stringify_keys`.
+
+    Example:
+
+        @my_comment.update_attributes(nil)  # => raises ArgumentError
+
+    *John Wang*
+
+*   Deprecate `quoted_locking_column` method, which isn't used anywhere.
+
+    *kennyj*
+
+*   Migration dump UUID default functions to schema.rb.
+
+    Fixes #10751.
+
+    *kennyj*
+
+*   Fixed a bug in `ActiveRecord::Associations::CollectionAssociation#find_by_scan`
+    when using `has_many` association with `:inverse_of` option and UUID primary key.
+
+    Fixes #10450.
+
+    *kennyj*
+
+*   ActiveRecord::Base#<=> has been removed.  Primary keys may not be in order,
+    or even be numbers, so sorting by id doesn't make sense.  Please use `sort_by`
+    and specify the attribute you wish to sort with.  For example, change:
+
+      Post.all.to_a.sort
+
+    to:
+
+      Post.all.to_a.sort_by(&:id)
+
+    *Aaron Patterson*
+
+*   Fix: joins association, with defined in the scope block constraints by using several
+    where constraints and at least of them is not `Arel::Nodes::Equality`,
+    generates invalid SQL expression.
+
+    Fixes: #11963
+
+    *Paul Nikitochkin*
+
+*   Deprecate the delegation of Array bang methods for associations.
+    To use them, instead first call `#to_a` on the association to access the
+    array to be acted on.
+
+    *Ben Woosley*
+
+*   `CollectionAssociation#first`/`#last` (e.g. `has_many`) use a `LIMIT`ed
+    query to fetch results rather than loading the entire collection.
+
+    *Lann Martin*
+
+*   Make possible to run SQLite rake tasks without the `Rails` constant defined.
+
+    *Damien Mathieu*
+
+*   Allow Relation#from to accept other relations with bind values.
+
+    *Ryan Wallace*
+
+*   Fix inserts with prepared statements disabled.
+
+    Fixes #12023.
+
+    *Rafael Mendonça França*
+
+*   Setting a has_one association on a new record no longer causes an empty
+    transaction.
+
+    *Dylan Thacker-Smith*
+
+*   Fix `AR::Relation#merge` sometimes failing to preserve `readonly(false)` flag.
+
+    *thedarkone*
+
+*   Re-use `order` argument pre-processing for `reorder`.
+
+    *Paul Nikitochkin*
+
+*   Fix PredicateBuilder so polymorphic association keys in `where` clause can
+    accept objects other than direct descendants of `ActiveRecord::Base` (decorated
+    models, for example).
+
+    *Mikhail Dieterle*
+
+*   PostgreSQL adapter recognizes negative money values formatted with
+    parentheses (eg. `($1.25) # => -1.25`)).
+    Fixes #11899.
+
+    *Yves Senn*
+
+*   Stop interpreting SQL 'string' columns as :string type because there is no
+    common STRING datatype in SQL.
+
+    *Ben Woosley*
+
+*   `ActiveRecord::FinderMethods#exists?` returns `true`/`false` in all cases.
+
+    *Xavier Noria*
+
+*   Assign inet/cidr attribute with `nil` value for invalid address.
+
+    Example:
+
+        record = User.new
+        record.logged_in_from_ip # is type of an inet or a cidr
+
+        # Before:
+        record.logged_in_from_ip = 'bad ip address' # raise exception
+
+        # After:
+        record.logged_in_from_ip = 'bad ip address' # do not raise exception
+        record.logged_in_from_ip # => nil
+        record.logged_in_from_ip_before_type_cast # => 'bad ip address'
+
+    *Paul Nikitochkin*
+
+*   `add_to_target` now accepts a second optional `skip_callbacks` argument
+
+    If truthy, it will skip the :before_add and :after_add callbacks.
+
+    *Ben Woosley*
+
+*   Fix interactions between `:before_add` callbacks and nested attributes
+    assignment of `has_many` associations, when the association was not
+    yet loaded:
+
+    - A `:before_add` callback was being called when a nested attributes
+      assignment assigned to an existing record.
+
+    - Nested Attributes assignment did not affect the record in the
+      association target when a `:before_add` callback triggered the
+      loading of the association
+
+    *Jörg Schray*
+
+*   Allow enable_extension migration method to be revertible.
+
+    *Eric Tipton*
+
+*   Type cast hstore values on write, so that the value is consistent
+    with reading from the database.
+
+    Example:
+
+        x = Hstore.new tags: {"bool" => true, "number" => 5}
+
+        # Before:
+        x.tags # => {"bool" => true, "number" => 5}
+
+        # After:
+        x.tags # => {"bool" => "true", "number" => "5"}
+
+    *Yves Senn* , *Severin Schoepke*
+
+*   Fix multidimensional PG arrays containing non-string items.
+
+    *Yves Senn*
+
+*   Load fixtures from linked folders.
+
+    *Kassio Borges*
+
+*   Create a directory for sqlite3 file if not present on the system.
+
+    *Richard Schneeman*
+
+*   Removed redundant override of `xml` column definition for PG,
+    in order to use `xml` column type instead of `text`.
+
+    *Paul Nikitochkin*, *Michael Nikitochkin*
+
+*   Revert `ActiveRecord::Relation#order` change that make new order
+    prepend the old one.
+
+    Before:
+
+        User.order("name asc").order("created_at desc")
+        # SELECT * FROM users ORDER BY created_at desc, name asc
+
+    After:
+
+        User.order("name asc").order("created_at desc")
+        # SELECT * FROM users ORDER BY name asc, created_at desc
+
+    This also affects order defined in `default_scope` or any kind of associations.
+
+*   Add ability to define how a class is converted to Arel predicates.
+    For example, adding a very vendor specific regex implementation:
+
+        regex_handler = proc do |column, value|
+          Arel::Nodes::InfixOperation.new('~', column, value.source)
+        end
+        ActiveRecord::PredicateBuilder.register_handler(Regexp, regex_handler)
+
+    *Sean Griffin & @joannecheng*
+
 *   Don't allow `quote_value` to be called without a column.
 
     Some adapters require column information to do their job properly.
@@ -9,7 +229,7 @@
 
 *   When using optimistic locking, `update` was not passing the column to `quote_value`
     to allow the connection adapter to properly determine how to quote the value. This was
-    affecting certain databases that use specific colmn types.
+    affecting certain databases that use specific column types.
 
     Fixes: #6763
 
@@ -299,7 +519,7 @@
 
     *Neeraj Singh*
 
-*   Fixture setup does no longer depend on `ActiveRecord::Base.configurations`.
+*   Fixture setup no longer depends on `ActiveRecord::Base.configurations`.
     This is relevant when `ENV["DATABASE_URL"]` is used in place of a `database.yml`.
 
     *Yves Senn*

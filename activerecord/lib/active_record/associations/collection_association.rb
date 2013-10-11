@@ -80,14 +80,13 @@ module ActiveRecord
           load_target.find(*args) { |*block_args| yield(*block_args) }
         else
           if options[:inverse_of] && loaded?
-            args = args.flatten
-            raise RecordNotFound, "Couldn't find #{scope.klass.name} without an ID" if args.blank?
-
+            args_flatten = args.flatten
+            raise RecordNotFound, "Couldn't find #{scope.klass.name} without an ID" if args_flatten.blank?
             result = find_by_scan(*args)
 
             result_size = Array(result).size
-            if !result || result_size != args.size
-              scope.raise_record_not_found_exception!(args, result_size, args.size)
+            if !result || result_size != args_flatten.size
+              scope.raise_record_not_found_exception!(args_flatten, result_size, args_flatten.size)
             else
               result
             end
@@ -290,7 +289,7 @@ module ActiveRecord
 
       # Returns true if the collection is empty.
       #
-      # If the collection has been loaded 
+      # If the collection has been loaded
       # it is equivalent to <tt>collection.size.zero?</tt>. If the
       # collection has not been loaded, it is equivalent to
       # <tt>collection.exists?</tt>. If the collection has not already been
@@ -366,8 +365,8 @@ module ActiveRecord
         target
       end
 
-      def add_to_target(record)
-        callback(:before_add, record)
+      def add_to_target(record, skip_callbacks = false)
+        callback(:before_add, record) unless skip_callbacks
         yield(record) if block_given?
 
         if association_scope.distinct_value && index = @target.index(record)
@@ -376,7 +375,7 @@ module ActiveRecord
           @target << record
         end
 
-        callback(:after_add, record)
+        callback(:after_add, record) unless skip_callbacks
         set_inverse_instance(record)
 
         record
@@ -510,20 +509,13 @@ module ActiveRecord
 
         def callback(method, record)
           callbacks_for(method).each do |callback|
-            case callback
-            when Symbol
-              owner.send(callback, record)
-            when Proc
-              callback.call(owner, record)
-            else
-              callback.send(method, owner, record)
-            end
+            callback.call(method, owner, record)
           end
         end
 
         def callbacks_for(callback_name)
           full_callback_name = "#{callback_name}_for_#{reflection.name}"
-          owner.class.send(full_callback_name.to_sym) || []
+          owner.class.send(full_callback_name)
         end
 
         # Should we deal with assoc.first or assoc.last by issuing an independent query to
@@ -535,21 +527,20 @@ module ActiveRecord
         #   * target already loaded
         #   * owner is new record
         #   * target contains new or changed record(s)
-        #   * the first arg is an integer (which indicates the number of records to be returned)
         def fetch_first_or_last_using_find?(args)
           if args.first.is_a?(Hash)
             true
           else
             !(loaded? ||
               owner.new_record? ||
-              target.any? { |record| record.new_record? || record.changed? } ||
-              args.first.kind_of?(Integer))
+              target.any? { |record| record.new_record? || record.changed? })
           end
         end
 
         def include_in_memory?(record)
           if reflection.is_a?(ActiveRecord::Reflection::ThroughReflection)
-            owner.send(reflection.through_reflection.name).any? { |source|
+            assoc = owner.association(reflection.through_reflection.name)
+            assoc.reader.any? { |source|
               target = source.send(reflection.source_reflection.name)
               target.respond_to?(:include?) ? target.include?(record) : target == record
             } || target.include?(record)
@@ -562,14 +553,14 @@ module ActiveRecord
         # specified, then #find scans the entire collection.
         def find_by_scan(*args)
           expects_array = args.first.kind_of?(Array)
-          ids           = args.flatten.compact.map{ |arg| arg.to_i }.uniq
+          ids           = args.flatten.compact.map{ |arg| arg.to_s }.uniq
 
           if ids.size == 1
             id = ids.first
-            record = load_target.detect { |r| id == r.id }
+            record = load_target.detect { |r| id == r.id.to_s }
             expects_array ? [ record ] : record
           else
-            load_target.select { |r| ids.include?(r.id) }
+            load_target.select { |r| ids.include?(r.id.to_s) }
           end
         end
 

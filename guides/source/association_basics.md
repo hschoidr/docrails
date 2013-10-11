@@ -40,7 +40,7 @@ end
 @customer.destroy
 ```
 
-With Active Record associations, we can streamline these — and other — operations by declaratively telling Rails that there is a connection between the two models. Here's the revised code for setting up customers and orders:
+With Active Record associations, we can streamline these - and other - operations by declaratively telling Rails that there is a connection between the two models. Here's the revised code for setting up customers and orders:
 
 ```ruby
 class Customer < ActiveRecord::Base
@@ -69,7 +69,7 @@ To learn more about the different types of associations, read the next section o
 The Types of Associations
 -------------------------
 
-In Rails, an _association_ is a connection between two Active Record models. Associations are implemented using macro-style calls, so that you can declaratively add features to your models. For example, by declaring that one model `belongs_to` another, you instruct Rails to maintain Primary Key–Foreign Key information between instances of the two models, and you also get a number of utility methods added to your model. Rails supports six types of associations:
+In Rails, an _association_ is a connection between two Active Record models. Associations are implemented using macro-style calls, so that you can declaratively add features to your models. For example, by declaring that one model `belongs_to` another, you instruct Rails to maintain Primary Key-Foreign Key information between instances of the two models, and you also get a number of utility methods added to your model. Rails supports six types of associations:
 
 * `belongs_to`
 * `has_one`
@@ -261,7 +261,10 @@ With `through: :sections` specified, Rails will now understand:
 
 ### The `has_one :through` Association
 
-A `has_one :through` association sets up a one-to-one connection with another model. This association indicates that the declaring model can be matched with one instance of another model by proceeding _through_ a third model. For example, if each supplier has one account, and each account is associated with one account history, then the customer model could look like this:
+A `has_one :through` association sets up a one-to-one connection with another model. This association indicates
+that the declaring model can be matched with one instance of another model by proceeding _through_ a third model.
+For example, if each supplier has one account, and each account is associated with one account history, then the
+supplier model could look like this:
 
 ```ruby
 class Supplier < ActiveRecord::Base
@@ -337,7 +340,7 @@ class CreateAssembliesAndParts < ActiveRecord::Migration
       t.timestamps
     end
 
-    create_table :assemblies_parts do |t|
+    create_table :assemblies_parts, id: false do |t|
       t.belongs_to :assembly
       t.belongs_to :part
     end
@@ -1136,6 +1139,12 @@ Controls what happens to the associated object when its owner is destroyed:
 * `:nullify` causes the foreign key to be set to `NULL`. Callbacks are not executed.
 * `:restrict_with_exception` causes an exception to be raised if there is an associated record
 * `:restrict_with_error` causes an error to be added to the owner if there is an associated object
+
+It's necessary not to set or leave `:nullify` option for those associations 
+that have `NOT NULL` database constraints. If you don't set `dependent` to 
+destroy such associations you won't be able to change the associated object 
+because initial associated object foreign key will be set to unallowed `NULL` 
+value.
 
 ##### `:foreign_key`
 
@@ -1944,8 +1953,8 @@ While Rails uses intelligent defaults that will work well in most situations, th
 
 ```ruby
 class Parts < ActiveRecord::Base
-  has_and_belongs_to_many :assemblies, uniq: true,
-                                       read_only: true
+  has_and_belongs_to_many :assemblies, autosave: true,
+                                       readonly: true
 end
 ```
 
@@ -1957,6 +1966,7 @@ The `has_and_belongs_to_many` association supports these options:
 * `:foreign_key`
 * `:join_table`
 * `:validate`
+* `:readonly`
 
 ##### `:association_foreign_key`
 

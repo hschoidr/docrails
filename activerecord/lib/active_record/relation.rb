@@ -599,8 +599,9 @@ module ActiveRecord
 
       preload = preload_values
       preload +=  includes_values unless eager_loading?
+      preloader = ActiveRecord::Associations::Preloader.new
       preload.each do |associations|
-        ActiveRecord::Associations::Preloader.new(@records, associations).run
+        preloader.preload @records, associations
       end
 
       @records.each { |record| record.readonly! } if readonly_value

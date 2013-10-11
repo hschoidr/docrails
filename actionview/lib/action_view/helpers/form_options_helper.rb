@@ -97,14 +97,17 @@ module ActionView
       # Create a select tag and a series of contained option tags for the provided object and method.
       # The option currently held by the object will be selected, provided that the object is available.
       #
-      # There are two possible formats for the choices parameter, corresponding to other helpers' output:
-      #   * A flat collection: see options_for_select
-      #   * A nested collection: see grouped_options_for_select
+      # There are two possible formats for the +choices+ parameter, corresponding to other helpers' output:
       #
-      # Example with @post.person_id => 1:
+      # * A flat collection (see +options_for_select+).
+      #
+      # * A nested collection (see +grouped_options_for_select+).
+      #
+      # For example:
+      #
       #   select("post", "person_id", Person.all.collect {|p| [ p.name, p.id ] }, { include_blank: true })
       #
-      # could become:
+      # would become:
       #
       #   <select name="post[person_id]">
       #     <option value=""></option>
@@ -112,6 +115,8 @@ module ActionView
       #     <option value="2">Sam</option>
       #     <option value="3">Tobias</option>
       #   </select>
+      #
+      # assuming the associated person has ID 1.
       #
       # This can be used to provide a default set of options in the standard way: before rendering the create form, a
       # new model instance is assigned the default options and bound to @model_name. Usually this model is not saved
@@ -122,6 +127,15 @@ module ActionView
       # By default, <tt>post.person_id</tt> is the selected option. Specify <tt>selected: value</tt> to use a different selection
       # or <tt>selected: nil</tt> to leave all options unselected. Similarly, you can specify values to be disabled in the option
       # tags by specifying the <tt>:disabled</tt> option. This can either be a single value or an array of values to be disabled.
+      #
+      # A block can be passed to +select+ to customize how the options tags will be rendered. This
+      # is useful when the options tag has complex attributes.
+      #
+      #   select(report, "campaign_ids") do
+      #     available_campaigns.each do |c|
+      #       content_tag(:option, c.name, value: c.id, data: { tags: c.tags.to_json })
+      #     end
+      #   end
       #
       # ==== Gotcha
       #
@@ -147,8 +161,8 @@ module ActionView
       # In case if you don't want the helper to generate this hidden field you can specify
       # <tt>include_hidden: false</tt> option.
       #
-      def select(object, method, choices, options = {}, html_options = {})
-        Tags::Select.new(object, method, self, choices, options, html_options).render
+      def select(object, method, choices = nil, options = {}, html_options = {}, &block)
+        Tags::Select.new(object, method, self, choices, options, html_options, &block).render
       end
 
       # Returns <tt><select></tt> and <tt><option></tt> tags for the collection of existing return values of
@@ -761,8 +775,8 @@ module ActionView
       #   <% end %>
       #
       # Please refer to the documentation of the base helper for details.
-      def select(method, choices, options = {}, html_options = {})
-        @template.select(@object_name, method, choices, objectify_options(options), @default_options.merge(html_options))
+      def select(method, choices = nil, options = {}, html_options = {}, &block)
+        @template.select(@object_name, method, choices, objectify_options(options), @default_options.merge(html_options), &block)
       end
 
       # Wraps ActionView::Helpers::FormOptionsHelper#collection_select for form builders:
