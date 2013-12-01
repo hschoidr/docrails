@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require "cases/helper"
 require 'active_support/concurrency/latch'
 require 'models/post'
@@ -556,17 +558,31 @@ class BasicsTest < ActiveRecord::TestCase
     assert_equal [ Topic.find(1) ], [ Topic.find(2).topic ] & [ Topic.find(1) ]
   end
 
-  def test_comparison
-    topic_1 = Topic.create!
-    topic_2 = Topic.create!
+  def test_create_without_prepared_statement
+    topic = Topic.connection.unprepared_statement do
+      Topic.create(:title => 'foo')
+    end
 
-    assert_equal [topic_2, topic_1].sort, [topic_1, topic_2]
+    assert_equal topic, Topic.find(topic.id)
+  end
+
+  def test_blank_ids
+    one = Subscriber.new(:id => '')
+    two = Subscriber.new(:id => '')
+    assert_equal one, two
   end
 
   def test_comparison_with_different_objects
     topic = Topic.create
     category = Category.create(:name => "comparison")
     assert_nil topic <=> category
+  end
+
+  def test_comparison_with_different_objects_in_array
+    topic = Topic.create
+    assert_raises(ArgumentError) do
+      [1, topic].sort
+    end
   end
 
   def test_readonly_attributes
@@ -580,6 +596,11 @@ class BasicsTest < ActiveRecord::TestCase
     post.reload
     assert_equal "cannot change this", post.title
     assert_equal "changed", post.body
+  end
+
+  def test_unicode_column_name
+    weird = Weird.create(:なまえ => 'たこ焼き仮面')
+    assert_equal 'たこ焼き仮面', weird.なまえ
   end
 
   def test_non_valid_identifier_column_name
@@ -1315,6 +1336,35 @@ class BasicsTest < ActiveRecord::TestCase
     post       = Marshal.load(marshalled)
 
     assert_equal 1, post.comments.length
+  end
+
+  def test_marshal_between_processes
+    skip "fork isn't supported" unless Process.respond_to?(:fork)
+
+    # Define a new model to ensure there are no caches
+    if self.class.const_defined?("Post", false)
+      flunk "there should be no post constant"
+    end
+
+    self.class.const_set("Post", Class.new(ActiveRecord::Base) {
+      has_many :comments
+    })
+
+    rd, wr = IO.pipe
+
+    ActiveRecord::Base.connection_handler.clear_all_connections!
+
+    fork do
+      rd.close
+      post = Post.new
+      post.comments.build
+      wr.write Marshal.dump(post)
+      wr.close
+    end
+
+    wr.close
+    assert Marshal.load rd.read
+    rd.close
   end
 
   def test_marshalling_new_record_round_trip_with_associations

@@ -201,6 +201,7 @@ module ActionController
     # You may declare that the parameter should be an array of permitted scalars
     # by mapping it to an empty array:
     #
+    #   params = ActionController::Parameters.new(tags: ['rails', 'parameters'])
     #   params.permit(tags: [])
     #
     # You can also use +permit+ on nested parameters, like:
@@ -297,7 +298,7 @@ module ActionController
     #   params.slice(:d)     # => {}
     def slice(*keys)
       self.class.new(super).tap do |new_instance|
-        new_instance.instance_variable_set :@permitted, @permitted
+        new_instance.permitted = @permitted
       end
     end
 
@@ -311,9 +312,14 @@ module ActionController
     #   copy_params.permitted?   # => true
     def dup
       super.tap do |duplicate|
-        duplicate.instance_variable_set :@permitted, @permitted
+        duplicate.permitted = @permitted
       end
     end
+
+    protected
+      def permitted=(new_permitted)
+        @permitted = new_permitted
+      end
 
     private
       def convert_hashes_to_parameters(key, value)
@@ -415,7 +421,7 @@ module ActionController
 
         # Slicing filters out non-declared keys.
         slice(*filter.keys).each do |key, value|
-          return unless value
+          next unless value
 
           if filter[key] == EMPTY_ARRAY
             # Declaration { comment_ids: [] }.

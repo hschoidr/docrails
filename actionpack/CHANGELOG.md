@@ -1,3 +1,54 @@
+*   Fix regex used to detect URI schemes in `redirect_to` to be consistent with
+    RFC 3986.
+
+    *Derek Prior*
+
+*   Fix incorrect `assert_redirected_to` failure message for protocol-relative
+    URLs.
+
+    *Derek Prior*
+
+*   Fix an issue where router can't recognize downcased url encoding path.
+
+    Fixes #12269
+
+    *kennyj*
+
+*   Fix custom flash type definition. Misusage of the `_flash_types` class variable
+    caused an error when reloading controllers with custom flash types.
+
+    Fixes #12057
+
+    *Ricardo de Cillo*
+
+*   Do not break params filtering on `nil` values.
+
+    Fixes #12149.
+
+    *Vasiliy Ermolovich*
+
+*   Separate Action View completely from Action Pack.
+
+    *Łukasz Strzałkowski*
+
+*   Development mode exceptions are rendered in text format in case of XHR request.
+
+    *Kir Shatrov*
+
+*   Fix an issue where :if and :unless controller action procs were being run
+    before checking for the correct action in the :only and :unless options.
+
+    Fixes #11799
+
+    *Nicholas Jakobsen*
+
+*   Fix an issue where `assert_dom_equal` and `assert_dom_not_equal` were
+    ignoring the passed failure message argument.
+
+    Fixes #11751
+
+    *Ryan McGeary*
+
 *   Allow REMOTE_ADDR, HTTP_HOST and HTTP_USER_AGENT to be overridden from
     the environment passed into `ActionDispatch::TestRequest.new`.
 

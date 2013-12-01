@@ -119,17 +119,7 @@ module ActiveRecord
         type_cast(default)
       end
 
-      # Used to convert from Strings to BLOBs
-      def string_to_binary(value)
-        self.class.string_to_binary(value)
-      end
-
       class << self
-        # Used to convert from Strings to BLOBs
-        def string_to_binary(value)
-          value
-        end
-
         # Used to convert from BLOBs to Strings
         def binary_to_string(value)
           value
@@ -213,11 +203,19 @@ module ActiveRecord
             end
           end
 
-          def new_time(year, mon, mday, hour, min, sec, microsec)
+          def new_time(year, mon, mday, hour, min, sec, microsec, offset = nil)
             # Treat 0000-00-00 00:00:00 as nil.
             return nil if year.nil? || (year == 0 && mon == 0 && mday == 0)
 
-            Time.send(Base.default_timezone, year, mon, mday, hour, min, sec, microsec) rescue nil
+            if offset
+              time = Time.utc(year, mon, mday, hour, min, sec, microsec) rescue nil
+              return nil unless time
+
+              time -= offset
+              Base.default_timezone == :utc ? time : time.getlocal
+            else
+              Time.public_send(Base.default_timezone, year, mon, mday, hour, min, sec, microsec) rescue nil
+            end
           end
 
           def fast_string_to_date(string)
@@ -242,7 +240,7 @@ module ActiveRecord
             time_hash = Date._parse(string)
             time_hash[:sec_fraction] = microseconds(time_hash)
 
-            new_time(*time_hash.values_at(:year, :mon, :mday, :hour, :min, :sec, :sec_fraction))
+            new_time(*time_hash.values_at(:year, :mon, :mday, :hour, :min, :sec, :sec_fraction, :offset))
           end
       end
 
@@ -282,7 +280,7 @@ module ActiveRecord
             :text
           when /blob/i, /binary/i
             :binary
-          when /char/i, /string/i
+          when /char/i
             :string
           when /boolean/i
             :boolean

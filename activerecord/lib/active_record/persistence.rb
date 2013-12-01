@@ -383,9 +383,10 @@ module ActiveRecord
         end
 
       @attributes.update(fresh_object.instance_variable_get('@attributes'))
-      @columns_hash = fresh_object.instance_variable_get('@columns_hash')
 
-      @attributes_cache = {}
+      @column_types           = self.class.column_types
+      @column_types_override  = fresh_object.instance_variable_get('@column_types_override')
+      @attributes_cache       = {}
       self
     end
 
@@ -433,7 +434,7 @@ module ActiveRecord
 
         changes[self.class.locking_column] = increment_lock if locking_enabled?
 
-        @changed_attributes.except!(*changes.keys)
+        changed_attributes.except!(*changes.keys)
         primary_key = self.class.primary_key
         self.class.unscoped.where(primary_key => self[primary_key]).update_all(changes) == 1
       end

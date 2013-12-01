@@ -150,17 +150,19 @@ module ActionView
       def excerpt(text, phrase, options = {})
         return unless text && phrase
 
-        separator = options.fetch(:separator, "")
+        separator = options[:separator] || ''
         phrase    = Regexp.escape(phrase)
         regex     = /#{phrase}/i
 
         return unless matches = text.match(regex)
         phrase = matches[0]
 
-        text.split(separator).each do |value|
-          if value.match(regex)
-            regex = phrase = value
-            break
+        unless separator.empty?
+          text.split(separator).each do |value|
+            if value.match(regex)
+              regex = phrase = value
+              break
+            end
           end
         end
 
@@ -169,7 +171,8 @@ module ActionView
         prefix, first_part   = cut_excerpt_part(:first, first_part, separator, options)
         postfix, second_part = cut_excerpt_part(:second, second_part, separator, options)
 
-        prefix + (first_part + separator + phrase + separator + second_part).strip + postfix
+        affix = [first_part, separator, phrase, separator, second_part].join.strip
+        [prefix, affix, postfix].join
       end
 
       # Attempts to pluralize the +singular+ word unless +count+ is 1. If
@@ -215,7 +218,7 @@ module ActionView
       def word_wrap(text, options = {})
         line_width = options.fetch(:line_width, 80)
 
-        text.split("\n").collect do |line|
+        text.split("\n").collect! do |line|
           line.length > line_width ? line.gsub(/(.{1,#{line_width}})(\s+|$)/, "\\1\n").strip : line
         end * "\n"
       end
@@ -264,7 +267,7 @@ module ActionView
         if paragraphs.empty?
           content_tag(wrapper_tag, nil, html_options)
         else
-          paragraphs.map { |paragraph|
+          paragraphs.map! { |paragraph|
             content_tag(wrapper_tag, paragraph, html_options, options[:sanitize])
           }.join("\n\n").html_safe
         end

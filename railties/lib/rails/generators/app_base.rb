@@ -18,6 +18,10 @@ module Rails
 
       argument :app_path, type: :string
 
+      def self.strict_args_position
+        false
+      end
+
       def self.add_shared_options_for(name)
         class_option :template,           type: :string, aliases: '-m',
                                           desc: "Path to some #{name} template (can be a filesystem path or URL)"
@@ -36,6 +40,9 @@ module Rails
 
         class_option :skip_active_record, type: :boolean, aliases: '-O', default: false,
                                           desc: 'Skip Active Record files'
+
+        class_option :skip_action_view,   type: :boolean, aliases: '-V', default: false,
+                                          desc: 'Skip Action View files'
 
         class_option :skip_sprockets,     type: :boolean, aliases: '-S', default: false,
                                           desc: 'Skip Sprockets files'
@@ -123,7 +130,7 @@ module Rails
       end
 
       def include_all_railties?
-        !options[:skip_active_record] && !options[:skip_test_unit] && !options[:skip_sprockets]
+        !options[:skip_active_record] && !options[:skip_action_view] && !options[:skip_test_unit] && !options[:skip_sprockets]
       end
 
       def comment_if(value)

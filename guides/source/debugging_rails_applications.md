@@ -198,7 +198,7 @@ Adding extra logging like this makes it easy to search for unexpected or unusual
 
 ### Tagged Logging
 
-When running multi-user, multi-account applications, it’s often useful
+When running multi-user, multi-account applications, it's often useful
 to be able to filter the logs using some custom rules. `TaggedLogging`
 in Active Support helps in doing exactly that by stamping log lines with subdomains, request ids, and anything else to aid debugging such applications.
 
@@ -233,7 +233,7 @@ only evaluated if the output level is the same or included in the allowed level
 (i.e. lazy loading). The same code rewritten would be:
 
 ```ruby
-logger.debug {"Person attibutes hash: #{@person.attributes.inspect}"}
+logger.debug {"Person attributes hash: #{@person.attributes.inspect}"}
 ```
 
 The contents of the block, and therefore the string interpolation, is only 
@@ -386,7 +386,7 @@ Finally, to see where you are in the code again you can type `list=`
    7
    8      respond_to do |format|
    9        format.html # index.html.erb
-   10        format.json { render :json => @posts }
+   10        format.json { render json: @posts }
 ```
 
 ### The Context
