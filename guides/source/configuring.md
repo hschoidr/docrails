@@ -261,6 +261,8 @@ config.middleware.delete "Rack::MethodOverride"
 
 * `config.active_record.table_name_suffix` lets you set a global string to be appended to table names. If you set this to `_northwest`, then the Customer class will look for `customers_northwest` as its table. The default is an empty string.
 
+* `config.active_record.schema_migrations_table_name` lets you set a string to be used as the name of the schema migrations table.
+
 * `config.active_record.pluralize_table_names` specifies whether Rails will look for singular or plural table names in the database. If set to true (the default), then the Customer class will use the `customers` table. If set to false, then the Customer class will use the `customer` table.
 
 * `config.active_record.default_timezone` determines whether to use `Time.local` (if set to `:local`) or `Time.utc` (if set to `:utc`) when pulling dates and times from the database. The default is `:utc` for Rails, although Active Record defaults to `:local` when used outside of Rails.
@@ -309,7 +311,7 @@ The schema dumper adds one additional configuration option:
 
 * `config.action_controller.permit_all_parameters` sets all the parameters for mass assignment to be permitted by default. The default value is `false`.
 
-* `config.action_controller.action_on_unpermitted_params` enables logging or raising an exception if parameters that are not explicitly permitted are found. Set to `:log` or `:raise` to enable. The default value is `:log` in development and test environments, and `false` in all other environments.
+* `config.action_controller.action_on_unpermitted_parameters` enables logging or raising an exception if parameters that are not explicitly permitted are found. Set to `:log` or `:raise` to enable. The default value is `:log` in development and test environments, and `false` in all other environments.
 
 ### Configuring Action Dispatch
 
@@ -610,7 +612,7 @@ Rails has 5 initialization events which can be hooked into (listed in the order 
 
 * `before_eager_load`: This is run directly before eager loading occurs, which is the default behavior for the `production` environment and not for the `development` environment.
 
-* `after_initialize`: Run directly after the initialization of the application, but before the application initializers are run.
+* `after_initialize`: Run directly after the initialization of the application, after the application initializers in `config/initializers` are run.
 
 To define an event for these hooks, use the block syntax within a `Rails::Application`, `Rails::Railtie` or `Rails::Engine` subclass:
 

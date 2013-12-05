@@ -7,7 +7,6 @@ module ActiveRecord
     # collections. See the class hierarchy in AssociationProxy.
     #
     #   CollectionAssociation:
-    #     HasAndBelongsToManyAssociation => has_and_belongs_to_many
     #     HasManyAssociation => has_many
     #       HasManyThroughAssociation + ThroughAssociation => has_many :through
     #
@@ -152,7 +151,7 @@ module ActiveRecord
 
       # Removes all records from the association without calling callbacks
       # on the associated records. It honors the `:dependent` option. However
-      # if the `:dependent` value is `:destroy` then in that case the default
+      # if the `:dependent` value is `:destroy` then in that case the `:delete_all`
       # deletion strategy for the association is applied.
       #
       # You can force a particular deletion strategy by passing a parameter.
@@ -171,9 +170,7 @@ module ActiveRecord
         dependent = if dependent.present?
                       dependent
                     elsif options[:dependent] == :destroy
-                      # since delete_all should not invoke callbacks so use the default deletion strategy
-                      # for :destroy
-                      reflection.is_a?(ActiveRecord::Reflection::ThroughReflection) ? :delete_all : :nullify
+                      :delete_all
                     else
                       options[:dependent]
                     end
@@ -196,9 +193,7 @@ module ActiveRecord
 
       # Count all records using SQL.  Construct options and pass them with
       # scope to the target class's +count+.
-      def count(column_name = nil, count_options = {})
-        column_name, count_options = nil, column_name if column_name.is_a?(Hash)
-
+      def count(column_name = nil)
         relation = scope
         if association_scope.distinct_value
           # This is needed because 'SELECT count(DISTINCT *)..' is not valid SQL.

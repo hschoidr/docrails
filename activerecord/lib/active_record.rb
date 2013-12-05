@@ -37,6 +37,7 @@ module ActiveRecord
   autoload :ConnectionHandling
   autoload :CounterCache
   autoload :DynamicMatchers
+  autoload :Enum
   autoload :Explain
   autoload :Inheritance
   autoload :Integration
@@ -44,6 +45,7 @@ module ActiveRecord
   autoload :Migrator, 'active_record/migration'
   autoload :ModelSchema
   autoload :NestedAttributes
+  autoload :NoTouching
   autoload :Persistence
   autoload :QueryCache
   autoload :Querying

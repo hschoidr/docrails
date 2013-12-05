@@ -42,7 +42,6 @@ module ActiveRecord
         autoload :HasManyThrough,      'active_record/associations/preloader/has_many_through'
         autoload :HasOne,              'active_record/associations/preloader/has_one'
         autoload :HasOneThrough,       'active_record/associations/preloader/has_one_through'
-        autoload :HasAndBelongsToMany, 'active_record/associations/preloader/has_and_belongs_to_many'
         autoload :BelongsTo,           'active_record/associations/preloader/belongs_to'
       end
 
@@ -154,13 +153,13 @@ module ActiveRecord
         records.group_by do |record|
           reflection = record.class.reflect_on_association(association)
 
-          reflection || raise_config_error(association)
+          reflection || raise_config_error(record, association)
         end
       end
 
-      def raise_config_error(association)
+      def raise_config_error(record, association)
         raise ActiveRecord::ConfigurationError,
-              "Association named '#{association}' was not found; " \
+              "Association named '#{association}' was not found on #{record.class.name}; " \
               "perhaps you misspelled it?"
       end
 
@@ -205,8 +204,6 @@ module ActiveRecord
           reflection.options[:through] ? HasManyThrough : HasMany
         when :has_one
           reflection.options[:through] ? HasOneThrough : HasOne
-        when :has_and_belongs_to_many
-          HasAndBelongsToMany
         when :belongs_to
           BelongsTo
         end

@@ -46,7 +46,6 @@ module ActiveModel
         # This is to avoid ActiveModel (and by extension the entire framework)
         # being dependent on a binary library.
         begin
-          gem 'bcrypt-ruby', '~> 3.1.2'
           require 'bcrypt'
         rescue LoadError
           $stderr.puts "You don't have bcrypt-ruby installed in your application. Please add it to your Gemfile and run bundle install"
@@ -103,7 +102,7 @@ module ActiveModel
       def password=(unencrypted_password)
         unless unencrypted_password.blank?
           @password = unencrypted_password
-          cost = ActiveModel::SecurePassword.min_cost ? BCrypt::Engine::MIN_COST : BCrypt::Engine::DEFAULT_COST
+          cost = ActiveModel::SecurePassword.min_cost ? BCrypt::Engine::MIN_COST : BCrypt::Engine.cost
           self.password_digest = BCrypt::Password.create(unencrypted_password, cost: cost)
         end
       end

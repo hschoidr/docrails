@@ -1,9 +1,22 @@
+*   Use `set_backtrace` instead of instance variable `@backtrace` in ActionView exceptions
+
+    *Shimpei Makimoto*
+
+*   Fix `simple_format` escapes own output when passing `sanitize: true`
+
+    *Paul Seidemann*
+
+*   Ensure `ActionView::Digestor.cache` is correctly cleaned up when
+    combining recursive templates with `ActionView::Resolver.caching = false`.
+
+    *wyaeld*
+
 *   Fix `collection_check_boxes` generated hidden input to use the name attribute provided
     in the options hash.
 
     *Angel N. Sciortino*
 
-*   Fix some edge cases for AV `select` helper with `:selected` option
+*   Fix some edge cases for AV `select` helper with `:selected` option.
 
     *Bogdan Gusiev*
 
@@ -17,14 +30,14 @@
 
     *Bogdan Gusiev*
 
-*   Handle `:namespace` form option in collection labels
+*   Handle `:namespace` form option in collection labels.
 
     *Vasiliy Ermolovich*
 
-*   Fix `form_for` when both `namespace` and `as` options are present
+*   Fix `form_for` when both `namespace` and `as` options are present.
 
     `as` option no longer overwrites `namespace` option when generating
-    html id attribute of the form element
+    html id attribute of the form element.
 
     *Adam Niedzielski*
 
@@ -32,7 +45,7 @@
 
     *Paul Nikitochkin*
 
-*   Only cache template digests if `config.cache_template_loading` id true.
+*   Only cache template digests if `config.cache_template_loading` is true.
 
     *Josh Lauer*, *Justin Ridgewell*
 
