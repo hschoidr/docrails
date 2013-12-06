@@ -91,12 +91,12 @@ module ActiveRecord
       def initialize_generated_modules
         super
 
-        generated_feature_methods
+        generated_association_methods
       end
 
-      def generated_feature_methods
-        @generated_feature_methods ||= begin
-          mod = const_set(:GeneratedFeatureMethods, Module.new)
+      def generated_association_methods
+        @generated_association_methods ||= begin
+          mod = const_set(:GeneratedAssociationMethods, Module.new)
           include mod
           mod
         end
@@ -109,7 +109,7 @@ module ActiveRecord
         elsif abstract_class?
           "#{super}(abstract)"
         elsif !connected?
-          "#{super}(no database connection)"
+          "#{super} (call '#{super}.connection' to establish a connection)"
         elsif table_exists?
           attr_list = columns.map { |c| "#{c.name}: #{c.type}" } * ', '
           "#{super}(#{attr_list})"
@@ -308,6 +308,15 @@ module ActiveRecord
     # Returns +true+ if the attributes hash has been frozen.
     def frozen?
       @attributes.frozen?
+    end
+
+    # Allows sort on objects
+    def <=>(other_object)
+      if other_object.is_a?(self.class)
+        self.to_key <=> other_object.to_key
+      else
+        super
+      end
     end
 
     # Returns +true+ if the record is read only. Records loaded through joins with piggy-back

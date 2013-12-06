@@ -165,15 +165,15 @@ Please refer to the [Changelog](https://github.com/rails/rails/blob/4-0-stable/a
 
 ### Notable changes
 
-* Replace deprecated `memcache-client` gem with `dalli` in ActiveSupport::Cache::MemCacheStore.
+* Replace deprecated `memcache-client` gem with `dalli` in `ActiveSupport::Cache::MemCacheStore`.
 
-* Optimize ActiveSupport::Cache::Entry to reduce memory and processing overhead.
+* Optimize `ActiveSupport::Cache::Entry` to reduce memory and processing overhead.
 
 * Inflections can now be defined per locale. `singularize` and `pluralize` accept locale as an extra argument.
 
 * `Object#try` will now return nil instead of raise a NoMethodError if the receiving object does not implement the method, but you can still get the old behavior by using the new `Object#try!`.
 
-* `String#to_date` now raises `Argument Error: invalid date` instead of `NoMethodError: undefined method 'div' for nil:NilClass`
+* `String#to_date` now raises `ArgumentError: invalid date` instead of `NoMethodError: undefined method 'div' for nil:NilClass`
   when given an invalid date. It is now the same as `Date.parse`, and it accepts more invalid dates than 3.x, such as:
 
   ```

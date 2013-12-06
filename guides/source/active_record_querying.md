@@ -473,7 +473,7 @@ In the case of a belongs_to relationship, an association key can be used to spec
 
 ```ruby
 Post.where(author: author)
-Author.joins(:posts).where(posts: {author: author})
+Author.joins(:posts).where(posts: { author: author })
 ```
 
 NOTE: The values cannot be symbols. For example, you cannot do `Client.where(status: :active)`.
@@ -685,9 +685,9 @@ This will return single order objects for each day, but only those that are orde
 Overriding Conditions
 ---------------------
 
-### `except`
+### `unscope`
 
-You can specify certain conditions to be excepted by using the `except` method. For example:
+You can specify certain conditions to be removed using the `unscope` method. For example:
 
 ```ruby
 Post.where('id > 10').limit(20).order('id asc').except(:order)
@@ -698,30 +698,24 @@ The SQL that would be executed:
 ```sql
 SELECT * FROM posts WHERE id > 10 LIMIT 20
 
-# Original query without `except`
+# Original query without `unscope`
 SELECT * FROM posts WHERE id > 10 ORDER BY id asc LIMIT 20
 
-```
-
-### `unscope`
-
-The `except` method does not work when the relation is merged. For example:
-
-```ruby
-Post.comments.except(:order)
-```
-
-will still have an order if the order comes from a default scope on Comment. In order to remove all ordering, even from relations which are merged in, use unscope as follows:
-
-```ruby
-Post.order('id DESC').limit(20).unscope(:order) = Post.limit(20)
-Post.order('id DESC').limit(20).unscope(:order, :limit) = Post.all
 ```
 
 You can additionally unscope specific where clauses. For example:
 
 ```ruby
-Post.where(id: 10).limit(1).unscope({ where: :id }, :limit).order('id DESC') = Post.order('id DESC')
+Post.where(id: 10, trashed: false).unscope(where: :id)
+# => SELECT "posts".* FROM "posts" WHERE trashed = 0
+```
+
+A relation which has used `unscope` will affect any relation it is
+merged in to:
+
+```ruby
+Post.order('id asc').merge(Post.unscope(:order))
+# => SELECT "posts".* FROM "posts"
 ```
 
 ### `only`
@@ -1022,7 +1016,7 @@ Or, in English: "return all posts that have a comment made by a guest."
 #### Joining Nested Associations (Multiple Level)
 
 ```ruby
-Category.joins(posts: [{comments: :guest}, :tags])
+Category.joins(posts: [{ comments: :guest }, :tags])
 ```
 
 This produces:
@@ -1048,7 +1042,7 @@ An alternative and cleaner syntax is to nest the hash conditions:
 
 ```ruby
 time_range = (Time.now.midnight - 1.day)..Time.now.midnight
-Client.joins(:orders).where(orders: {created_at: time_range})
+Client.joins(:orders).where(orders: { created_at: time_range })
 ```
 
 This will find all clients who have orders that were created yesterday, again using a `BETWEEN` SQL expression.
@@ -1109,7 +1103,7 @@ This loads all the posts and the associated category and comments for each post.
 #### Nested Associations Hash
 
 ```ruby
-Category.includes(posts: [{comments: :guest}, :tags]).find(1)
+Category.includes(posts: [{ comments: :guest }, :tags]).find(1)
 ```
 
 This will find the category with id 1 and eager load all of the associated posts, the associated posts' tags and comments, and every comment's guest association.
@@ -1301,7 +1295,7 @@ especially useful if a `default_scope` is specified in the model and should not 
 applied for this particular query.
 
 ```ruby
-Client.unscoped.all
+Client.unscoped.load
 ```
 
 This method removes all scoping and will do a normal query on the table.
@@ -1610,7 +1604,7 @@ Client.where(first_name: 'Ryan').count
 You can also use various finder methods on a relation for performing complex calculations:
 
 ```ruby
-Client.includes("orders").where(first_name: 'Ryan', orders: {status: 'received'}).count
+Client.includes("orders").where(first_name: 'Ryan', orders: { status: 'received' }).count
 ```
 
 Which will execute:

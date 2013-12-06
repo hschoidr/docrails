@@ -37,9 +37,10 @@ For every single method defined as a core extension this guide has a note that s
 
 NOTE: Defined in `active_support/core_ext/object/blank.rb`.
 
-That means that this single call is enough:
+That means that you can require it like this:
 
 ```ruby
+require 'active_support'
 require 'active_support/core_ext/object/blank'
 ```
 
@@ -52,6 +53,7 @@ The next level is to simply load all extensions to `Object`. As a rule of thumb,
 Thus, to load all extensions to `Object` (including `blank?`):
 
 ```ruby
+require 'active_support'
 require 'active_support/core_ext/object'
 ```
 
@@ -60,6 +62,7 @@ require 'active_support/core_ext/object'
 You may prefer just to load all core extensions, there is a file for that:
 
 ```ruby
+require 'active_support'
 require 'active_support/core_ext'
 ```
 
@@ -176,14 +179,14 @@ duplicate = array.dup
 duplicate.push 'another-string'
 
 # the object was duplicated, so the element was added only to the duplicate
-array     #=> ['string']
-duplicate #=> ['string', 'another-string']
+array     # => ['string']
+duplicate # => ['string', 'another-string']
 
 duplicate.first.gsub!('string', 'foo')
 
 # first element was not duplicated, it will be changed in both arrays
-array     #=> ['foo']
-duplicate #=> ['foo', 'another-string']
+array     # => ['foo']
+duplicate # => ['foo', 'another-string']
 ```
 
 As you can see, after duplicating the `Array` instance, we got another object, therefore we can modify it and the original object will stay unchanged. This is not true for array's elements, however. Since `dup` does not make deep copy, the string inside the array is still the same object.
@@ -196,8 +199,8 @@ duplicate = array.deep_dup
 
 duplicate.first.gsub!('string', 'foo')
 
-array     #=> ['string']
-duplicate #=> ['foo']
+array     # => ['string']
+duplicate # => ['foo']
 ```
 
 If the object is not duplicable, `deep_dup` will just return it:
@@ -421,11 +424,9 @@ NOTE: Defined in `active_support/core_ext/object/with_options.rb`.
 
 ### JSON support
 
-Active Support provides a better implementation of `to_json` than the +json+ gem ordinarily provides for Ruby objects. This is because some classes, like +Hash+ and +OrderedHash+ needs special handling in order to provide a proper JSON representation.
+Active Support provides a better implementation of `to_json` than the `json` gem ordinarily provides for Ruby objects. This is because some classes, like `Hash`, `OrderedHash` and `Process::Status` need special handling in order to provide a proper JSON representation.
 
-Active Support also provides an implementation of `as_json` for the <tt>Process::Status</tt> class.
-
-NOTE: Defined in `active_support/core_ext/object/to_json.rb`.
+NOTE: Defined in `active_support/core_ext/object/json.rb`.
 
 ### Instance Variables
 
@@ -1092,6 +1093,15 @@ end
 
 we can access `field_error_proc` in views.
 
+Also, you can pass a block to `cattr_*` to set up the attribute with a default value:
+
+```ruby
+class MysqlAdapter < AbstractAdapter
+  # Generates class methods to access @@emulate_booleans with default value of true.
+  cattr_accessor(:emulate_booleans) { true }
+end
+```
+
 The generation of the reader instance method can be prevented by setting `:instance_reader` to `false` and the generation of the writer instance method can be prevented by setting `:instance_writer` to `false`. Generation of both methods can be prevented by setting `:instance_accessor` to `false`. In all cases, the value must be exactly `false` and not any false value.
 
 ```ruby
@@ -1544,7 +1554,7 @@ ActiveSupport::Inflector.inflections do |inflect|
   inflect.acronym 'SSL'
 end
 
-"SSLError".underscore.camelize #=> "SSLError"
+"SSLError".underscore.camelize # => "SSLError"
 ```
 
 `camelize` is aliased to `camelcase`.
@@ -1772,6 +1782,12 @@ The method `humanize` gives you a sensible name for display out of an attribute 
 "name".humanize           # => "Name"
 "author_id".humanize      # => "Author"
 "comments_count".humanize # => "Comments count"
+```
+
+The capitalization of the first word can be turned off by setting the optional parameter `capitalize` to false:
+
+```ruby
+"author_id".humanize(capitalize: false) # => "author"
 ```
 
 The helper method `full_messages` uses `humanize` as a fallback to include attribute names:

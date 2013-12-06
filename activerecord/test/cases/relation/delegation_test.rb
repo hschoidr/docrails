@@ -9,10 +9,11 @@ module ActiveRecord
     def assert_responds(target, method)
       assert target.respond_to?(method)
       assert_nothing_raised do
-        case target.to_a.method(method).arity
-        when 0
+        method_arity = target.to_a.method(method).arity
+
+        if method_arity.zero?
           target.send(method)
-        when -1
+        elsif method_arity < 0
           if method == :shuffle!
             target.send(method)
           else
@@ -60,8 +61,10 @@ module ActiveRecord
   end
 
   class DelegationRelationTest < DelegationTest
+    fixtures :comments
+
     def target
-      Comment.where.not(body: nil)
+      Comment.where(body: 'Normal type')
     end
 
     [:map, :collect].each do |method|
@@ -87,7 +90,7 @@ module ActiveRecord
     end
 
     [:select!, :uniq!].each do |method|
-      test "##{method} is triggers an immutable error" do
+      test "##{method} triggers an immutable error" do
         assert_raises ActiveRecord::ImmutableRelation do
           assert_responds(target, method)
         end

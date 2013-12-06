@@ -514,6 +514,15 @@ class HasManyThroughAssociationsTest < ActiveRecord::TestCase
     assert_equal(post.taggings.count, post.taggings_count)
   end
 
+  def test_update_counter_caches_on_destroy
+    post = posts(:welcome)
+    tag  = post.tags.create!(name: 'doomed')
+
+    assert_difference 'post.reload.taggings_count', -1 do
+      tag.tagged_posts.destroy(post)
+    end
+  end
+
   def test_replace_association
     assert_queries(4){posts(:welcome);people(:david);people(:michael); posts(:welcome).people(true)}
 
@@ -785,7 +794,7 @@ class HasManyThroughAssociationsTest < ActiveRecord::TestCase
     sarah = Person.create!(:first_name => 'Sarah', :primary_contact_id => people(:susan).id, :gender => 'F', :number1_fan_id => 1)
     john = Person.create!(:first_name => 'John', :primary_contact_id => sarah.id, :gender => 'M', :number1_fan_id => 1)
     assert_equal sarah.agents, [john]
-    assert_equal people(:susan).agents.map(&:agents).flatten, people(:susan).agents_of_agents
+    assert_equal people(:susan).agents.flat_map(&:agents), people(:susan).agents_of_agents
   end
 
   def test_associate_existing_with_nonstandard_primary_key_on_belongs_to
@@ -1084,5 +1093,9 @@ class HasManyThroughAssociationsTest < ActiveRecord::TestCase
 
     readers(:michael_authorless).update(first_post_id: 1)
     assert_equal [posts(:thinking)], person.reload.first_posts
+  end
+
+  def test_has_many_through_with_includes_in_through_association_scope
+    assert_not_empty posts(:welcome).author_address_extra_with_address
   end
 end
