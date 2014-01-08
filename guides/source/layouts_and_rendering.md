@@ -404,7 +404,7 @@ class ProductsController < ApplicationController
 end
 ```
 
-With this declaration, all of the views rendered by the products controller will use `app/views/layouts/inventory.html.erb` as their layout.
+With this declaration, all of the views rendered by the `ProductsController` will use `app/views/layouts/inventory.html.erb` as their layout.
 
 To assign a specific layout for the entire application, use a `layout` declaration in your `ApplicationController` class:
 
@@ -703,7 +703,7 @@ WARNING: The asset tag helpers do _not_ verify the existence of the assets at th
 
 #### Linking to Feeds with the `auto_discovery_link_tag`
 
-The `auto_discovery_link_tag` helper builds HTML that most browsers and newsreaders can use to detect the presence of RSS or Atom feeds. It takes the type of the link (`:rss` or `:atom`), a hash of options that are passed through to url_for, and a hash of options for the tag:
+The `auto_discovery_link_tag` helper builds HTML that most browsers and feed readers can use to detect the presence of RSS or Atom feeds. It takes the type of the link (`:rss` or `:atom`), a hash of options that are passed through to url_for, and a hash of options for the tag:
 
 ```erb
 <%= auto_discovery_link_tag(:rss, {action: "feed"},

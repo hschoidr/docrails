@@ -301,17 +301,15 @@ module ActiveRecord
           end
         end
 
-        TYPE_MAP = TypeMap.new # :nodoc:
-
-        # When the PG adapter connects, the pg_type table is queried.  The
+        # When the PG adapter connects, the pg_type table is queried. The
         # key of this hash maps to the `typname` column from the table.
-        # TYPE_MAP is then dynamically built with oids as the key and type
+        # type_map is then dynamically built with oids as the key and type
         # objects as values.
         NAMES = Hash.new { |h,k| # :nodoc:
           h[k] = OID::Identity.new
         }
 
-        # Register an OID type named +name+ with a typcasting object in
+        # Register an OID type named +name+ with a typecasting object in
         # +type+.  +name+ should correspond to the `typname` column in
         # the `pg_type` table.
         def self.register_type(name, type)

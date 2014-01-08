@@ -43,10 +43,23 @@ module ActiveRecord
       namespace :db do
         task :load_config do
           ActiveRecord::Tasks::DatabaseTasks.db_dir = Rails.application.config.paths["db"].first
-          ActiveRecord::Tasks::DatabaseTasks.database_configuration = Rails.application.config.database_configuration
           ActiveRecord::Tasks::DatabaseTasks.migrations_paths = Rails.application.paths['db/migrate'].to_a
           ActiveRecord::Tasks::DatabaseTasks.fixtures_path = File.join Rails.root, 'test', 'fixtures'
           ActiveRecord::Tasks::DatabaseTasks.root = Rails.root
+
+          configuration = if ENV["DATABASE_URL"]
+            { Rails.env => ENV["DATABASE_URL"] }
+          else
+            Rails.application.config.database_configuration || {}
+          end
+
+          resolver = ActiveRecord::ConnectionAdapters::ConnectionSpecification::Resolver.new(configuration)
+
+          configuration.each do |key, value|
+            configuration[key] = resolver.resolve(value) if value
+          end
+
+          ActiveRecord::Tasks::DatabaseTasks.database_configuration = configuration
 
           if defined?(ENGINE_PATH) && engine = Rails::Engine.find(ENGINE_PATH)
             if engine.paths['db/migrate'].existent
@@ -122,6 +135,15 @@ module ActiveRecord
     # and then establishes the connection.
     initializer "active_record.initialize_database" do |app|
       ActiveSupport.on_load(:active_record) do
+
+        class ActiveRecord::NoDatabaseError
+          remove_possible_method :extend_message
+          def extend_message(message)
+            message << "Run `$ bin/rake db:create db:migrate` to create your database"
+            message
+          end
+        end
+
         self.configurations = app.config.database_configuration || {}
         establish_connection
       end

@@ -10,9 +10,6 @@ module ActiveRecord
       # The +attributes+ parameter can be either a Hash or an Array of Hashes. These Hashes describe the
       # attributes on the objects that are to be created.
       #
-      # +create+ respects mass-assignment security and accepts either +:as+ or +:without_protection+ options
-      # in the +options+ parameter.
-      #
       # ==== Examples
       #   # Create a single new object
       #   User.create(first_name: 'Jamie')
@@ -184,6 +181,7 @@ module ActiveRecord
       became = klass.new
       became.instance_variable_set("@attributes", @attributes)
       became.instance_variable_set("@attributes_cache", @attributes_cache)
+      became.instance_variable_set("@changed_attributes", @changed_attributes) if defined?(@changed_attributes)
       became.instance_variable_set("@new_record", new_record?)
       became.instance_variable_set("@destroyed", destroyed?)
       became.instance_variable_set("@errors", errors)
@@ -364,7 +362,7 @@ module ActiveRecord
     #   assert_equal 25, account.credit        # check it is updated in memory
     #   assert_equal 25, account.reload.credit # check it is also persisted
     #
-    # Another commom use case is optimistic locking handling:
+    # Another common use case is optimistic locking handling:
     #
     #   def with_optimistic_retry
     #     begin

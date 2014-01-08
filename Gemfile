@@ -12,7 +12,6 @@ gem 'bcrypt-ruby', '~> 3.1.2'
 gem 'jquery-rails', '~> 2.2.0'
 gem 'turbolinks'
 gem 'coffee-rails', '~> 4.0.0'
-gem 'arel', github: 'rails/arel'
 
 # This needs to be with require false to avoid
 # it being automatically loaded by sprockets
@@ -37,15 +36,14 @@ group :test do
     gem 'ruby-prof', '~> 0.11.2'
   end
 
-  platforms :mri_19, :mri_20 do
-    gem 'debugger'
-  end
+  # platforms :mri_19, :mri_20 do
+  #   gem 'debugger'
+  # end
 
   gem 'benchmark-ips'
 end
 
 platforms :ruby do
-  gem 'yajl-ruby'
   gem 'nokogiri', '>= 1.4.5'
 
   # Needed for compiling the ActionDispatch::Journey parser

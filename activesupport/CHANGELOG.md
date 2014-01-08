@@ -1,8 +1,146 @@
+*   `blank?` and `present?` commit to return singletons.
+
+    *Xavier Noria*, *Pavel Pravosud*
+
+*   Fixed Float related error in NumberHelper with large precisions.
+
+    before:
+        ActiveSupport::NumberHelper.number_to_rounded '3.14159', precision: 50
+        #=> "3.14158999999999988261834005243144929409027099609375"
+    after:
+        ActiveSupport::NumberHelper.number_to_rounded '3.14159', precision: 50
+        #=> "3.14159000000000000000000000000000000000000000000000"
+
+    *Kenta Murata*, *Akira Matsuda*
+
+*   Default the new `I18n.enforce_available_locales` config to `true`, meaning
+    `I18n` will make sure that all locales passed to it must be declared in the
+    `available_locales` list.
+
+    To disable it add the following configuration to your application:
+
+        config.i18n.enforce_available_locales = false
+
+    This also ensures I18n configuration is properly initialized taking the new
+    option into account, to avoid their deprecations while booting up the app.
+
+    *Carlos Antonio da Silva*, *Yves Senn*
+
+*   Introduce Module#concerning: a natural, low-ceremony way to separate
+    responsibilities within a class.
+
+    Imported from https://github.com/37signals/concerning#readme
+
+        class Todo < ActiveRecord::Base
+          concerning :EventTracking do
+            included do
+              has_many :events
+            end
+
+            def latest_event
+              ...
+            end
+
+            private
+              def some_internal_method
+                ...
+              end
+          end
+
+          concerning :Trashable do
+            def trashed?
+              ...
+            end
+
+            def latest_event
+              super some_option: true
+            end
+          end
+        end
+
+    is equivalent to defining these modules inline, extending them into
+    concerns, then mixing them in to the class.
+
+    Inline concerns tame "junk drawer" classes that intersperse many unrelated
+    class-level declarations, public instance methods, and private
+    implementation. Coalesce related bits and give them definition.
+    These are a stepping stone toward future growth & refactoring.
+
+    When to move on from an inline concern:
+     * Encapsulating state? Extract collaborator object.
+     * Encompassing more public behavior or implementation? Move to separate file.
+     * Sharing behavior among classes? Move to separate file.
+
+    *Jeremy Kemper*
+
+*   Fix file descriptor being leaked on each call to `Kernel.silence_stream`.
+
+    *Mario Visic*
+
+*   Added `Date#all_week/month/quarter/year` for generating date ranges.
+
+    *Dmitriy Meremyanin*
+
+*   Add `Time.zone.yesterday` and `Time.zone.tomorrow`. These follow the
+    behavior of Ruby's `Date.yesterday` and `Date.tomorrow` but return localized
+    versions, similar to how `Time.zone.today` has returned a localized version
+    of `Date.today`.
+
+    *Colin Bartlett*
+
+*   Show valid keys when `assert_valid_keys` raises an exception, and show the
+    wrong value as it was entered.
+
+    *Gonzalo Rodríguez-Baltanás Díaz*
+
+*   Both `cattr_*` and `mattr_*` method definitions now live in `active_support/core_ext/module/attribute_accessors`.
+
+    Requires to `active_support/core_ext/class/attribute_accessors` are
+    deprecated and will be removed in Ruby on Rails 4.2.
+
+    *Genadi Samokovarov*
+
+*   Deprecated `Numeric#{ago,until,since,from_now}`, the user is expected to explicitly
+    convert the value into an AS::Duration, i.e. `5.ago` => `5.seconds.ago`
+
+    This will help to catch subtle bugs like:
+
+        def recent?(days = 3)
+          self.created_at >= days.ago
+        end
+
+    The above code would check if the model is created within the last 3 **seconds**.
+
+    In the future, `Numeric#{ago,until,since,from_now}` should be removed completely,
+    or throw some sort of errors to indicate there are no implicit conversion from
+    Numeric to AS::Duration.
+
+    *Godfrey Chan*
+
+*   Requires JSON gem version 1.7.7 or above due to a security issue in older versions.
+
+    *Godfrey Chan*
+
+*   Removed the old pure-Ruby JSON encoder and switched to a new encoder based on the built-in JSON
+    gem.
+
+    Support for encoding `BigDecimal` as a JSON number, as well as defining custom `encode_json`
+    methods to control the JSON output has been **removed from core**. The new encoder will always
+    encode BigDecimals as `String`s and ignore any custom `encode_json` methods.
+
+    The old encoder has been extracted into the `activesupport-json_encoder` gem. Installing that
+    gem will bring back the ability to encode `BigDecimal`s as numbers as well as `encode_json`
+    support.
+
+    Setting the related configuration `ActiveSupport.encode_big_decimal_as_string` without the
+    `activesupport-json_encoder` gem installed will raise an error.
+
+    *Godfrey Chan*
+
 *   Add `ActiveSupport::Testing::TimeHelpers#travel` and `#travel_to`. These methods change current
     time to the given time or time difference by stubbing `Time.now` and `Date.today` to return the
     time or date after the difference calculation, or the time or date that got passed into the
-    method respectively. These methods also accept a block, which will return current time back to
-    its original state at the end of the block.
+    method respectively.
 
     Example for `#travel`:
 
@@ -157,7 +295,8 @@
 
     *Simon Coffey*
 
-*   Add String#remove(pattern) as a short-hand for the common pattern of String#gsub(pattern, '')
+*   Add `String#remove(pattern)` as a short-hand for the common pattern of
+    `String#gsub(pattern, '')`.
 
     *DHH*
 
@@ -223,7 +362,7 @@
 
     *Arun Agrawal*
 
-*   Remove deprecated `DateTime.local_offset` in favor of `DateTime.civil_from_fromat`.
+*   Remove deprecated `DateTime.local_offset` in favor of `DateTime.civil_from_format`.
 
     *Arun Agrawal*
 
@@ -260,11 +399,12 @@
 
     *Carlos Antonio da Silva*
 
-*   Remove deprecated `BufferedLogger`.
+*   Remove deprecated `BufferedLogger`, use `ActiveSupport::Logger` instead.
 
     *Yves Senn*
 
-*   Remove deprecated `assert_present` and `assert_blank` methods.
+*   Remove deprecated `assert_present` and `assert_blank` methods, use `assert
+    object.blank?` and `assert object.present?` instead.
 
     *Yves Senn*
 
@@ -304,6 +444,10 @@
     Fixes #10526
 
     *Yves Senn*
+
+*   Removed deprecated `ActiveSupport::JSON::Variable` with no replacement.
+
+    *Toshinori Kajihara*
 
 *   Raise an error when multiple `included` blocks are defined for a Concern.
     The old behavior would silently discard previously defined blocks, running

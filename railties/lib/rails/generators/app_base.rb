@@ -47,6 +47,9 @@ module Rails
         class_option :skip_sprockets,     type: :boolean, aliases: '-S', default: false,
                                           desc: 'Skip Sprockets files'
 
+        class_option :skip_spring,        type: :boolean, default: false,
+                                          desc: "Don't install Spring application preloader"
+
         class_option :database,           type: :string, aliases: '-d', default: 'sqlite3',
                                           desc: "Preconfigure for selected database (options: #{DATABASES.join('/')})"
 
@@ -109,6 +112,7 @@ module Rails
           jbuilder_gemfile_entry,
           sdoc_gemfile_entry,
           platform_dependent_gemfile_entry,
+          spring_gemfile_entry,
           @extra_entries].flatten.find_all(&@gem_filter)
       end
 
@@ -304,7 +308,7 @@ module Rails
                                     'Use SCSS for stylesheets')
         else
           gems << GemfileEntry.version('sass-rails',
-                                     '~> 4.0.0.rc1',
+                                     '~> 4.0.1',
                                      'Use SCSS for stylesheets')
         end
 
@@ -325,7 +329,7 @@ module Rails
 
       def jbuilder_gemfile_entry
         comment = 'Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder'
-        GemfileEntry.version('jbuilder', '~> 1.2', comment)
+        GemfileEntry.version('jbuilder', '~> 2.0', comment)
       end
 
       def sdoc_gemfile_entry
@@ -365,6 +369,12 @@ module Rails
         end
       end
 
+      def spring_gemfile_entry
+        return [] unless spring_install?
+        comment = 'Spring speeds up development by keeping your application running in the background. Read more: https://github.com/jonleighton/spring'
+        GemfileEntry.new('spring', nil, comment, group: :development)
+      end
+
       def bundle_command(command)
         say_status :run, "bundle #{command}"
 
@@ -388,8 +398,22 @@ module Rails
         end
       end
 
+      def bundle_install?
+        !(options[:skip_gemfile] || options[:skip_bundle] || options[:pretend])
+      end
+
+      def spring_install?
+        !options[:skip_spring] && Process.respond_to?(:fork)
+      end
+
       def run_bundle
-        bundle_command('install') unless options[:skip_gemfile] || options[:skip_bundle] || options[:pretend]
+        bundle_command('install') if bundle_install?
+      end
+
+      def generate_spring_binstubs
+        if bundle_install? && spring_install?
+          bundle_command("exec spring binstub --all")
+        end
       end
 
       def empty_directory_with_keep_file(destination, config = {})

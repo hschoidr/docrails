@@ -1,3 +1,130 @@
+*   Fix `Encoding::CompatibilityError` when public path is UTF-8
+
+    In #5337 we forced the path encoding to ASCII-8BIT to prevent static file handling
+    from blowing up before an application has had chance to deal with possibly invalid
+    urls. However this has a negative side effect of making it an incompatible encoding
+    if the application's public path has UTF-8 characters in it.
+
+    To work around the problem we check to see if the path has a valid encoding once
+    it has been unescaped. If it is not valid then we can return early since it will
+    not match any file anyway.
+
+    Fixes #13518
+
+    *Andrew White*
+
+*   `ActionController::Parameters#permit!` permits hashes in array values.
+
+    *Xavier Noria*
+
+*   Converts hashes in arrays of unfiltered params to unpermitted params.
+
+    Fixes #13382
+
+    *Xavier Noria*
+
+*   New config option to opt out of params "deep munging" that was used to
+    address security vulnerability CVE-2013-0155. In your app config:
+
+        config.action_dispatch.perform_deep_munge = false
+
+    Take care to understand the security risk involved before disabling this.
+    [Read more.](https://groups.google.com/forum/#!topic/rubyonrails-security/t1WFuuQyavI)
+
+    *Bernard Potocki*
+
+*   `rake routes` shows routes defined under assets prefix.
+
+    *Ryunosuke SATO*
+
+*   Extend cross-site request forgery (CSRF) protection to GET requests with
+    JavaScript responses, protecting apps from cross-origin `<script>` tags.
+
+    *Jeremy Kemper*
+
+*   Fix generating a path for engine inside a resources block.
+
+    Fixes #8533.
+
+    *Piotr Sarnacki*
+
+*   Add `Mime::Type.register "text/vcard", :vcf` to the default list of mime types.
+
+    *DHH*
+
+*   Remove deprecated `ActionController::RecordIdentifier`, use
+    `ActionView::RecordIdentifier` instead.
+
+    *kennyj*
+
+*   Fix regression when using `ActionView::Helpers::TranslationHelper#translate` with
+    `options[:raise]`.
+
+    This regression was introduced at ec16ba75a5493b9da972eea08bae630eba35b62f.
+
+    *Shota Fukumori (sora_h)*
+
+*   Introducing Variants
+
+    We often want to render different html/json/xml templates for phones,
+    tablets, and desktop browsers. Variants make it easy.
+
+    The request variant is a specialization of the request format, like `:tablet`,
+    `:phone`, or `:desktop`.
+
+    You can set the variant in a `before_action`:
+
+        request.variant = :tablet if request.user_agent =~ /iPad/
+
+    Respond to variants in the action just like you respond to formats:
+
+        respond_to do |format|
+          format.html do |html|
+            html.tablet # renders app/views/projects/show.html+tablet.erb
+            html.phone { extra_setup; render ... }
+          end
+        end
+
+    Provide separate templates for each format and variant:
+
+        app/views/projects/show.html.erb
+        app/views/projects/show.html+tablet.erb
+        app/views/projects/show.html+phone.erb
+
+    You can also simplify the variants definition using the inline syntax:
+
+        respond_to do |format|
+          format.js         { render "trash" }
+          format.html.phone { redirect_to progress_path }
+          format.html.none  { render "trash" }
+        end
+
+    *Łukasz Strzałkowski*
+
+*   Fix render of localized templates without an explicit format using wrong
+    content header and not passing correct formats to template due to the
+    introduction of the `NullType` for mimes.
+
+    Templates like `hello.it.erb` were subject to this issue.
+
+    Fixes #13064.
+
+    *Angelo Capilleri*, *Carlos Antonio da Silva*
+
+*   Try to escape each part of a url correctly when using a redirect route.
+
+    Fixes #13110.
+
+    *Andrew White*
+
+*   Better error message for typos in assert_response argument.
+
+    When the response type argument to `assert_response` is not a known
+    response type, `assert_response` now throws an ArgumentError with a clear
+    message. This is intended to help debug typos in the response type.
+
+    *Victor Costan*
+
 *   Fix formatting for `rake routes` when a section is shorter than a header.
 
     *Sıtkı Bağdat*
@@ -13,9 +140,7 @@
 
 *   Add `session#fetch` method
 
-    fetch behaves similarly to [Hash#fetch](http://www.ruby-doc.org/core-1.9.3/Hash.html#method-i-fetch),
-    with the exception that the returned value is always saved into the session.
-
+    fetch behaves like [Hash#fetch](http://www.ruby-doc.org/core-1.9.3/Hash.html#method-i-fetch).
     It returns a value from the hash for the given key.
     If the key can’t be found, there are several options:
 
@@ -122,10 +247,6 @@
 
     *Vasiliy Ermolovich*
 
-*   Separate Action View completely from Action Pack.
-
-    *Łukasz Strzałkowski*
-
 *   Development mode exceptions are rendered in text format in case of XHR request.
 
     *Kir Shatrov*
@@ -226,7 +347,7 @@
 
     *Yves Senn*, *Andrew White*
 
-*   ActionView extracted from ActionPack.
+*   Action View extracted from Action Pack.
 
     *Piotr Sarnacki*, *Łukasz Strzałkowski*
 

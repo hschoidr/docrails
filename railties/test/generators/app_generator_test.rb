@@ -113,6 +113,9 @@ class AppGeneratorTest < Rails::Generators::TestCase
 
     FileUtils.mv(app_root, app_moved_root)
 
+    # make sure we are in correct dir
+    FileUtils.cd(app_moved_root)
+
     generator = Rails::Generators::AppGenerator.new ["rails"], { with_dispatchers: true },
                                                                destination_root: app_moved_root, shell: @shell
     generator.send(:app_const)
@@ -288,7 +291,6 @@ class AppGeneratorTest < Rails::Generators::TestCase
     run_generator [destination_root, "--skip-sprockets"]
     assert_file "config/application.rb" do |content|
       assert_match(/#\s+require\s+["']sprockets\/railtie["']/, content)
-      assert_match(/config\.assets\.enabled = false/, content)
     end
     assert_file "Gemfile" do |content|
       assert_no_match(/sass-rails/, content)
@@ -364,7 +366,13 @@ class AppGeneratorTest < Rails::Generators::TestCase
 
   def test_inclusion_of_debugger
     run_generator
-    assert_file "Gemfile", /# gem 'debugger'/
+    if defined?(JRUBY_VERSION)
+      assert_file "Gemfile" do |content|
+        assert_no_match(/debugger/, content)
+      end
+    else
+      assert_file "Gemfile", /# gem 'debugger'/
+    end
   end
 
   def test_inclusion_of_lazy_loaded_sdoc
@@ -427,6 +435,34 @@ class AppGeneratorTest < Rails::Generators::TestCase
 
     assert_file "foo bar/config/database.yml", /database: foo_bar_development/
     assert_file "foo bar/config/initializers/session_store.rb", /key: '_foo_bar/
+  end
+
+  def test_spring
+    run_generator
+    assert_file "Gemfile", /gem 'spring', \s+group: :development/
+  end
+
+  def test_spring_binstubs
+    generator.stubs(:bundle_command).with('install')
+    generator.expects(:bundle_command).with('exec spring binstub --all').once
+    quietly { generator.invoke_all }
+  end
+
+  def test_spring_no_fork
+    Process.stubs(:respond_to?).with(:fork).returns(false)
+    run_generator
+
+    assert_file "Gemfile" do |content|
+      assert_no_match(/spring/, content)
+    end
+  end
+
+  def test_skip_spring
+    run_generator [destination_root, "--skip-spring"]
+
+    assert_file "Gemfile" do |content|
+      assert_no_match(/spring/, content)
+    end
   end
 
 protected
