@@ -86,7 +86,7 @@ current version of Ruby installed:
 
 ```bash
 $ ruby -v
-ruby 2.0.0p247
+ruby 2.0.0p353
 ```
 
 To install Rails, use the `gem install` command provided by RubyGems:
@@ -398,7 +398,7 @@ If you refresh <http://localhost:3000/posts/new> now, you'll get a new error:
 
 This error indicates that Rails cannot find the `new` action inside the `PostsController`
 that you just generated. This is because when controllers are generated in Rails
-they are empty by default, unless you tell it you wanted actions during the
+they are empty by default, unless you tell it your wanted actions during the
 generation process.
 
 To manually define an action inside a controller, all you need to do is to
@@ -1268,6 +1268,7 @@ together.
 
 ```html+erb
 <h1>Listing Posts</h1>
+<%= link_to 'New post', new_post_path %>
 <table>
   <tr>
     <th>Title</th>
@@ -1702,8 +1703,8 @@ Deleting Comments
 -----------------
 
 Another important feature of a blog is being able to delete spam comments. To do
-this, we need to implement a link of some sort in the view and a `DELETE` action
-in the `CommentsController`.
+this, we need to implement a link of some sort in the view and a `destroy`
+action in the `CommentsController`.
 
 So first, let's add the delete link in the
 `app/views/comments/_comment.html.erb` partial:
@@ -1728,7 +1729,7 @@ So first, let's add the delete link in the
 
 Clicking this new "Destroy Comment" link will fire off a `DELETE
 /posts/:post_id/comments/:id` to our `CommentsController`, which can then use
-this to find the comment we want to delete, so let's add a destroy action to our
+this to find the comment we want to delete, so let's add a `destroy` action to our
 controller (`app/controllers/comments_controller.rb`):
 
 ```ruby

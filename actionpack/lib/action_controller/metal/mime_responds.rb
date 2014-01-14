@@ -181,13 +181,50 @@ module ActionController #:nodoc:
     #     end
     #   end
     #
+    # Formats can have different variants.
+    #
+    # The request variant is a specialization of the request format, like <tt>:tablet</tt>,
+    # <tt>:phone</tt>, or <tt>:desktop</tt>.
+    #
+    # We often want to render different html/json/xml templates for phones,
+    # tablets, and desktop browsers. Variants make it easy.
+    #
+    # You can set the variant in a +before_action+:
+    #
+    #   request.variant = :tablet if request.user_agent =~ /iPad/
+    #
+    # Respond to variants in the action just like you respond to formats:
+    #
+    #   respond_to do |format|
+    #     format.html do |variant|
+    #       variant.tablet # renders app/views/projects/show.html+tablet.erb
+    #       variant.phone { extra_setup; render ... }
+    #       variant.none  { special_setup } # executed only if there is no variant set
+    #     end
+    #   end
+    #
+    # Provide separate templates for each format and variant:
+    #
+    #   app/views/projects/show.html.erb
+    #   app/views/projects/show.html+tablet.erb
+    #   app/views/projects/show.html+phone.erb
+    #
+    # When you're not sharing any code within the format, you can simplify defining variants
+    # using the inline syntax:
+    #
+    #   respond_to do |format|
+    #     format.js         { render "trash" }
+    #     format.html.phone { redirect_to progress_path }
+    #     format.html.none  { render "trash" }
+    #   end
+    #
     # Be sure to check the documentation of +respond_with+ and
     # <tt>ActionController::MimeResponds.respond_to</tt> for more examples.
     def respond_to(*mimes, &block)
       raise ArgumentError, "respond_to takes either types or a block, never both" if mimes.any? && block_given?
 
       if collector = retrieve_collector_from_mimes(mimes, &block)
-        response = collector.response
+        response = collector.response(request.variant)
         response ? response.call : render({})
       end
     end
@@ -260,7 +297,7 @@ module ActionController #:nodoc:
     # * for other requests - i.e. data formats such as xml, json, csv etc, if
     #   the resource passed to +respond_with+ responds to <code>to_<format></code>,
     #   the method attempts to render the resource in the requested format
-    #   directly, e.g. for an xml request, the response is equivalent to calling 
+    #   directly, e.g. for an xml request, the response is equivalent to calling
     #   <code>render xml: resource</code>.
     #
     # === Nested resources
@@ -321,13 +358,15 @@ module ActionController #:nodoc:
     # 2. <tt>:action</tt> - overwrites the default render action used after an
     #    unsuccessful html +post+ request.
     def respond_with(*resources, &block)
-      raise "In order to use respond_with, first you need to declare the formats your " \
-            "controller responds to in the class level" if self.class.mimes_for_respond_to.empty?
+      if self.class.mimes_for_respond_to.empty?
+        raise "In order to use respond_with, first you need to declare the " \
+          "formats your controller responds to in the class level."
+      end
 
       if collector = retrieve_collector_from_mimes(&block)
         options = resources.size == 1 ? {} : resources.extract_options!
         options = options.clone
-        options[:default_response] = collector.response
+        options[:default_response] = collector.response(request.variant)
         (options.delete(:responder) || self.class.responder).call(self, resources, options)
       end
     end
@@ -400,7 +439,8 @@ module ActionController #:nodoc:
 
       def initialize(mimes)
         @responses = {}
-        mimes.each { |mime| send(mime) }
+
+        mimes.each { |mime| @responses["Mime::#{mime.upcase}".constantize] = nil }
       end
 
       def any(*args, &block)
@@ -414,15 +454,54 @@ module ActionController #:nodoc:
 
       def custom(mime_type, &block)
         mime_type = Mime::Type.lookup(mime_type.to_s) unless mime_type.is_a?(Mime::Type)
-        @responses[mime_type] ||= block
+        @responses[mime_type] ||= if block_given?
+          block
+        else
+          VariantCollector.new
+        end
       end
 
-      def response
-        @responses.fetch(format, @responses[Mime::ALL])
+      def response(variant)
+        response = @responses.fetch(format, @responses[Mime::ALL])
+        if response.is_a?(VariantCollector)
+          response.variant(variant)
+        elsif response.nil? || response.arity == 0
+          response
+        else
+          lambda { response.call VariantFilter.new(variant) }
+        end
       end
 
       def negotiate_format(request)
         @format = request.negotiate_mime(@responses.keys)
+      end
+
+      #Used for inline syntax
+      class VariantCollector #:nodoc:
+        def initialize
+          @variants = {}
+        end
+
+        def method_missing(name, *args, &block)
+          @variants[name] = block if block_given?
+        end
+
+        def variant(name)
+          @variants[name.nil? ? :none : name]
+        end
+      end
+
+      #Used for nested block syntax
+      class VariantFilter #:nodoc:
+        def initialize(variant)
+          @variant = variant
+        end
+
+        def method_missing(name)
+          if block_given?
+            yield if name == @variant || (name == :none && @variant.nil?)
+          end
+        end
       end
     end
   end

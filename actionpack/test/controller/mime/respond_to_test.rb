@@ -146,6 +146,51 @@ class RespondToController < ActionController::Base
     end
   end
 
+  def variant_with_implicit_rendering
+  end
+
+  def variant_with_format_and_custom_render
+    request.variant = :mobile
+
+    respond_to do |type|
+      type.html { render text: "mobile" }
+    end
+  end
+
+  def multiple_variants_for_format
+    respond_to do |type|
+      type.html do |html|
+        html.tablet { render text: "tablet" }
+        html.phone  { render text: "phone" }
+      end
+    end
+  end
+
+  def variant_plus_none_for_format
+    respond_to do |format|
+      format.html do |variant|
+        variant.phone { render text: "phone" }
+        variant.none
+      end
+    end
+  end
+
+  def variant_inline_syntax
+    respond_to do |format|
+      format.js         { render text: "js"    }
+      format.html.none  { render text: "none"  }
+      format.html.phone { render text: "phone" }
+    end
+  end
+
+  def variant_inline_syntax_without_block
+    respond_to do |format|
+      format.js
+      format.html.none
+      format.html.phone
+    end
+  end
+
   protected
     def set_layout
       case action_name
@@ -489,5 +534,67 @@ class RespondToControllerTest < ActionController::TestCase
     assert_raises(ActionController::UnknownFormat) do
       get :using_defaults, :format => "invalidformat"
     end
+  end
+
+  def test_invalid_variant
+    @request.variant = :invalid
+    assert_raises(ActionView::MissingTemplate) do
+      get :variant_with_implicit_rendering
+    end
+  end
+
+  def test_variant_not_set_regular_template_missing
+    assert_raises(ActionView::MissingTemplate) do
+      get :variant_with_implicit_rendering
+    end
+  end
+
+  def test_variant_with_implicit_rendering
+    @request.variant = :mobile
+    get :variant_with_implicit_rendering
+    assert_equal "text/html", @response.content_type
+    assert_equal "mobile", @response.body
+  end
+
+  def test_variant_with_format_and_custom_render
+    @request.variant = :phone
+    get :variant_with_format_and_custom_render
+    assert_equal "text/html", @response.content_type
+    assert_equal "mobile", @response.body
+  end
+
+  def test_multiple_variants_for_format
+    @request.variant = :tablet
+    get :multiple_variants_for_format
+    assert_equal "text/html", @response.content_type
+    assert_equal "tablet", @response.body
+  end
+
+  def test_no_variant_in_variant_setup
+    get :variant_plus_none_for_format
+    assert_equal "text/html", @response.content_type
+    assert_equal "none", @response.body
+  end
+
+  def test_variant_inline_syntax
+    get :variant_inline_syntax, format: :js
+    assert_equal "text/javascript", @response.content_type
+    assert_equal "js", @response.body
+
+    get :variant_inline_syntax
+    assert_equal "text/html", @response.content_type
+    assert_equal "none", @response.body
+
+    @request.variant = :phone
+    get :variant_inline_syntax
+    assert_equal "text/html", @response.content_type
+    assert_equal "phone", @response.body
+  end
+
+  def test_variant_inline_syntax_without_block
+    @request.variant = :phone
+    get :variant_inline_syntax_without_block
+    assert_equal "text/html", @response.content_type
+    assert_equal "phone", @response.body
   end
 end

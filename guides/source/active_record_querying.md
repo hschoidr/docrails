@@ -436,7 +436,7 @@ to this code:
 Client.where("orders_count = #{params[:orders]}")
 ```
 
-because of argument safety. Putting the variable directly into the conditions string will pass the variable to the database **as-is**. This means that it will be an unescaped variable directly from a user who may have malicious intent. If you do this, you put your entire database at risk because once a user finds out he or she can exploit your database they can do just about anything to it. Never ever put your arguments directly inside the conditions string.
+because of argument safety. Putting the variable directly into the conditions string will pass the variable to the database **as-is**. This means that it will be an unescaped variable directly from a user who may have malicious intent. If you do this, you put your entire database at risk because once a user finds out they can exploit your database they can do just about anything to it. Never ever put your arguments directly inside the conditions string.
 
 TIP: For more information on the dangers of SQL injection, see the [Ruby on Rails Security Guide](security.html#sql-injection).
 
@@ -789,6 +789,32 @@ SELECT * FROM clients WHERE orders_count > 10 ORDER BY clients.id DESC
 ```
 
 This method accepts **no** arguments.
+
+### `rewhere`
+
+The `rewhere` method overrides an existing, named where condition. For example:
+
+```ruby
+Post.where(trashed: true).rewhere(trashed: false)
+```
+
+The SQL that would be executed:
+
+```sql
+SELECT * FROM posts WHERE `trashed` = 0
+```
+
+In case the `rewhere` clause is not used,
+
+```ruby
+Post.where(trashed: true).where(trashed: false)
+```
+
+the SQL executed would be:
+
+```sql
+SELECT * FROM posts WHERE `trashed` = 1 AND `trashed` = 0
+```
 
 Null Relation
 -------------
