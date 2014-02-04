@@ -148,7 +148,7 @@ module ActiveRecord
       QUOTED_TRUE, QUOTED_FALSE = '1', '0'
 
       NATIVE_DATABASE_TYPES = {
-        :primary_key => "int(11) DEFAULT NULL auto_increment PRIMARY KEY",
+        :primary_key => "int(11) auto_increment PRIMARY KEY",
         :string      => { :name => "varchar", :limit => 255 },
         :text        => { :name => "text" },
         :integer     => { :name => "int", :limit => 4 },
@@ -207,9 +207,14 @@ module ActiveRecord
       end
 
       def type_cast(value, column)
-        return super unless value == true || value == false
-
-        value ? 1 : 0
+        case value
+        when TrueClass
+          1
+        when FalseClass
+          0
+        else
+          super
+        end
       end
 
       # MySQL 4 technically support transaction isolation, but it is affected by a bug
@@ -278,7 +283,7 @@ module ActiveRecord
 
       # REFERENTIAL INTEGRITY ====================================
 
-      def disable_referential_integrity(&block) #:nodoc:
+      def disable_referential_integrity #:nodoc:
         old = select_value("SELECT @@FOREIGN_KEY_CHECKS")
 
         begin
@@ -297,12 +302,6 @@ module ActiveRecord
           @connection.query(sql)
         else
           log(sql, name) { @connection.query(sql) }
-        end
-      rescue ActiveRecord::StatementInvalid => exception
-        if exception.message.split(":").first =~ /Packets out of order/
-          raise ActiveRecord::StatementInvalid.new("'Packets out of order' error was received from the database. Please update your mysql bindings (gem install mysql) and read http://dev.mysql.com/doc/mysql/en/password-hashing.html for more information. If you're on Windows, use the Instant Rails installer to get the updated mysql bindings.", exception.original_exception)
-        else
-          raise
         end
       end
 
@@ -485,6 +484,18 @@ module ActiveRecord
       def rename_table(table_name, new_name)
         execute "RENAME TABLE #{quote_table_name(table_name)} TO #{quote_table_name(new_name)}"
         rename_table_indexes(table_name, new_name)
+      end
+
+      def drop_table(table_name, options = {})
+        execute "DROP#{' TEMPORARY' if options[:temporary]} TABLE #{quote_table_name(table_name)}"
+      end
+
+      def rename_index(table_name, old_name, new_name)
+        if (version[0] == 5 && version[1] >= 7) || version[0] >= 6
+          execute "ALTER TABLE #{quote_table_name(table_name)} RENAME INDEX #{quote_table_name(old_name)} TO #{quote_table_name(new_name)}"
+        else
+          super
+        end
       end
 
       def change_column_default(table_name, column_name, default)

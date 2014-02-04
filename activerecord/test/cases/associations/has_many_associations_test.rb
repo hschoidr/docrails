@@ -104,7 +104,7 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
     car = Car.create(:name => 'honda')
     car.funky_bulbs.create!
     assert_nothing_raised { car.reload.funky_bulbs.delete_all }
-    assert_equal 0, Bulb.count, "bulbs should have been deleted using :delete_all strategey"
+    assert_equal 0, Bulb.count, "bulbs should have been deleted using :delete_all strategy"
   end
 
   def test_building_the_associated_object_with_implicit_sti_base_class
@@ -318,9 +318,7 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
 
   def test_belongs_to_sanity
     c = Client.new
-    assert_nil c.firm
-
-    flunk "belongs_to failed if check" if c.firm
+    assert_nil c.firm, "belongs_to failed sanity check on new object"
   end
 
   def test_find_ids
@@ -1769,5 +1767,24 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
 
     assert_equal [bulb1], car.bulbs
     assert_equal [bulb1, bulb2], car.all_bulbs.sort_by(&:id)
+  end
+
+  test "raises RecordNotDestroyed when replaced child can't be destroyed" do
+    car = Car.create!
+    original_child = FailedBulb.create!(car: car)
+
+    assert_raise(ActiveRecord::RecordNotDestroyed) do
+      car.failed_bulbs = [FailedBulb.create!]
+    end
+
+    assert_equal [original_child], car.reload.failed_bulbs
+  end
+
+  test 'updates counter cache when default scope is given' do
+    topic = DefaultRejectedTopic.create approved: true
+
+    assert_difference "topic.reload.replies_count", 1 do
+      topic.approved_replies.create!
+    end
   end
 end

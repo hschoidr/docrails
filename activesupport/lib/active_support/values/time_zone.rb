@@ -1,3 +1,4 @@
+require 'thread_safe'
 require 'active_support/core_ext/object/blank'
 require 'active_support/core_ext/object/try'
 
@@ -184,6 +185,8 @@ module ActiveSupport
     UTC_OFFSET_WITH_COLON = '%s%02d:%02d'
     UTC_OFFSET_WITHOUT_COLON = UTC_OFFSET_WITH_COLON.sub(':', '')
 
+    @lazy_zones_map = ThreadSafe::Cache.new
+
     # Assumes self represents an offset from UTC in seconds (as returned from
     # Time#utc_offset) and turns this into an +HH:MM formatted string.
     #
@@ -314,6 +317,16 @@ module ActiveSupport
       tzinfo.now.to_date
     end
 
+    # Returns the next date in this time zone.
+    def tomorrow
+      today + 1
+    end
+
+    # Returns the previous date in this time zone.
+    def yesterday
+      today - 1
+    end
+
     # Adjust the given time to the simultaneous time in the time zone
     # represented by +self+. Returns a Time.utc() instance -- if you want an
     # ActiveSupport::TimeWithZone instance, use Time#in_time_zone() instead.
@@ -362,10 +375,8 @@ module ActiveSupport
 
       def zones_map
         @zones_map ||= begin
-          new_zones_names = MAPPING.keys - lazy_zones_map.keys
-          new_zones       = Hash[new_zones_names.map { |place| [place, create(place)] }]
-
-          lazy_zones_map.merge(new_zones)
+          MAPPING.each_key {|place| self[place]} # load all the zones
+          @lazy_zones_map
         end
       end
 
@@ -378,7 +389,7 @@ module ActiveSupport
         case arg
           when String
           begin
-            lazy_zones_map[arg] ||= lookup(arg).tap { |tz| tz.utc_offset }
+            lazy_zones_map[arg] ||= create(arg).tap { |tz| tz.utc_offset }
           rescue TZInfo::InvalidTimezoneIdentifier
             nil
           end
@@ -407,16 +418,9 @@ module ActiveSupport
 
       private
 
-        def lookup(name)
-          (tzinfo = find_tzinfo(name)) && create(tzinfo.name.freeze)
-        end
-
         def lazy_zones_map
           require_tzinfo
-
-          @lazy_zones_map ||= Hash.new do |hash, place|
-            hash[place] = create(place) if MAPPING.has_key?(place)
-          end
+          @lazy_zones_map
         end
     end
 
