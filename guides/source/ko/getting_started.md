@@ -1,152 +1,178 @@
-Getting Started with Rails
+레일스 시작하기
 ==========================
 
-This guide covers getting up and running with Ruby on Rails.
+이 가이드는 루비온레일스를 시작 그리고 실행까지 다룹니다. [[[This guide covers getting up and running with Ruby on Rails.]]]
 
-After reading this guide, you will know:
+이 가이드를 읽고나면 아래사항을 알게 될 것입니다. [[[After reading this guide, you will know:]]]
 
-* How to install Rails, create a new Rails application, and connect your
-  application to a database.
-* The general layout of a Rails application.
-* The basic principles of MVC (Model, View, Controller) and RESTful design.
-* How to quickly generate the starting pieces of a Rails application.
+* 레일스를 설치, 새 레일스 어플리케이션을 만들고 데이터베이스에 연결하는 법. [[[How to install Rails, create a new Rails application, and connect your application to a database.]]]
+
+* 일반적이 레일스 어필리케이션 레이아웃. [[[The general layout of a Rails application.]]]
+
+* MVC(모델, 뷰, 컨트롤러) 그리고 RESTful 디자인의 기본적인 원리. [[[The basic principles of MVC (Model, View, Controller) and RESTful design.]]]
+
+* 레일스 어플리케이션의 초석을 빠르게 만드는 법. [[[How to quickly generate the starting pieces of a Rails application.]]]
 
 --------------------------------------------------------------------------------
 
-Guide Assumptions
+[Guide Assumptions] 가이드에 대한 가정 사항들
 -----------------
 
-This guide is designed for beginners who want to get started with a Rails
+이 가이드는 레일스 어플리케이션을 처음 부터 시작하는 초보자를 위한 것입니다. 레일스에 관한 어떤한 경험도 없음을 가정하고 쓰여진 것입니다. 하지만 최대한으로 얻어 가실려면 아래의 것들을 미리 설치하시면 됩니다. [[[This guide is designed for beginners who want to get started with a Rails
 application from scratch. It does not assume that you have any prior experience
 with Rails. However, to get the most out of it, you need to have some
-prerequisites installed:
+prerequisites installed:]]]
 
-* The [Ruby](http://www.ruby-lang.org/en/downloads) language version 1.9.3 or newer
-* The [RubyGems](http://rubygems.org/) packaging system
-    * To learn more about RubyGems, please read the [RubyGems User Guide](http://docs.rubygems.org/read/book/1)
-* A working installation of the [SQLite3 Database](http://www.sqlite.org)
+* [루비](http://www.ruby-lang.org/en/downloads) 1.9.3 이상의 버젼 [[[The [Ruby](http://www.ruby-lang.org/en/downloads) language version 1.9.3 or newer]]]
 
-Rails is a web application framework running on the Ruby programming language.
+* [루비](http://rubygems.org/) 패키징 시스템 [[[The [RubyGems](http://rubygems.org/) packaging system]]]
+    루비잼에 대해서 더 배우시길 원하신다면 [RubyGems User Guide](http://docs.rubygems.org/read/book/1)를 읽기 바랍니다. [[[* To learn more about RubyGems, please read the [루비잼 사용자 가이드](http://docs.rubygems.org/read/book/1)]]]
+
+* 동작하는 [SQLite3 데이터베이스](http://www.sqlite.org) [[[A working installation of the [SQLite3 Database](http://www.sqlite.org)]]]
+
+
+레일스는 루비 프로그래밍 언어에서 동작하는 웹 어플리케이션 프레임워크입니다. 루비에 대한 경험이 없다면 
+레일스로 바로 들어가기에는 진입장벽이 높을 것입니다. 인터넷이 루비를 배우기 위한 많은 무료자료들이 있습니다. 
+대표적으로 아래의 것들이 있습니다.
+[[[Rails is a web application framework running on the Ruby programming language.
 If you have no prior experience with Ruby, you will find a very steep learning
 curve diving straight into Rails. There are some good free resources on the
-internet for learning Ruby, including:
+internet for learning Ruby, including:]]]
 
 * [Mr. Neighborly's Humble Little Ruby Book](http://www.humblelittlerubybook.com)
+
 * [Programming Ruby](http://www.ruby-doc.org/docs/ProgrammingRuby/)
+
 * [Why's (Poignant) Guide to Ruby](http://mislav.uniqpath.com/poignant-guide/)
 
-What is Rails?
+
+[What is Rails?] 레일스란?
 --------------
 
-Rails is a web application development framework written in the Ruby language.
+레일스는 루비로 작성된 웹 어플리케이션 개발 프레임워크 입니다.
+모든 개발자들이 필요한 것을 미리 가정(설정)해 놓음으로서 웹 어플리케이션 개발이 더욱 쉽도록 디자인 되었습니다. 
+그 어떤 언어나 프레임워크보다도 적은 코드를 작성하게 끔 만들어 졌습니다. 
+숙련된 레일스 개발자들에 의하면 웹 개발을 더욱 재미있게 만들어 주기까지 한답니다.
+[[[Rails is a web application development framework written in the Ruby language.
 It is designed to make programming web applications easier by making assumptions
 about what every developer needs to get started. It allows you to write less
 code while accomplishing more than many other languages and frameworks.
 Experienced Rails developers also report that it makes web application
-development more fun.
+development more fun.]]]
 
-Rails is opinionated software. It makes the assumption that there is the "best"
+레일스는 독단적인 소프트웨어 입니다. "최선"의 방법이 있다고 가정하고 그 방법을 사용하도록 독려를 합니다.
+때로는 다른 방법의 사용하지 않게 추천합니다. "The Rails Way"(레일스 방법론?)을 배우게 된다면 엄청나게 효율성이 늘어난다는 것을 느낄수 있을 것입니다.
+다른 언어에서 사용하던 오래된 습관을 고집하고나 다른 곳에서 배운 패턴들을 사용하려고 한다면 아마도 덜 즐거운 경험이 될 것입니다.
+[[[Rails is opinionated software. It makes the assumption that there is the "best"
 way to do things, and it's designed to encourage that way - and in some cases to
 discourage alternatives. If you learn "The Rails Way" you'll probably discover a
 tremendous increase in productivity. If you persist in bringing old habits from
 other languages to your Rails development, and trying to use patterns you
-learned elsewhere, you may have a less happy experience.
+learned elsewhere, you may have a less happy experience.]]]
 
-The Rails philosophy includes two major guiding principles:
+레이스의 철학은 두가지의 핵심 원리로 이루어져 있습니다.[[[The Rails philosophy includes two major guiding principles:]]]
 
-* DRY - "Don't Repeat Yourself" - suggests that writing the same code over and over again is a bad thing.
-* Convention Over Configuration - means that Rails makes assumptions about what you want to do and how you're going to
-do it, rather than requiring you to specify every little thing through endless configuration files.
+* DRY - "Don't Repeat Yourself"(너 자신을 반복하지마라, 했던 것을 또 하지마라) - DRY는 작성했던 코드를 반복해서 다시 작성하는 것은 나쁜 것임을 시사합니다. [[[DRY - "Don't Repeat Yourself" - suggests that writing the same code over and over again is a bad thing.]]]
 
-Creating a New Rails Project
+* 설정보다는 규칙 - 말인 즉슨 레일스가 당신이 무엇을 원하는지 그리고 어떻게 할 것인지에 대한 가정을 하고 작은 사항까지 끝이 없는 설정을 요구하는 것이 아닙니다. [[[Convention Over Configuration - means that Rails makes assumptions about what you want to do and how you're going to do it, rather than requiring you to specify every little thing through endless configuration files.]]]
+
+
+[Creating a New Rails Project] 새로운 레일스 프로젝트 만들기
 ----------------------------
 
-The best way to use this guide is to follow each step as it happens, no code or
+이 가이드를 사용하기 가장 좋은 방법은 매 단계를 따라하는 것입니다. 이 예시 어플리케이션에서의 어떠한 코드나 과정도 빠지지 않았습니다. 말그대로 단계 단계 그대로 따라하면 됩니다. [여기](https://github.com/lifo/docrails/tree/master/guides/code/getting_started).에서 완성된 코드를 받으실수 있습니다.
+[[[The best way to use this guide is to follow each step as it happens, no code or
 step needed to make this example application has been left out, so you can
 literally follow along step by step. You can get the complete code
-[here](https://github.com/lifo/docrails/tree/master/guides/code/getting_started).
+[here](https://github.com/lifo/docrails/tree/master/guides/code/getting_started).]]]
 
-By following along with this guide, you'll create a Rails project called
+가이드를 따라감으로써 (매우) 간단한 웹블로그 'blog'라는 레일스 프로 젝트를 생성하게 될 것입니다.
+어플리케이션을 제작하기 시작하기 전에 레일스가 설치되어있는지 확인 해야합니다.
+[[[By following along with this guide, you'll create a Rails project called
 `blog`, a
 (very) simple weblog. Before you can start building the application, you need to
-make sure that you have Rails itself installed.
+make sure that you have Rails itself installed.]]]
 
-TIP: The examples below use `#` and `$` to denote superuser and regular
-user terminal prompts respectively in a UNIX-like OS. If you are using
-Windows, your prompt will look something like `c:\source_code>`
+TIP: '#'과 '$'는 UNIX-like OS(유사 유니스 운영체제)의 터미널 프롬프트에서 각각 슈퍼유저와 일반유저를 나타내는 것입니다. 윈도우를 사용하신다면 `c:\source_code>`과 같이 표시될 것입니다. [[[The examples below use `#` and `$` to denote superuser and regular user terminal prompts respectively in a UNIX-like OS. If you are using Windows, your prompt will look something like `c:\source_code>`]]]
 
-### Installing Rails
+### 레일스 설치하기 [[[Installing Rails]]]
 
-Open up a command line prompt. On Mac OS X open Terminal.app, on Windows choose
+커맨드 라인 프롬프트를 엽니다. 맥 OS X에서 터미널.app을 윈도우에서는 스타트 메뉴에 있는 "Run"에서 'cmd.exe'를 실행시킵니다.
+어떠한 명령어도 달라 싸인 '$'과 앞에 붙어 나오는 경우에는 커맨드 라인을 실행 시켜야합니다. 최신 버젼의 루비가 설치되어 있는지 확인합니다.
+[[[Open up a command line prompt. On Mac OS X open Terminal.app, on Windows choose
 "Run" from your Start menu and type 'cmd.exe'. Any commands prefaced with a
 dollar sign `$` should be run in the command line. Verify that you have a
-current version of Ruby installed:
+current version of Ruby installed:]]]
 
 ```bash
 $ ruby -v
 ruby 1.9.3p385
 ```
 
-To install Rails, use the `gem install` command provided by RubyGems:
+레일스를 설치하기 위해서 루비잼에 의해서 제공되는 'gem install' 명령을 사용합니다. [[[To install Rails, use the `gem install` command provided by RubyGems:]]]
 
 ```bash
 $ gem install rails
 ```
 
-TIP. A number of tools exist to help you quickly install Ruby and Ruby
+TIP: 루비 온 레일스를 빠르게 설치하기를 도와줄 많은 툴들이 존재합니다. 윈도우 사용자들은  [Rails Installer](http://railsinstaller.org), 맥 OS X 사용자들은 [Rails One Click](http://railsoneclick.com)을 사용하실수 있습니다. [[[A number of tools exist to help you quickly install Ruby and Ruby
 on Rails on your system. Windows users can use [Rails Installer](http://railsinstaller.org), while Mac OS X users can use
-[Rails One Click](http://railsoneclick.com).
+[Rails One Click](http://railsoneclick.com).]]]
 
-To verify that you have everything installed correctly, you should be able to run the following:
+모든 것이 제대로 설치 되었는지 확인하기 위해서는 아래의 명령어들을 실행 시킬수 있으셔야 합니다.[[[To verify that you have everything installed correctly, you should be able to run the following:]]]
 
 ```bash
 $ rails --version
 ```
 
-If it says something like "Rails 4.0.0", you are ready to continue.
+먄약 "Rails 4.0.0"와 같이 나타난다면 계속 진행 하실 준비가 되신 것 입니다.[[[If it says something like "Rails 4.0.0", you are ready to continue.]]]
 
-### Creating the Blog Application
+### 블로그 어플리케이션 만들기 [[[Creating the Blog Application]]]
 
-Rails comes with a number of scripts called generators that are designed to make your development life easier by creating everything that's necessary to start working on a particular task. One of these is the new application generator, which will provide you with the foundation of a fresh Rails application so that you don't have to write it yourself.
+레일스는 특정한 업무를 시작하는 데 필요한것을 만들어 줌으로 개발자들의 삶을 편하게 만들어줄 많은 제너레이터(generators)라는 스크립트와 함께 옵니다. 이런 스크립트중 하나인 새 어플리케이션 제너레이터 (new application generator)는 개발자 스스로 작성할 필요없이, 레일스 어플리케이션의 기본적인 구조를 제공합니다.  [[[Rails comes with a number of scripts called generators that are designed to make your development life easier by creating everything that's necessary to start working on a particular task. One of these is the new application generator, which will provide you with the foundation of a fresh Rails application so that you don't have to write it yourself.]]]
 
-To use this generator, open a terminal, navigate to a directory where you have rights to create files, and type:
+제너레이터를 사용하기 위해서는 터미널을 열고 파일 쓰기 권한이 있는 디렉토리에 가서 아래와 같이 치면 됩니다:
+[[[To use this generator, open a terminal, navigate to a directory where you have rights to create files, and type:]]]
 
 ```bash
 $ rails new blog
 ```
 
-This will create a Rails application called Blog in a directory called blog and install the gem dependencies that are already mentioned in `Gemfile` using `bundle install`.
+이 과정은 blog 디렉토리에 Blog라고 불리는 레일스 에플리케이션을 생성할것이고 `bundle install`을 통해서 `Gemfile`에 게시되어 있는 젬들과 의존 젬들을 설치합니다. [[[This will create a Rails application called Blog in a directory called blog and install the gem dependencies that are already mentioned in `Gemfile` using `bundle install`.]]]
 
-TIP: You can see all of the command line options that the Rails
-application builder accepts by running `rails new -h`.
+TIP: 레일스 어플리케이션 빌더가 허락하는 모든 커맨드 라인 옵션은 `rails new -h`을 실행시킴으로써 확인할 수 있습니다.
+[[[You can see all of the command line options that the Rails application builder accepts by running `rails new -h`.]]]
 
-After you create the blog application, switch to its folder to continue work directly in that application:
+blog 어플리케이션을 생성후 어플리케이션에서 직접 작업을 할수있도록 그 폴더로 옮겨갑니다: [[[After you create the blog application, switch to its folder to continue work directly in that application:]]]
 
 ```bash
 $ cd blog
 ```
 
-The `rails new blog` command we ran above created a folder in your
+위에서 실행시킨 명령인 `rails new blog`는 현제 작업하는 경로에 `blog`라는 폴더를 생성해 줍니다.
+`blog` 디렉토리에는 레일스 어플리케이션의 골격을 구성하는 많은 자동생성된 파일과 폴더들이 있습니다.
+이 튜토리얼의 대부분의 작업은 `app/` 폴더에서 일어날 것이지만 여기 레일스가 기본적으로 생성하는 파일과 폴더들의 기능들의 기본적 설명이 있습니다.
+[[[The `rails new blog` command we ran above created a folder in your
 working directory called `blog`. The `blog` directory has a number of
 auto-generated files and folders that make up the structure of a Rails
-application. Most of the work in this tutorial will happen in the `app/` folder, but here's a basic rundown on the function of each of the files and folders that Rails created by default:
+application. Most of the work in this tutorial will happen in the `app/` folder, but here's a basic rundown on the function of each of the files and folders that Rails created by default:]]]
 
 | File/Folder | Purpose |
 | ----------- | ------- |
-|app/|Contains the controllers, models, views, helpers, mailers and assets for your application. You'll focus on this folder for the remainder of this guide.|
-|bin/|Contains the rails script that starts your app and can contain other scripts you use to deploy or run your application.|
-|config/|Configure your application's runtime rules, routes, database, and more.  This is covered in more detail in [Configuring Rails Applications](configuring.html)|
-|config.ru|Rack configuration for Rack based servers used to start the application.|
-|db/|Contains your current database schema, as well as the database migrations.|
-|Gemfile<br />Gemfile.lock|These files allow you to specify what gem dependencies are needed for your Rails application. These files are used by the Bundler gem. For more information about Bundler, see [the Bundler website](http://gembundler.com) |
-|lib/|Extended modules for your application.|
-|log/|Application log files.|
-|public/|The only folder seen to the world as-is. Contains the static files and compiled assets.|
-|Rakefile|This file locates and loads tasks that can be run from the command line. The task definitions are defined throughout the components of Rails. Rather than changing Rakefile, you should add your own tasks by adding files to the lib/tasks directory of your application.|
-|README.rdoc|This is a brief instruction manual for your application. You should edit this file to tell others what your application does, how to set it up, and so on.|
-|test/|Unit tests, fixtures, and other test apparatus. These are covered in [Testing Rails Applications](testing.html)|
-|tmp/|Temporary files (like cache, pid and session files)|
-|vendor/|A place for all third-party code. In a typical Rails application, this includes Ruby Gems and the Rails source code (if you optionally install it into your project).|
+|app/|어플리케이션을 위한 컨트롤러(controllers),모델(models),뷰(views),헬퍼(helpers),메일러(mailers) 그리고 어셑(assets)들을 포함하고 있습니다. 가이드 나머지 부분에서 이 폴더를 계속 집중 하게 될 것입니다.|
+|bin/|당신의 엡을 시작하게 할 레일스 스크립트를 포함하고 있으며 디플로이(deploy)또는 엡을 실행 시킬떄 사용하게 될 다른 스크립트들을 포함 할수 있습니다.|
+|config/|런타임 규칙, 경로(routes),데이타베이스 등을 설정하실수 있습니다. 자세한 사항은 [레일스 에플리케이션 설정하기](configuring.html)에서 다룹니다.|
+|config.ru|에플리케이션을 시작하는데 사용되는 레이크로 구성된 서버를 위한한 레이크 설정(Rack configuration).|
+|db/|현재의 데이터베이스 개요(database schema) 그리고 데이터베이스 마이그레이션(database migrations)을 포함하고 있습니다.|
+|Gemfile<br />Gemfile.lock|이 파일들은 레일스 에플리케이션에 필요한 잼 종속성(dependencies)을 명시하는 곳입니다.이 파일들은 번들러 잼(Bundler gem)에 의해서 사용됩니다.번들러에 관한 더 많은 정보는 [번들러 웹페이지](http://gembundler.com)에서 확인하시길 바랍니다.|
+|lib/|당신의 어플레케이션을 위한 확장 모듈들.|
+|log/|어플리케이션의 로그 파일들.|
+|public/|그 자체로 세상에 보여지는 유일한 폴더입니다. 정적 파일들과 컴파일된 어셑들을 포함하고 있습니다.|
+|Rakefile|이 파일은 커맨드 라인에서 실행될수있는 테스크들을 위치시키고 로드 시킵니다. 테스크에 대한 정의들은 레일스 컴포넌트 도처에 정의 되어있습니다. 레이크파일(Rakefile)을 수정하기 보다는 에플리케이션의 lib/tasks 경로에 파일을 추가함으로서 자신만의 테스크를 추가하는것이 바람직 합니다.|
+|README.rdoc|이 파일은 당신의 에플리케이션의 간단한 사용 설명서입니다. 이 파일은 다른사람들에게 어플리케이션이 무엇을 하는지, 어떻게 사용할지 설명하기, 등을 위해서 수정해야 합니다.|
+|test/|유닡 테스트(unit tests), fixtures 그리고 다른 테스트 장치들. 자세한 사항은 [레일스 어플리케이션 테스트 하기](testing.html)에서 다뤄 집니다.|
+|tmp/|임시 파일들.(케쉬, pid 그리고 세션파일들)|
+|vendor/|모든 써드 파디 코드를 두는 곳입니다. 일반적인 레일스 어플리케이션에서는 루비 잼 과 레일즈 보안 코드(만약 선택적으로 프로젝트에 설치를 원한다면)가 포합됩니다.|
 
 Hello, Rails!
 -------------
