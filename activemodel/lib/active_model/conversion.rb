@@ -62,7 +62,7 @@ module ActiveModel
     #   person = Person.create
     #   person.to_param # => "1"
     def to_param
-      persisted? ? to_key.join('-') : nil
+      (persisted? && key = to_key) ? key.join('-') : nil
     end
 
     # Returns a +string+ identifying the path associated with the object.
@@ -83,8 +83,8 @@ module ActiveModel
       # internal method and should not be accessed directly.
       def _to_partial_path #:nodoc:
         @_to_partial_path ||= begin
-          element = ActiveSupport::Inflector.underscore(ActiveSupport::Inflector.demodulize(self))
-          collection = ActiveSupport::Inflector.tableize(self)
+          element = ActiveSupport::Inflector.underscore(ActiveSupport::Inflector.demodulize(name))
+          collection = ActiveSupport::Inflector.tableize(name)
           "#{collection}/#{element}".freeze
         end
       end

@@ -586,9 +586,14 @@ module ActiveRecord
 
       # Is this connection alive and ready for queries?
       def active?
-        @connection.connect_poll != PG::PGRES_POLLING_FAILED
+        @connection.query 'SELECT 1'
+        true
       rescue PGError
         false
+      end
+
+      def active_threadsafe?
+        @connection.connect_poll != PG::PGRES_POLLING_FAILED
       end
 
       # Close then reopen the connection.
@@ -721,6 +726,10 @@ module ActiveRecord
         !native_database_types[type].nil?
       end
 
+      def update_table_definition(table_name, base) #:nodoc:
+        Table.new(table_name, base)
+      end
+
       protected
 
         # Returns the version of the connected PostgreSQL server.
@@ -776,17 +785,34 @@ module ActiveRecord
         end
 
         def initialize_type_map(type_map)
-          result = execute('SELECT oid, typname, typelem, typdelim, typinput FROM pg_type', 'SCHEMA')
-          leaves, nodes = result.partition { |row| row['typelem'] == '0' }
+          if supports_ranges?
+            result = execute(<<-SQL, 'SCHEMA')
+              SELECT t.oid, t.typname, t.typelem, t.typdelim, t.typinput, r.rngsubtype
+              FROM pg_type as t
+              LEFT JOIN pg_range as r ON oid = rngtypid
+            SQL
+          else
+            result = execute(<<-SQL, 'SCHEMA')
+              SELECT t.oid, t.typname, t.typelem, t.typdelim, t.typinput
+              FROM pg_type as t
+            SQL
+          end
+          ranges, nodes = result.partition { |row| row['typinput'] == 'range_in' }
+          leaves, nodes = nodes.partition { |row| row['typelem'] == '0' }
+          arrays, nodes = nodes.partition { |row| row['typinput'] == 'array_in' }
 
-          # populate the leaf nodes
+          # populate the enum types
+          enums, leaves = leaves.partition { |row| row['typinput'] == 'enum_in' }
+          enums.each do |row|
+            type_map[row['oid'].to_i] = OID::Enum.new
+          end
+
+          # populate the base types
           leaves.find_all { |row| OID.registered_type? row['typname'] }.each do |row|
             type_map[row['oid'].to_i] = OID::NAMES[row['typname']]
           end
 
           records_by_oid = result.group_by { |row| row['oid'] }
-
-          arrays, nodes = nodes.partition { |row| row['typinput'] == 'array_in' }
 
           # populate composite types
           nodes.each do |row|
@@ -798,9 +824,16 @@ module ActiveRecord
             array = OID::Array.new  type_map[row['typelem'].to_i]
             type_map[row['oid'].to_i] = array
           end
+
+          # populate range types
+          ranges.find_all { |row| type_map.key? row['rngsubtype'].to_i }.each do |row|
+            subtype = type_map[row['rngsubtype'].to_i]
+            range = OID::Range.new subtype
+            type_map[row['oid'].to_i] = range
+          end
         end
 
-        FEATURE_NOT_SUPPORTED = "0A000" # :nodoc:
+        FEATURE_NOT_SUPPORTED = "0A000" #:nodoc:
 
         def exec_no_cache(sql, name, binds)
           log(sql, name, binds) { @connection.async_exec(sql) }
@@ -849,7 +882,11 @@ module ActiveRecord
           sql_key = sql_key(sql)
           unless @statements.key? sql_key
             nextkey = @statements.next_key
-            @connection.prepare nextkey, sql
+            begin
+              @connection.prepare nextkey, sql
+            rescue => e
+              raise translate_exception_class(e, sql)
+            end
             # Clear the queue
             @connection.get_last_result
             @statements[sql_key] = nextkey
@@ -934,14 +971,6 @@ module ActiveRecord
           exec_query(sql, name, binds)
         end
 
-        def select_raw(sql, name = nil)
-          res = execute(sql, name)
-          results = result_as_array(res)
-          fields = res.fields
-          res.clear
-          return fields, results
-        end
-
         # Returns the list of a table's column names, data types, and default values.
         #
         # The underlying query is roughly:
@@ -989,10 +1018,6 @@ module ActiveRecord
 
         def create_table_definition(name, temporary, options, as = nil)
           TableDefinition.new native_database_types, name, temporary, options, as
-        end
-
-        def update_table_definition(table_name, base)
-          Table.new(table_name, base)
         end
     end
   end

@@ -8,6 +8,8 @@ module ActiveSupport
       # duration of a block. Repeated calls to the cache for the same key will hit the
       # in-memory cache for faster access.
       module LocalCache
+        autoload :Middleware, 'active_support/cache/strategy/local_cache_middleware'
+
         # Class for storing and registering the local caches.
         class LocalCacheRegistry # :nodoc:
           extend ActiveSupport::PerThreadRegistry
@@ -63,32 +65,6 @@ module ActiveSupport
         def with_local_cache
           use_temporary_local_cache(LocalStore.new) { yield }
         end
-
-        #--
-        # This class wraps up local storage for middlewares. Only the middleware method should
-        # construct them.
-        class Middleware # :nodoc:
-          attr_reader :name, :local_cache_key
-
-          def initialize(name, local_cache_key)
-            @name             = name
-            @local_cache_key = local_cache_key
-            @app              = nil
-          end
-
-          def new(app)
-            @app = app
-            self
-          end
-
-          def call(env)
-            LocalCacheRegistry.set_cache_for(local_cache_key, LocalStore.new)
-            @app.call(env)
-          ensure
-            LocalCacheRegistry.set_cache_for(local_cache_key, nil)
-          end
-        end
-
         # Middleware class can be inserted as a Rack handler to be local cache for the
         # duration of request.
         def middleware

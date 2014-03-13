@@ -20,6 +20,14 @@ module ActiveRecord
 
       # Returns an ActiveRecord::Result instance.
       def select_all(arel, name = nil, binds = [])
+        if arel.is_a?(Relation)
+          relation = arel
+          arel = relation.arel
+          if !binds || binds.empty?
+            binds = relation.bind_values
+          end
+        end
+
         select(to_sql(arel, binds), name, binds)
       end
 
@@ -39,13 +47,16 @@ module ActiveRecord
       # Returns an array of the values of the first column in a select:
       #   select_values("SELECT id FROM companies LIMIT 3") => [1,2,3]
       def select_values(arel, name = nil)
-        select_rows(to_sql(arel, []), name)
-          .map { |v| v[0] }
+        binds = []
+        if arel.is_a?(Relation)
+          arel, binds = arel.arel, arel.bind_values
+        end
+        select_rows(to_sql(arel, binds), name, binds).map(&:first)
       end
 
       # Returns an array of arrays containing the field values.
       # Order is the same as that returned by +columns+.
-      def select_rows(sql, name = nil)
+      def select_rows(sql, name = nil, binds = [])
       end
       undef_method :select_rows
 
@@ -286,10 +297,6 @@ module ActiveRecord
       # Inserts the given fixture into the table. Overridden in adapters that require
       # something beyond a simple insert (eg. Oracle).
       def insert_fixture(fixture, table_name)
-        execute fixture_sql(fixture, table_name), 'Fixture Insert'
-      end
-
-      def fixture_sql(fixture, table_name)
         columns = schema_cache.columns_hash(table_name)
 
         key_list   = []
@@ -298,7 +305,7 @@ module ActiveRecord
           quote(value, columns[name])
         end
 
-        "INSERT INTO #{quote_table_name(table_name)} (#{key_list.join(', ')}) VALUES (#{value_list.join(', ')})"
+        execute "INSERT INTO #{quote_table_name(table_name)} (#{key_list.join(', ')}) VALUES (#{value_list.join(', ')})", 'Fixture Insert'
       end
 
       def empty_insert_statement_value

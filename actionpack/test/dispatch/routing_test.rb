@@ -1889,6 +1889,65 @@ class TestRoutingMapper < ActionDispatch::IntegrationTest
     assert_equal 'notes#destroy', @response.body
   end
 
+  def test_shallow_option_nested_resources_within_scope
+    draw do
+      scope '/hello' do
+        resources :notes, :shallow => true do
+          resources :trackbacks
+        end
+      end
+    end
+
+    get '/hello/notes/1/trackbacks'
+    assert_equal 'trackbacks#index', @response.body
+    assert_equal '/hello/notes/1/trackbacks', note_trackbacks_path(:note_id => 1)
+
+    get '/hello/notes/1/edit'
+    assert_equal 'notes#edit', @response.body
+    assert_equal '/hello/notes/1/edit', edit_note_path(:id => '1')
+
+    get '/hello/notes/1/trackbacks/new'
+    assert_equal 'trackbacks#new', @response.body
+    assert_equal '/hello/notes/1/trackbacks/new', new_note_trackback_path(:note_id => 1)
+
+    get '/hello/trackbacks/1'
+    assert_equal 'trackbacks#show', @response.body
+    assert_equal '/hello/trackbacks/1', trackback_path(:id => '1')
+
+    get '/hello/trackbacks/1/edit'
+    assert_equal 'trackbacks#edit', @response.body
+    assert_equal '/hello/trackbacks/1/edit', edit_trackback_path(:id => '1')
+
+    put '/hello/trackbacks/1'
+    assert_equal 'trackbacks#update', @response.body
+
+    post '/hello/notes/1/trackbacks'
+    assert_equal 'trackbacks#create', @response.body
+
+    delete '/hello/trackbacks/1'
+    assert_equal 'trackbacks#destroy', @response.body
+
+    get '/hello/notes'
+    assert_equal 'notes#index', @response.body
+
+    post '/hello/notes'
+    assert_equal 'notes#create', @response.body
+
+    get '/hello/notes/new'
+    assert_equal 'notes#new', @response.body
+    assert_equal '/hello/notes/new', new_note_path
+
+    get '/hello/notes/1'
+    assert_equal 'notes#show', @response.body
+    assert_equal '/hello/notes/1', note_path(:id => 1)
+
+    put '/hello/notes/1'
+    assert_equal 'notes#update', @response.body
+
+    delete '/hello/notes/1'
+    assert_equal 'notes#destroy', @response.body
+  end
+
   def test_custom_resource_routes_are_scoped
     draw do
       resources :customers do
@@ -2864,6 +2923,116 @@ class TestRoutingMapper < ActionDispatch::IntegrationTest
     assert !@request.params[:action].frozen?
   end
 
+  def test_multiple_positional_args_with_the_same_name
+    draw do
+      get '/downloads/:id/:id.tar' => 'downloads#show', as: :download, format: false
+    end
+
+    expected_params = {
+      controller: 'downloads',
+      action:     'show',
+      id:         '1'
+    }
+
+    get '/downloads/1/1.tar'
+    assert_equal 'downloads#show', @response.body
+    assert_equal expected_params, @request.symbolized_path_parameters
+    assert_equal '/downloads/1/1.tar', download_path('1')
+    assert_equal '/downloads/1/1.tar', download_path('1', '1')
+  end
+
+  def test_absolute_controller_namespace
+    draw do
+      namespace :foo do
+        get '/', to: '/bar#index', as: 'root'
+      end
+    end
+
+    get '/foo'
+    assert_equal 'bar#index', @response.body
+    assert_equal '/foo', foo_root_path
+  end
+
+  def test_trailing_slash
+    draw do
+      resources :streams
+    end
+
+    get '/streams'
+    assert @response.ok?, 'route without trailing slash should work'
+
+    get '/streams/'
+    assert @response.ok?, 'route with trailing slash should work'
+
+    get '/streams?foobar'
+    assert @response.ok?, 'route without trailing slash and with QUERY_STRING should work'
+
+    get '/streams/?foobar'
+    assert @response.ok?, 'route with trailing slash and with QUERY_STRING should work'
+  end
+
+  def test_route_with_dashes_in_path
+    draw do
+      get '/contact-us', to: 'pages#contact_us'
+    end
+
+    get '/contact-us'
+    assert_equal 'pages#contact_us', @response.body
+    assert_equal '/contact-us', contact_us_path
+  end
+
+  def test_shorthand_route_with_dashes_in_path
+    draw do
+      get '/about-us/index'
+    end
+
+    get '/about-us/index'
+    assert_equal 'about_us#index', @response.body
+    assert_equal '/about-us/index', about_us_index_path
+  end
+
+  def test_resource_routes_with_dashes_in_path
+    draw do
+      resources :photos, only: [:show] do
+        get 'user-favorites', on: :collection
+        get 'preview-photo', on: :member
+        get 'summary-text'
+      end
+    end
+
+    get '/photos/user-favorites'
+    assert_equal 'photos#user_favorites', @response.body
+    assert_equal '/photos/user-favorites', user_favorites_photos_path
+
+    get '/photos/1/preview-photo'
+    assert_equal 'photos#preview_photo', @response.body
+    assert_equal '/photos/1/preview-photo', preview_photo_photo_path('1')
+
+    get '/photos/1/summary-text'
+    assert_equal 'photos#summary_text', @response.body
+    assert_equal '/photos/1/summary-text', photo_summary_text_path('1')
+
+    get '/photos/1'
+    assert_equal 'photos#show', @response.body
+    assert_equal '/photos/1', photo_path('1')
+  end
+
+  def test_shallow_path_inside_namespace_is_not_added_twice
+    draw do
+      namespace :admin do
+        shallow do
+          resources :posts do
+            resources :comments
+          end
+        end
+      end
+    end
+
+    get '/admin/posts/1/comments'
+    assert_equal 'admin/comments#index', @response.body
+    assert_equal '/admin/posts/1/comments', admin_post_comments_path('1')
+  end
+
 private
 
   def draw(&block)
@@ -3327,6 +3496,8 @@ class TestOptimizedNamedRoutes < ActionDispatch::IntegrationTest
       ok = lambda { |env| [200, { 'Content-Type' => 'text/plain' }, []] }
       get '/foo' => ok, as: :foo
       get '/post(/:action(/:id))' => ok, as: :posts
+      get '/:foo/:foo_type/bars/:id' => ok, as: :bar
+      get '/projects/:id.:format' => ok, as: :project
     end
   end
 
@@ -3348,6 +3519,16 @@ class TestOptimizedNamedRoutes < ActionDispatch::IntegrationTest
   test 'nested optional segments are removed' do
     assert_equal '/post', Routes.url_helpers.posts_path
     assert_equal '/post', posts_path
+  end
+
+  test 'segments with same prefix are replaced correctly' do
+    assert_equal '/foo/baz/bars/1', Routes.url_helpers.bar_path('foo', 'baz', '1')
+    assert_equal '/foo/baz/bars/1', bar_path('foo', 'baz', '1')
+  end
+
+  test 'segments separated with a period are replaced correctly' do
+    assert_equal '/projects/1.json', Routes.url_helpers.project_path(1, :json)
+    assert_equal '/projects/1.json', project_path(1, :json)
   end
 end
 
@@ -3694,5 +3875,30 @@ class TestRedirectRouteGeneration < ActionDispatch::IntegrationTest
     assert_raise(ActionController::UrlGenerationError) do
       assert_equal '/de/account?controller=products', url_for(controller: 'products', action: 'index', :locale => 'de', only_path: true)
     end
+  end
+end
+
+class TestUrlGenerationErrors < ActionDispatch::IntegrationTest
+  Routes = ActionDispatch::Routing::RouteSet.new.tap do |app|
+    app.draw do
+      get "/products/:id" => 'products#show', :as => :product
+    end
+  end
+
+  def app; Routes end
+
+  include Routes.url_helpers
+
+  test "url helpers raise a helpful error message whem generation fails" do
+    url, missing = { action: 'show', controller: 'products', id: nil }, [:id]
+    message = "No route matches #{url.inspect} missing required keys: #{missing.inspect}"
+
+    # Optimized url helper
+    error = assert_raises(ActionController::UrlGenerationError){ product_path(nil) }
+    assert_equal message, error.message
+
+    # Non-optimized url helper
+    error = assert_raises(ActionController::UrlGenerationError, message){ product_path(id: nil) }
+    assert_equal message, error.message
   end
 end

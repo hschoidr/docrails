@@ -393,7 +393,7 @@ module ActiveRecord
         synchronize do
           stale = Time.now - @dead_connection_timeout
           connections.dup.each do |conn|
-            if conn.in_use? && stale > conn.last_use && !conn.active?
+            if conn.in_use? && stale > conn.last_use && !conn.active_threadsafe?
               remove conn
             end
           end
@@ -538,7 +538,10 @@ module ActiveRecord
       # for (not necessarily the current class).
       def retrieve_connection(klass) #:nodoc:
         pool = retrieve_connection_pool(klass)
-        (pool && pool.connection) or raise ConnectionNotEstablished
+        raise ConnectionNotEstablished, "No connection pool for #{klass}" unless pool
+        conn = pool.connection
+        raise ConnectionNotEstablished, "No connection for #{klass} in connection pool" unless conn
+        conn
       end
 
       # Returns true if a connection that's accessible to this class has

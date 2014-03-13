@@ -707,7 +707,7 @@ You can additionally unscope specific where clauses. For example:
 
 ```ruby
 Post.where(id: 10, trashed: false).unscope(where: :id)
-# => SELECT "posts".* FROM "posts" WHERE trashed = 0
+# SELECT "posts".* FROM "posts" WHERE trashed = 0
 ```
 
 A relation which has used `unscope` will affect any relation it is
@@ -715,7 +715,7 @@ merged in to:
 
 ```ruby
 Post.order('id asc').merge(Post.unscope(:order))
-# => SELECT "posts".* FROM "posts"
+# SELECT "posts".* FROM "posts"
 ```
 
 ### `only`
@@ -1242,26 +1242,26 @@ class User < ActiveRecord::Base
 end
 
 User.active.inactive
-# => SELECT "users".* FROM "users" WHERE "users"."state" = 'active' AND "users"."state" = 'inactive'
+# SELECT "users".* FROM "users" WHERE "users"."state" = 'active' AND "users"."state" = 'inactive'
 ```
 
 We can mix and match `scope` and `where` conditions and the final sql
-will have all conditions joined with `AND` .
+will have all conditions joined with `AND`.
 
 ```ruby
 User.active.where(state: 'finished')
-# => SELECT "users".* FROM "users" WHERE "users"."state" = 'active' AND "users"."state" = 'finished'
+# SELECT "users".* FROM "users" WHERE "users"."state" = 'active' AND "users"."state" = 'finished'
 ```
 
 If we do want the `last where clause` to win then `Relation#merge` can
-be used .
+be used.
 
 ```ruby
 User.active.merge(User.inactive)
-# => SELECT "users".* FROM "users" WHERE "users"."state" = 'inactive'
+# SELECT "users".* FROM "users" WHERE "users"."state" = 'inactive'
 ```
 
-One important caveat is that `default_scope` will be overridden by
+One important caveat is that `default_scope` will be prepended in
 `scope` and `where` conditions.
 
 ```ruby
@@ -1272,16 +1272,16 @@ class User < ActiveRecord::Base
 end
 
 User.all
-# => SELECT "users".* FROM "users" WHERE "users"."state" = 'pending'
+# SELECT "users".* FROM "users" WHERE "users"."state" = 'pending'
 
 User.active
-# => SELECT "users".* FROM "users" WHERE "users"."state" = 'active'
+# SELECT "users".* FROM "users" WHERE "users"."state" = 'pending' AND "users"."state" = 'active'
 
 User.where(state: 'inactive')
-# => SELECT "users".* FROM "users" WHERE "users"."state" = 'inactive'
+# SELECT "users".* FROM "users" WHERE "users"."state" = 'pending' AND "users"."state" = 'inactive'
 ```
 
-As you can see above the `default_scope` is being overridden by both
+As you can see above the `default_scope` is being merged in both
 `scope` and `where` conditions.
 
 
@@ -1338,11 +1338,6 @@ Client.unscoped {
 Dynamic Finders
 ---------------
 
-NOTE: Dynamic finders have been deprecated in Rails 4.0 and will be
-removed in Rails 4.1. The best practice is to use Active Record scopes
-instead. You can find the deprecation gem at
-https://github.com/rails/activerecord-deprecated_finders
-
 For every field (also known as an attribute) you define in your table, Active Record provides a finder method. If you have a field called `first_name` on your `Client` model for example, you get `find_by_first_name` for free from Active Record. If you have a `locked` field on the `Client` model, you also get `find_by_locked` and methods.
 
 You can specify an exclamation point (`!`) on the end of the dynamic finders to get them to raise an `ActiveRecord::RecordNotFound` error if they do not return any records, like `Client.find_by_name!("Ryan")`
@@ -1351,6 +1346,11 @@ If you want to find both by name and locked, you can chain these finders togethe
 
 Find or Build a New Object
 --------------------------
+
+NOTE: Some dynamic finders have been deprecated in Rails 4.0 and will be
+removed in Rails 4.1. The best practice is to use Active Record scopes
+instead. You can find the deprecation gem at
+https://github.com/rails/activerecord-deprecated_finders
 
 It's common that you need to find a record or create it if it doesn't exist. You can do that with the `find_or_create_by` and `find_or_create_by!` methods.
 
@@ -1455,7 +1455,7 @@ If you'd like to use your own SQL to find records in a table you can use `find_b
 ```ruby
 Client.find_by_sql("SELECT * FROM clients
   INNER JOIN orders ON clients.id = orders.client_id
-  ORDER clients.created_at desc")
+  ORDER BY clients.created_at desc")
 ```
 
 `find_by_sql` provides you with a simple way of making custom calls to the database and retrieving instantiated objects.

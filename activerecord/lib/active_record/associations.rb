@@ -75,13 +75,13 @@ module ActiveRecord
 
   class EagerLoadPolymorphicError < ActiveRecordError #:nodoc:
     def initialize(reflection)
-      super("Can not eagerly load the polymorphic association #{reflection.name.inspect}")
+      super("Cannot eagerly load the polymorphic association #{reflection.name.inspect}")
     end
   end
 
   class ReadOnlyAssociation < ActiveRecordError #:nodoc:
     def initialize(reflection)
-      super("Can not add to a has_many :through association. Try adding to #{reflection.through_reflection.name.inspect}.")
+      super("Cannot add to a has_many :through association. Try adding to #{reflection.through_reflection.name.inspect}.")
     end
   end
 
@@ -130,7 +130,6 @@ module ActiveRecord
       autoload :JoinDependency,   'active_record/associations/join_dependency'
       autoload :AssociationScope, 'active_record/associations/association_scope'
       autoload :AliasTracker,     'active_record/associations/alias_tracker'
-      autoload :JoinHelper,       'active_record/associations/join_helper'
     end
 
     # Clears out the association cache.
@@ -669,11 +668,14 @@ module ActiveRecord
     # and member posts that use the posts table for STI. In this case, there must be a +type+
     # column in the posts table.
     #
+    # Note: The <tt>attachable_type=</tt> method is being called when assigning an +attachable+.
+    # The +class_name+ of the +attachable+ is passed as a String.
+    #
     #   class Asset < ActiveRecord::Base
     #     belongs_to :attachable, polymorphic: true
     #
-    #     def attachable_type=(sType)
-    #        super(sType.to_s.classify.constantize.base_class.to_s)
+    #     def attachable_type=(class_name)
+    #        super(class_name.constantize.base_class.to_s)
     #     end
     #   end
     #
@@ -1034,6 +1036,9 @@ module ActiveRecord
       # Specifies a one-to-many association. The following methods for retrieval and query of
       # collections of associated objects will be added:
       #
+      # +collection+ is a placeholder for the symbol passed as the first argument, so
+      # <tt>has_many :clients</tt> would add among others <tt>clients.empty?</tt>.
+      #
       # [collection(force_reload = false)]
       #   Returns an array of all the associated objects.
       #   An empty array is returned if none are found.
@@ -1091,9 +1096,6 @@ module ActiveRecord
       # [collection.create!(attributes = {})]
       #   Does the same as <tt>collection.create</tt>, but raises <tt>ActiveRecord::RecordInvalid</tt>
       #   if the record is invalid.
-      #
-      # (*Note*: +collection+ is replaced with the symbol passed as the first argument, so
-      # <tt>has_many :clients</tt> would add among others <tt>clients.empty?</tt>.)
       #
       # === Example
       #
@@ -1209,11 +1211,15 @@ module ActiveRecord
       #
       # The following methods for retrieval and query of a single associated object will be added:
       #
+      # +association+ is a placeholder for the symbol passed as the first argument, so
+      # <tt>has_one :manager</tt> would add among others <tt>manager.nil?</tt>.
+      #
       # [association(force_reload = false)]
       #   Returns the associated object. +nil+ is returned if none is found.
       # [association=(associate)]
       #   Assigns the associate object, extracts the primary key, sets it as the foreign key,
-      #   and saves the associate object.
+      #   and saves the associate object. To avoid database inconsistencies, permanently deletes an existing
+      #   associated object when assigning a new one, even if the new one isn't saved to database.
       # [build_association(attributes = {})]
       #   Returns a new object of the associated type that has been instantiated
       #   with +attributes+ and linked to this object through a foreign key, but has not
@@ -1225,9 +1231,6 @@ module ActiveRecord
       # [create_association!(attributes = {})]
       #   Does the same as <tt>create_association</tt>, but raises <tt>ActiveRecord::RecordInvalid</tt>
       #   if the record is invalid.
-      #
-      # (+association+ is replaced with the symbol passed as the first argument, so
-      # <tt>has_one :manager</tt> would add among others <tt>manager.nil?</tt>.)
       #
       # === Example
       #
@@ -1314,6 +1317,9 @@ module ActiveRecord
       # Methods will be added for retrieval and query for a single associated object, for which
       # this object holds an id:
       #
+      # +association+ is a placeholder for the symbol passed as the first argument, so
+      # <tt>belongs_to :author</tt> would add among others <tt>author.nil?</tt>.
+      #
       # [association(force_reload = false)]
       #   Returns the associated object. +nil+ is returned if none is found.
       # [association=(associate)]
@@ -1328,9 +1334,6 @@ module ActiveRecord
       # [create_association!(attributes = {})]
       #   Does the same as <tt>create_association</tt>, but raises <tt>ActiveRecord::RecordInvalid</tt>
       #   if the record is invalid.
-      #
-      # (+association+ is replaced with the symbol passed as the first argument, so
-      # <tt>belongs_to :author</tt> would add among others <tt>author.nil?</tt>.)
       #
       # === Example
       #
@@ -1451,6 +1454,9 @@ module ActiveRecord
       #
       # Adds the following methods for retrieval and query:
       #
+      # +collection+ is a placeholder for the symbol passed as the first argument, so
+      # <tt>has_and_belongs_to_many :categories</tt> would add among others <tt>categories.empty?</tt>.
+      #
       # [collection(force_reload = false)]
       #   Returns an array of all the associated objects.
       #   An empty array is returned if none are found.
@@ -1491,9 +1497,6 @@ module ActiveRecord
       #   Returns a new object of the collection type that has been instantiated
       #   with +attributes+, linked to this object through the join table, and that has already been
       #   saved (if it passed the validation).
-      #
-      # (+collection+ is replaced with the symbol passed as the first argument, so
-      # <tt>has_and_belongs_to_many :categories</tt> would add among others <tt>categories.empty?</tt>.)
       #
       # === Example
       #
@@ -1581,7 +1584,7 @@ module ActiveRecord
         hm_options[:through] = middle_reflection.name
         hm_options[:source] = join_model.right_reflection.name
 
-        [:before_add, :after_add, :before_remove, :after_remove].each do |k|
+        [:before_add, :after_add, :before_remove, :after_remove, :autosave].each do |k|
           hm_options[k] = options[k] if options.key? k
         end
 

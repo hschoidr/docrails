@@ -262,6 +262,12 @@ module ActiveRecord
       def active?
       end
 
+      # Adapter should redefine this if it needs a threadsafe way to approximate
+      # if the connection is active
+      def active_threadsafe?
+        active?
+      end
+
       # Disconnects from the database if already connected, and establishes a
       # new connection with the database. Implementors should call super if they
       # override the default implementation.
@@ -349,6 +355,14 @@ module ActiveRecord
 
       protected
 
+      def translate_exception_class(e, sql)
+        message = "#{e.class.name}: #{e.message}: #{sql}"
+        @logger.error message if @logger
+        exception = translate_exception(e, message)
+        exception.set_backtrace e.backtrace
+        exception
+      end
+
       def log(sql, name = "SQL", binds = [], statement_name = nil)
         @instrumenter.instrument(
           "sql.active_record",
@@ -358,11 +372,7 @@ module ActiveRecord
           :statement_name => statement_name,
           :binds          => binds) { yield }
       rescue => e
-        message = "#{e.class.name}: #{e.message}: #{sql}"
-        @logger.error message if @logger
-        exception = translate_exception(e, message)
-        exception.set_backtrace e.backtrace
-        raise exception
+        raise translate_exception_class(e, sql)
       end
 
       def translate_exception(exception, message)

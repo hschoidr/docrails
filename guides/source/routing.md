@@ -239,6 +239,8 @@ In each of these cases, the named routes remain the same as if you did not use `
 | PATCH/PUT | /admin/posts/:id      | posts#update      | post_path(:id)      |
 | DELETE    | /admin/posts/:id      | posts#destroy     | post_path(:id)      |
 
+TIP: _If you need to use a different controller namespace inside a `namespace` block you can specify an absolute controller path, e.g: `get '/foo' => '/foo#index'`._
+
 ### Nested Resources
 
 It's common to have resources that are logically children of other resources. For example, suppose your application includes these models:
@@ -350,15 +352,15 @@ end
 
 The comments resource here will have the following routes generated for it:
 
-| HTTP Verb | Path                                   | Controller#Action | Named Helper        |
-| --------- | -------------------------------------- | ----------------- | ------------------- |
-| GET       | /posts/:post_id/comments(.:format)     | comments#index    | post_comments       |
-| POST      | /posts/:post_id/comments(.:format)     | comments#create   | post_comments       |
-| GET       | /posts/:post_id/comments/new(.:format) | comments#new      | new_post_comment    |
-| GET       | /sekret/comments/:id/edit(.:format)    | comments#edit     | edit_comment        |
-| GET       | /sekret/comments/:id(.:format)         | comments#show     | comment             |
-| PATCH/PUT | /sekret/comments/:id(.:format)         | comments#update   | comment             |
-| DELETE    | /sekret/comments/:id(.:format)         | comments#destroy  | comment             |
+| HTTP Verb | Path                                   | Controller#Action | Named Helper          |
+| --------- | -------------------------------------- | ----------------- | --------------------- |
+| GET       | /posts/:post_id/comments(.:format)     | comments#index    | post_comments_path    |
+| POST      | /posts/:post_id/comments(.:format)     | comments#create   | post_comments_path    |
+| GET       | /posts/:post_id/comments/new(.:format) | comments#new      | new_post_comment_path |
+| GET       | /sekret/comments/:id/edit(.:format)    | comments#edit     | edit_comment_path     |
+| GET       | /sekret/comments/:id(.:format)         | comments#show     | comment_path          |
+| PATCH/PUT | /sekret/comments/:id(.:format)         | comments#update   | comment_path          |
+| DELETE    | /sekret/comments/:id(.:format)         | comments#destroy  | comment_path          |
 
 The `:shallow_prefix` option adds the specified parameter to the named helpers:
 
@@ -372,15 +374,15 @@ end
 
 The comments resource here will have the following routes generated for it:
 
-| HTTP Verb | Path                                   | Controller#Action | Named Helper        |
-| --------- | -------------------------------------- | ----------------- | ------------------- |
-| GET       | /posts/:post_id/comments(.:format)     | comments#index    | post_comments       |
-| POST      | /posts/:post_id/comments(.:format)     | comments#create   | post_comments       |
-| GET       | /posts/:post_id/comments/new(.:format) | comments#new      | new_post_comment    |
-| GET       | /comments/:id/edit(.:format)           | comments#edit     | edit_sekret_comment |
-| GET       | /comments/:id(.:format)                | comments#show     | sekret_comment      |
-| PATCH/PUT | /comments/:id(.:format)                | comments#update   | sekret_comment      |
-| DELETE    | /comments/:id(.:format)                | comments#destroy  | sekret_comment      |
+| HTTP Verb | Path                                   | Controller#Action | Named Helper             |
+| --------- | -------------------------------------- | ----------------- | ------------------------ |
+| GET       | /posts/:post_id/comments(.:format)     | comments#index    | post_comments_path       |
+| POST      | /posts/:post_id/comments(.:format)     | comments#create   | post_comments_path       |
+| GET       | /posts/:post_id/comments/new(.:format) | comments#new      | new_post_comment_path    |
+| GET       | /comments/:id/edit(.:format)           | comments#edit     | edit_sekret_comment_path |
+| GET       | /comments/:id(.:format)                | comments#show     | sekret_comment_path      |
+| PATCH/PUT | /comments/:id(.:format)                | comments#update   | sekret_comment_path      |
+| DELETE    | /comments/:id(.:format)                | comments#destroy  | sekret_comment_path      |
 
 ### Routing concerns
 
@@ -629,7 +631,7 @@ This will define a `user_path` method that will be available in controllers, hel
 
 ### HTTP Verb Constraints
 
-In general, you should use the `get`, `post`, `put` and `delete` methods to constrain a route to a particular verb. You can use the `match` method with the `:via` option to match multiple verbs at once:
+In general, you should use the `get`, `post`, `put`, `patch`  and `delete` methods to constrain a route to a particular verb. You can use the `match` method with the `:via` option to match multiple verbs at once:
 
 ```ruby
 match 'photos', to: 'photos#show', via: [:get, :post]

@@ -40,7 +40,7 @@ module ActiveRecord
       #   index_exists?(:suppliers, :company_id, unique: true)
       #
       #   # Check an index with a custom name exists
-      #   index_exists?(:suppliers, :company_id, name: "idx_company_id"
+      #   index_exists?(:suppliers, :company_id, name: "idx_company_id")
       #
       def index_exists?(table_name, column_name, options = {})
         column_names = Array(column_name)
@@ -120,9 +120,9 @@ module ActiveRecord
       #   The name of the primary key, if one is to be added automatically.
       #   Defaults to +id+. If <tt>:id</tt> is false this option is ignored.
       #
-      #   Also note that this just sets the primary key in the table. You additionally
-      #   need to configure the primary key in the model via +self.primary_key=+.
-      #   Models do NOT auto-detect the primary key from their table definition.
+      #   Note that Active Record models will automatically detect their
+      #   primary key. This can be avoided by using +self.primary_key=+ on the model
+      #   to define the key explicitly.
       #
       # [<tt>:options</tt>]
       #   Any extra options you want appended to the table definition.
@@ -714,7 +714,7 @@ module ActiveRecord
       # require the order columns appear in the SELECT.
       #
       #   columns_for_distinct("posts.id", ["posts.created_at desc"])
-      def columns_for_distinct(columns, orders) # :nodoc:
+      def columns_for_distinct(columns, orders) #:nodoc:
         columns
       end
 
@@ -734,6 +734,10 @@ module ActiveRecord
       def remove_timestamps(table_name)
         remove_column table_name, :updated_at
         remove_column table_name, :created_at
+      end
+
+      def update_table_definition(table_name, base) #:nodoc:
+        Table.new(table_name, base)
       end
 
       protected
@@ -847,10 +851,6 @@ module ActiveRecord
 
       def create_alter_table(name)
         AlterTable.new create_table_definition(name, false, {})
-      end
-
-      def update_table_definition(table_name, base)
-        Table.new(table_name, base)
       end
     end
   end
