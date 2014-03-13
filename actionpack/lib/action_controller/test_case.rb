@@ -213,6 +213,9 @@ module ActionController
       # Clear the combined params hash in case it was already referenced.
       @env.delete("action_dispatch.request.parameters")
 
+      # Clear the filter cache variables so they're not stale
+      @filtered_parameters = @filtered_env = @filtered_path = nil
+
       params = self.request_parameters.dup
       %w(controller action only_path).each do |k|
         params.delete(k)
@@ -252,6 +255,17 @@ module ActionController
   class TestResponse < ActionDispatch::TestResponse
     def recycle!
       initialize
+    end
+  end
+
+  class LiveTestResponse < Live::Response
+    def recycle!
+      @body = nil
+      initialize
+    end
+
+    def body
+      @body ||= super
     end
   end
 
@@ -565,6 +579,7 @@ module ActionController
 
         name = @request.parameters[:action]
 
+        @controller.recycle!
         @controller.process(name)
 
         if cookies = @request.env['action_dispatch.cookies']
@@ -579,13 +594,14 @@ module ActionController
       end
 
       def setup_controller_request_and_response
-        @request          = build_request
-        @response         = build_response
-        @response.request = @request
-
         @controller = nil unless defined? @controller
 
+        response_klass = TestResponse
+
         if klass = self.class.controller_class
+          if klass < ActionController::Live
+            response_klass = LiveTestResponse
+          end
           unless @controller
             begin
               @controller = klass.new
@@ -594,6 +610,10 @@ module ActionController
             end
           end
         end
+
+        @request          = build_request
+        @response         = build_response response_klass
+        @response.request = @request
 
         if @controller
           @controller.request = @request
@@ -605,8 +625,8 @@ module ActionController
         TestRequest.new
       end
 
-      def build_response
-        TestResponse.new
+      def build_response(klass)
+        klass.new
       end
 
       included do

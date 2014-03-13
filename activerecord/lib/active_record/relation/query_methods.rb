@@ -120,6 +120,9 @@ module ActiveRecord
     # Will throw an error, but this will work:
     #
     #   User.includes(:posts).where('posts.name = ?', 'example').references(:posts)
+    #
+    # Note that +includes+ works with association names while +references+ needs
+    # the actual table name.
     def includes(*args)
       check_if_method_has_arguments!(:includes, args)
       spawn.includes!(*args)
@@ -163,24 +166,26 @@ module ActiveRecord
       self
     end
 
-    # Used to indicate that an association is referenced by an SQL string, and should
-    # therefore be JOINed in any query rather than loaded separately.
+    # Use to indicate that the given +table_names+ are referenced by an SQL string,
+    # and should therefore be JOINed in any query rather than loaded separately.
+    # This method only works in conjuction with +includes+.
+    # See #includes for more details.
     #
     #   User.includes(:posts).where("posts.name = 'foo'")
     #   # => Doesn't JOIN the posts table, resulting in an error.
     #
     #   User.includes(:posts).where("posts.name = 'foo'").references(:posts)
     #   # => Query now knows the string references posts, so adds a JOIN
-    def references(*args)
-      check_if_method_has_arguments!(:references, args)
-      spawn.references!(*args)
+    def references(*table_names)
+      check_if_method_has_arguments!(:references, table_names)
+      spawn.references!(*table_names)
     end
 
-    def references!(*args) # :nodoc:
-      args.flatten!
-      args.map!(&:to_s)
+    def references!(*table_names) # :nodoc:
+      table_names.flatten!
+      table_names.map!(&:to_s)
 
-      self.references_values |= args
+      self.references_values |= table_names
       self
     end
 
@@ -197,7 +202,7 @@ module ActiveRecord
     # fields are retrieved:
     #
     #   Model.select(:field)
-    #   # => [#<Model field:value>]
+    #   # => [#<Model id: nil, field: "value">]
     #
     # Although in the above example it looks as though this method returns an
     # array, it actually returns a relation object and can have other query
@@ -206,12 +211,12 @@ module ActiveRecord
     # The argument to the method can also be an array of fields.
     #
     #   Model.select(:field, :other_field, :and_one_more)
-    #   # => [#<Model field: "value", other_field: "value", and_one_more: "value">]
+    #   # => [#<Model id: nil, field: "value", other_field: "value", and_one_more: "value">]
     #
     # You can also use one or more strings, which will be used unchanged as SELECT fields.
     #
     #   Model.select('field AS field_one', 'other_field AS field_two')
-    #   # => [#<Model field: "value", other_field: "value">]
+    #   # => [#<Model id: nil, field: "value", other_field: "value">]
     #
     # If an alias was specified, it will be accessible from the resulting objects:
     #
@@ -219,7 +224,7 @@ module ActiveRecord
     #   # => "value"
     #
     # Accessing attributes of an object that do not have fields retrieved by a select
-    # will throw <tt>ActiveModel::MissingAttributeError</tt>:
+    # except +id+ will throw <tt>ActiveModel::MissingAttributeError</tt>:
     #
     #   Model.select(:field).first.other_field
     #   # => ActiveModel::MissingAttributeError: missing attribute: other_field
@@ -234,7 +239,9 @@ module ActiveRecord
 
     def select!(*fields) # :nodoc:
       fields.flatten!
-
+      fields.map! do |field|
+        klass.attribute_alias?(field) ? klass.attribute_alias(field) : field
+      end
       self.select_values += fields
       self
     end
@@ -268,15 +275,6 @@ module ActiveRecord
 
     # Allows to specify an order attribute:
     #
-    #   User.order('name')
-    #   => SELECT "users".* FROM "users" ORDER BY name
-    #
-    #   User.order('name DESC')
-    #   => SELECT "users".* FROM "users" ORDER BY name DESC
-    #
-    #   User.order('name DESC, email')
-    #   => SELECT "users".* FROM "users" ORDER BY name DESC, email
-    #
     #   User.order(:name)
     #   => SELECT "users".* FROM "users" ORDER BY "users"."name" ASC
     #
@@ -285,6 +283,15 @@ module ActiveRecord
     #
     #   User.order(:name, email: :desc)
     #   => SELECT "users".* FROM "users" ORDER BY "users"."name" ASC, "users"."email" DESC
+    #
+    #   User.order('name')
+    #   => SELECT "users".* FROM "users" ORDER BY name
+    #
+    #   User.order('name DESC')
+    #   => SELECT "users".* FROM "users" ORDER BY name DESC
+    #
+    #   User.order('name DESC, email')
+    #   => SELECT "users".* FROM "users" ORDER BY name DESC, email
     def order(*args)
       check_if_method_has_arguments!(:order, args)
       spawn.order!(*args)
@@ -817,11 +824,12 @@ module ActiveRecord
     end
 
     # Returns the Arel object associated with the relation.
-    def arel
+    def arel # :nodoc:
       @arel ||= build_arel
     end
 
-    # Like #arel, but ignores the default scope of the model.
+    private
+
     def build_arel
       arel = Arel::SelectManager.new(table.engine, table)
 
@@ -847,19 +855,17 @@ module ActiveRecord
       arel
     end
 
-    private
-
     def symbol_unscoping(scope)
       if !VALID_UNSCOPING_VALUES.include?(scope)
         raise ArgumentError, "Called unscope() with invalid unscoping argument ':#{scope}'. Valid arguments are :#{VALID_UNSCOPING_VALUES.to_a.join(", :")}."
       end
 
       single_val_method = Relation::SINGLE_VALUE_METHODS.include?(scope)
-      unscope_code = :"#{scope}_value#{'s' unless single_val_method}="
+      unscope_code = "#{scope}_value#{'s' unless single_val_method}="
 
       case scope
       when :order
-        self.send(:reverse_order_value=, false)
+        self.reverse_order_value = false
         result = []
       else
         result = [] unless single_val_method
@@ -869,17 +875,17 @@ module ActiveRecord
     end
 
     def where_unscoping(target_value)
-      target_value_sym = target_value.to_sym
+      target_value = target_value.to_s
 
       where_values.reject! do |rel|
         case rel
         when Arel::Nodes::In, Arel::Nodes::NotIn, Arel::Nodes::Equality, Arel::Nodes::NotEqual
           subrelation = (rel.left.kind_of?(Arel::Attributes::Attribute) ? rel.left : rel.right)
-          subrelation.name.to_sym == target_value_sym
-        else
-          raise "unscope(where: #{target_value.inspect}) failed: unscoping #{rel.class} is unimplemented."
+          subrelation.name == target_value
         end
       end
+
+      bind_values.reject! { |col,_| col.name == target_value }
     end
 
     def custom_join_ast(table, joins)
@@ -985,9 +991,10 @@ module ActiveRecord
 
     def build_select(arel, selects)
       if !selects.empty?
-        arel.project(*selects)
-      elsif from_value
-        arel.project(Arel.star)
+        expanded_select = selects.map do |field|
+          columns_hash.key?(field.to_s) ? arel_table[field] : field
+        end
+        arel.project(*expanded_select)
       else
         arel.project(@klass.arel_table[Arel.star])
       end
@@ -1023,10 +1030,15 @@ module ActiveRecord
       arel.order(*orders) unless orders.empty?
     end
 
+    VALID_DIRECTIONS = [:asc, :desc, :ASC, :DESC,
+                        'asc', 'desc', 'ASC', 'DESC'] # :nodoc:
+
     def validate_order_args(args)
-      args.grep(Hash) do |h|
-        unless (h.values - [:asc, :desc]).empty?
-          raise ArgumentError, 'Direction should be :asc or :desc'
+      args.each do |arg|
+        next unless arg.is_a?(Hash)
+        arg.each do |_key, value|
+          raise ArgumentError, "Direction \"#{value}\" is invalid. Valid " \
+                               "directions are: #{VALID_DIRECTIONS.inspect}" unless VALID_DIRECTIONS.include?(value)
         end
       end
     end
@@ -1043,10 +1055,12 @@ module ActiveRecord
       order_args.map! do |arg|
         case arg
         when Symbol
+          arg = klass.attribute_alias(arg) if klass.attribute_alias?(arg)
           table[arg].asc
         when Hash
           arg.map { |field, dir|
-            table[field].send(dir)
+            field = klass.attribute_alias(field) if klass.attribute_alias?(field)
+            table[field].send(dir.downcase)
           }
         else
           arg

@@ -107,8 +107,11 @@ module ActionController
     end
 
     class Buffer < ActionDispatch::Response::Buffer #:nodoc:
+      include MonitorMixin
+
       def initialize(response)
-        @error_callback = nil
+        @error_callback = lambda { true }
+        @cv = new_cond
         super(response, SizedQueue.new(10))
       end
 
@@ -128,8 +131,17 @@ module ActionController
       end
 
       def close
-        super
-        @buf.push nil
+        synchronize do
+          super
+          @buf.push nil
+          @cv.broadcast
+        end
+      end
+
+      def await_close
+        synchronize do
+          @cv.wait_until { @closed }
+        end
       end
 
       def on_error(&block)
@@ -191,6 +203,7 @@ module ActionController
       t1 = Thread.current
       locals = t1.keys.map { |key| [key, t1[key]] }
 
+      error = nil
       # This processes the action in a child thread. It lets us return the
       # response code and headers back up the rack stack, and still process
       # the body in parallel with sending data to the client
@@ -205,6 +218,9 @@ module ActionController
         begin
           super(name)
         rescue => e
+          unless @_response.committed?
+            error = e
+          end
           begin
             @_response.stream.write(ActionView::Base.streaming_completion_on_exception) if request.format == :html
             @_response.stream.call_on_error
@@ -220,6 +236,7 @@ module ActionController
       }
 
       @_response.await_commit
+      raise error if error
     end
 
     def log_error(exception)
@@ -234,7 +251,7 @@ module ActionController
 
     def response_body=(body)
       super
-      response.stream.close if response
+      response.close if response
     end
 
     def set_response!(request)

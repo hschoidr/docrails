@@ -166,7 +166,6 @@ module Rails
       end
 
       public_task :set_default_accessors!
-      public_task :apply_rails_template
       public_task :create_root
 
       def create_root_files
@@ -226,18 +225,17 @@ module Rails
         build(:vendor)
       end
 
-      def finish_template
-        build(:leftovers)
-      end
-
       def delete_js_folder_skipping_javascript
         if options[:skip_javascript]
           remove_dir 'app/assets/javascripts'
         end
       end
 
-      public_task :run_bundle
-      public_task :replay_template
+      def finish_template
+        build(:leftovers)
+      end
+
+      public_task :apply_rails_template, :run_bundle
       public_task :generate_spring_binstubs
 
     protected

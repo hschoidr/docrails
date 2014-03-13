@@ -79,7 +79,7 @@ module ActiveRecord
         end
 
         # Returns name of the database.
-        # Sqlite3 expects this to be a full path or `:memory`.
+        # Sqlite3 expects this to be a full path or `:memory:`.
         def database
           if @adapter == 'sqlite3'
             if '/:memory:' == uri.path
@@ -112,7 +112,7 @@ module ActiveRecord
         #
         #   configurations = { "production" => { "host" => "localhost", "database" => "foo", "adapter" => "sqlite3" } }
         #   Resolver.new(configurations).resolve(:production)
-        #   # => {host: "localhost", database: "foo", adapter: "sqlite3"}
+        #   # => { "host" => "localhost", "database" => "foo", "adapter" => "sqlite3"}
         #
         # Initialized with URL configuration strings.
         #
@@ -123,11 +123,20 @@ module ActiveRecord
         def resolve(config)
           if config
             resolve_connection config
-          elsif defined?(Rails.env)
-            resolve_env_connection Rails.env.to_sym
+          elsif env = ActiveRecord::ConnectionHandling::RAILS_ENV.call
+            resolve_env_connection env.to_sym
           else
             raise AdapterNotSpecified
           end
+        end
+
+        # Expands each key in @configurations hash into fully resolved hash
+        def resolve_all
+          config = configurations.dup
+          config.each do |key, value|
+            config[key] = resolve(value) if value
+          end
+          config
         end
 
         # Returns an instance of ConnectionSpecification for a given adapter.
@@ -219,7 +228,7 @@ module ActiveRecord
           elsif spec.is_a?(String)
             resolve_string_connection(spec)
           else
-            raise(AdapterNotSpecified, "#{spec} database is not configured")
+            raise(AdapterNotSpecified, "'#{spec}' database is not configured. Available configuration: #{configurations.inspect}")
           end
         end
 
