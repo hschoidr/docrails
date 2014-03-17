@@ -94,7 +94,7 @@ module ActiveRecord
       # actually gets built.
       def association_scope
         if klass
-          @association_scope ||= AssociationScope.new(self).scope
+          @association_scope ||= AssociationScope.scope(self, klass.connection)
         end
       end
 
@@ -232,7 +232,7 @@ module ActiveRecord
 
         # Returns true if record contains the foreign_key
         def foreign_key_for?(record)
-          record.attributes.has_key? reflection.foreign_key
+          record.has_attribute?(reflection.foreign_key)
         end
 
         # This should be implemented to return the values of the relevant key(s) on the owner,

@@ -37,10 +37,8 @@ module StaticTests
   end
 
   def test_served_static_file_with_non_english_filename
-    if RUBY_ENGINE == 'jruby '
-      skip "Stop skipping if following bug gets fixed: " \
+    jruby_skip "Stop skipping if following bug gets fixed: " \
       "http://jira.codehaus.org/browse/JRUBY-7192"
-    end
     assert_html "means hello in Japanese\n", get("/foo/#{Rack::Utils.escape("こんにちは.html")}")
   end
 
@@ -138,10 +136,15 @@ module StaticTests
 
     def with_static_file(file)
       path = "#{FIXTURE_LOAD_PATH}/#{public_path}" + file
-      File.open(path, "wb+") { |f| f.write(file) }
+      begin
+        File.open(path, "wb+") { |f| f.write(file) }
+      rescue Errno::EPROTO
+        skip "Couldn't create a file #{path}"
+      end
+
       yield file
     ensure
-      File.delete(path)
+      File.delete(path) if File.exist? path
     end
 end
 

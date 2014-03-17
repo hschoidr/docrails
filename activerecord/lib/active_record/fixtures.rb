@@ -462,7 +462,7 @@ module ActiveRecord
         @class_names.delete_if { |k,klass|
           unless klass.is_a? Class
             klass = klass.safe_constantize
-            ActiveSupport::Deprecation.warn("The ability to pass in strings as a class name will be removed in Rails 4.2, consider using the class itself instead.")
+            ActiveSupport::Deprecation.warn("The ability to pass in strings as a class name to `set_fixture_class` will be removed in Rails 4.2. Use the class itself instead.")
           end
           !insert_class(@class_names, k, klass)
         }
@@ -521,8 +521,16 @@ module ActiveRecord
           connection.transaction(:requires_new => true) do
             fixture_sets.each do |fs|
               conn = fs.model_class.respond_to?(:connection) ? fs.model_class.connection : connection
-              fs.fixture_sql(conn).each do |stmt|
-                conn.execute stmt
+              table_rows = fs.table_rows
+
+              table_rows.keys.each do |table|
+                conn.delete "DELETE FROM #{conn.quote_table_name(table)}", 'Fixture Delete'
+              end
+
+              table_rows.each do |fixture_set_name, rows|
+                rows.each do |row|
+                  conn.insert_fixture(row, fixture_set_name)
+                end
               end
             end
 
@@ -541,7 +549,7 @@ module ActiveRecord
     end
 
     # Returns a consistent, platform-independent identifier for +label+.
-    # Identifiers are positive integers less than 2^32.
+    # Identifiers are positive integers less than 2^30.
     def self.identify(label)
       Zlib.crc32(label.to_s) % MAX_ID
     end
@@ -560,7 +568,7 @@ module ActiveRecord
       @model_class = nil
 
       if class_name.is_a?(String)
-        ActiveSupport::Deprecation.warn("The ability to pass in strings as a class name will be removed in Rails 4.2, consider using the class itself instead.")
+        ActiveSupport::Deprecation.warn("The ability to pass in strings as a class name to `FixtureSet.new` will be removed in Rails 4.2. Use the class itself instead.")
       end
 
       if class_name.is_a?(Class) # TODO: Should be an AR::Base type class, or any?
@@ -592,16 +600,6 @@ module ActiveRecord
 
     def size
       fixtures.size
-    end
-
-    def fixture_sql(conn)
-      table_rows = self.table_rows
-
-      table_rows.keys.map { |table|
-        "DELETE FROM #{conn.quote_table_name(table)}"
-      }.concat table_rows.flat_map { |fixture_set_name, rows|
-        rows.map { |row| conn.fixture_sql(row, fixture_set_name) }
-      }
     end
 
     # Returns a hash of rows to be inserted. The key is the table, the value is

@@ -89,6 +89,7 @@ module ActiveSupport
     #
     #   'SSLError'.underscore.camelize # => "SslError"
     def underscore(camel_cased_word)
+      return camel_cased_word unless camel_cased_word =~ /[A-Z-]|::/
       word = camel_cased_word.to_s.gsub('::', '/')
       word.gsub!(/(?:([A-Za-z\d])|^)(#{inflections.acronym_regex})(?=\b|[^a-z])/) { "#{$1}#{$1 && '_'}#{$2.downcase}" }
       word.gsub!(/([A-Z\d]+)([A-Z][a-z])/,'\1_\2')
@@ -117,7 +118,7 @@ module ActiveSupport
       result.gsub!(/([a-z\d]*)/i) { |match|
         "#{inflections.acronyms[match] || match.downcase}"
       }
-      result.gsub!(/^\w/) { $&.upcase } if options.fetch(:capitalize, true)
+      result.gsub!(/^\w/) { |match| match.upcase } if options.fetch(:capitalize, true)
       result
     end
 

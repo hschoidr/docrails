@@ -59,7 +59,8 @@ independently outside Rails.
 
    Run with `--help` or `-h` for options.
 
-4. Using a browser, go to http://localhost:3000 and you'll see: "Welcome aboard: You're riding Ruby on Rails!"
+4. Using a browser, go to `http://localhost:3000` and you'll see:
+"Welcome aboard: You're riding Ruby on Rails!"
 
 5. Follow the guidelines to start developing your application. You may find
    the following resources handy:
@@ -75,8 +76,7 @@ We encourage you to contribute to Ruby on Rails! Please check out the
 
 ## Code Status
 
-* [![Build Status](https://api.travis-ci.org/rails/rails.png)](https://travis-ci.org/rails/rails)
-* [![Dependencies](https://gemnasium.com/rails/rails.png?travis)](https://gemnasium.com/rails/rails)
+* [![Build Status](https://travis-ci.org/rails/rails.png?branch=master)](https://travis-ci.org/rails/rails)
 
 ## License
 

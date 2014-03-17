@@ -51,7 +51,7 @@ module ActionMailer
   # * <tt>mail</tt> - Allows you to specify email to be sent.
   #
   # The hash passed to the mail method allows you to specify any header that a <tt>Mail::Message</tt>
-  # will accept (any valid Email header including optional fields).
+  # will accept (any valid email header including optional fields).
   #
   # The mail method, if not passed a block, will inspect your views and send all the views with
   # the same name as the method, so the above action would send the +welcome.text.erb+ view
@@ -94,7 +94,7 @@ module ActionMailer
   #   Hi <%= @account.name %>,
   #   Thanks for joining our service! Please check back often.
   #
-  # You can even use Action Pack helpers in these views. For example:
+  # You can even use Action View helpers in these views. For example:
   #
   #   You got a new note!
   #   <%= truncate(@note.body, length: 25) %>
@@ -330,6 +330,21 @@ module ActionMailer
   # An overview of all previews is accessible at <tt>http://localhost:3000/rails/mailers</tt>
   # on a running development server instance.
   #
+  # Previews can also be intercepted in a similar manner as deliveries can be by registering
+  # a preview interceptor that has a <tt>previewing_email</tt> method:
+  #
+  #   class CssInlineStyler
+  #     def self.previewing_email(message)
+  #       # inline CSS styles
+  #     end
+  #   end
+  #
+  #   config.action_mailer.register_preview_interceptor :css_inline_styler
+  #
+  # Note that interceptors need to be registered both with <tt>register_interceptor</tt>
+  # and <tt>register_preview_interceptor</tt> if they should operate on both sending and
+  # previewing emails.
+  #
   # = Configuration options
   #
   # These options are specified on the class level, like
@@ -429,18 +444,30 @@ module ActionMailer
       end
 
       # Register an Observer which will be notified when mail is delivered.
-      # Either a class or a string can be passed in as the Observer. If a string is passed in
-      # it will be <tt>constantize</tt>d.
+      # Either a class, string or symbol can be passed in as the Observer.
+      # If a string or symbol is passed in it will be camelized and constantized.
       def register_observer(observer)
-        delivery_observer = (observer.is_a?(String) ? observer.constantize : observer)
+        delivery_observer = case observer
+          when String, Symbol
+            observer.to_s.camelize.constantize
+          else
+            observer
+          end
+
         Mail.register_observer(delivery_observer)
       end
 
       # Register an Interceptor which will be called before mail is sent.
-      # Either a class or a string can be passed in as the Interceptor. If a string is passed in
-      # it will be <tt>constantize</tt>d.
+      # Either a class, string or symbol can be passed in as the Interceptor.
+      # If a string or symbol is passed in it will be camelized and constantized.
       def register_interceptor(interceptor)
-        delivery_interceptor = (interceptor.is_a?(String) ? interceptor.constantize : interceptor)
+        delivery_interceptor = case interceptor
+          when String, Symbol
+            interceptor.to_s.camelize.constantize
+          else
+            interceptor
+          end
+
         Mail.register_interceptor(delivery_interceptor)
       end
 
@@ -674,7 +701,7 @@ module ActionMailer
     # For example:
     #
     #   class Notifier < ActionMailer::Base
-    #     default from: 'no-reply@test.lindsaar.net',
+    #     default from: 'no-reply@test.lindsaar.net'
     #
     #     def welcome
     #       mail(to: 'mikel@test.lindsaar.net')
@@ -697,11 +724,11 @@ module ActionMailer
     #     format.html
     #   end
     #
-    # You can even render text directly without using a template:
+    # You can even render plain text directly without using a template:
     #
     #   mail(to: 'mikel@test.lindsaar.net') do |format|
-    #     format.text { render text: "Hello Mikel!" }
-    #     format.html { render text: "<h1>Hello Mikel!</h1>" }
+    #     format.text { render plain: "Hello Mikel!" }
+    #     format.html { render html: "<h1>Hello Mikel!</h1>".html_safe }
     #   end
     #
     # Which will render a +multipart/alternative+ email with +text/plain+ and
@@ -737,7 +764,7 @@ module ActionMailer
       m.charset = charset = headers[:charset]
 
       # Set configure delivery behavior
-      wrap_delivery_behavior!(headers.delete(:delivery_method),headers.delete(:delivery_method_options))
+      wrap_delivery_behavior!(headers.delete(:delivery_method), headers.delete(:delivery_method_options))
 
       # Assign all headers except parts_order, content_type and body
       assignable = headers.except(:parts_order, :content_type, :body, :template_name, :template_path)

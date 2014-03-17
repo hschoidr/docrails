@@ -111,7 +111,6 @@ module Rails
           javascript_gemfile_entry,
           jbuilder_gemfile_entry,
           sdoc_gemfile_entry,
-          platform_dependent_gemfile_entry,
           spring_gemfile_entry,
           @extra_entries].flatten.find_all(&@gem_filter)
       end
@@ -141,71 +140,10 @@ module Rails
         FileUtils.cd(destination_root) unless options[:pretend]
       end
 
-      class TemplateRecorder < ::BasicObject # :nodoc:
-        attr_reader :gems
-
-        def initialize(target)
-          @target         = target
-          # unfortunately, instance eval has access to these ivars
-          @app_const      = target.send :app_const if target.respond_to?(:app_const, true)
-          @app_const_base = target.send :app_const_base if target.respond_to?(:app_const_base, true)
-          @app_name       = target.send :app_name if target.respond_to?(:app_name, true)
-          @commands       = []
-          @gems           = []
-        end
-
-        def gemfile_entry(*args)
-          @target.send :gemfile_entry, *args
-        end
-
-        def add_gem_entry_filter(*args, &block)
-          @target.send :add_gem_entry_filter, *args, &block
-        end
-
-        def method_missing(name, *args, &block)
-          @commands << [name, args, block]
-        end
-
-        def respond_to_missing?(method, priv = false)
-          super || @target.respond_to?(method, priv)
-        end
-
-        def replay!
-          @commands.each do |name, args, block|
-            @target.send name, *args, &block
-          end
-        end
-      end
-
       def apply_rails_template
-        @recorder = TemplateRecorder.new self
-
-        apply(rails_template, target: @recorder) if rails_template
+        apply rails_template if rails_template
       rescue Thor::Error, LoadError, Errno::ENOENT => e
         raise Error, "The template [#{rails_template}] could not be loaded. Error: #{e}"
-      end
-
-      def replay_template
-        @recorder.replay! if @recorder
-      end
-
-      def apply(path, config={})
-        verbose = config.fetch(:verbose, true)
-        target  = config.fetch(:target, self)
-        is_uri  = path =~ /^https?\:\/\//
-        path    = find_in_source_paths(path) unless is_uri
-
-        say_status :apply, path, verbose
-        shell.padding += 1 if verbose
-
-        if is_uri
-          contents = open(path, "Accept" => "application/x-thor-template") {|io| io.read }
-        else
-          contents = open(path) {|io| io.read }
-        end
-
-        target.instance_eval(contents, path)
-        shell.padding -= 1 if verbose
       end
 
       def set_default_accessors!
@@ -319,14 +257,6 @@ module Rails
         gems
       end
 
-      def platform_dependent_gemfile_entry
-        gems = []
-        if RUBY_ENGINE == 'rbx'
-          gems << GemfileEntry.version('rubysl', nil)
-        end
-        gems
-      end
-
       def jbuilder_gemfile_entry
         comment = 'Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder'
         GemfileEntry.version('jbuilder', '~> 2.0', comment)
@@ -334,7 +264,7 @@ module Rails
 
       def sdoc_gemfile_entry
         comment = 'bundle exec rake doc:rails generates the API under doc/api.'
-        GemfileEntry.new('sdoc', nil, comment, { group: :doc, require: false })
+        GemfileEntry.new('sdoc', '~> 0.4.0', comment, group: :doc)
       end
 
       def coffee_gemfile_entry
@@ -371,7 +301,7 @@ module Rails
 
       def spring_gemfile_entry
         return [] unless spring_install?
-        comment = 'Spring speeds up development by keeping your application running in the background. Read more: https://github.com/jonleighton/spring'
+        comment = 'Spring speeds up development by keeping your application running in the background. Read more: https://github.com/rails/spring'
         GemfileEntry.new('spring', nil, comment, group: :development)
       end
 
@@ -394,7 +324,8 @@ module Rails
 
         require 'bundler'
         Bundler.with_clean_env do
-          print `"#{Gem.ruby}" "#{_bundle_command}" #{command}`
+          output = `"#{Gem.ruby}" "#{_bundle_command}" #{command}`
+          print output unless options[:quiet]
         end
       end
 

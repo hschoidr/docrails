@@ -35,6 +35,12 @@ class PluginGeneratorTest < Rails::Generators::TestCase
 
     content = capture(:stderr){ run_generator [File.join(destination_root, "43things")] }
     assert_equal "Invalid plugin name 43things. Please give a name which does not start with numbers.\n", content
+
+    content = capture(:stderr){ run_generator [File.join(destination_root, "plugin")] }
+    assert_equal "Invalid plugin name plugin. Please give a name which does not match one of the reserved rails words.\n", content
+
+    content = capture(:stderr){ run_generator [File.join(destination_root, "Digest")] }
+    assert_equal "Invalid plugin name Digest, constant Digest is already in use. Please choose another plugin name.\n", content
   end
 
   def test_camelcase_plugin_name_underscores_filenames
@@ -349,6 +355,18 @@ class PluginGeneratorTest < Rails::Generators::TestCase
     FileUtils.rm gemfile_path
   end
 
+  def test_generating_controller_inside_mountable_engine
+    run_generator [destination_root, "--mountable"]
+
+    capture(:stdout) do
+      `#{destination_root}/bin/rails g controller admin/dashboard foo`
+    end
+
+    assert_file "config/routes.rb" do |contents|
+      assert_match(/namespace :admin/, contents)
+      assert_no_match(/namespace :bukkit/, contents)
+    end
+  end
 
 protected
   def action(*args, &block)

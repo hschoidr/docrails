@@ -321,7 +321,7 @@ class BasicsTest < ActiveRecord::TestCase
 
   def test_load
     topics = Topic.all.merge!(:order => 'id').to_a
-    assert_equal(4, topics.size)
+    assert_equal(5, topics.size)
     assert_equal(topics(:first).title, topics.first.title)
   end
 
@@ -626,6 +626,7 @@ class BasicsTest < ActiveRecord::TestCase
       assert_equal ["EUC-JP"], Weird.columns.map {|c| c.name.encoding.name }.uniq
     ensure
       silence_warnings { Encoding.default_internal = old_default_internal }
+      Weird.reset_column_information
     end
   end
 
@@ -1129,7 +1130,7 @@ class BasicsTest < ActiveRecord::TestCase
     k = Class.new(ak)
     k.table_name = "projects"
     orig_name = k.sequence_name
-    return skip "sequences not supported by db" unless orig_name
+    skip "sequences not supported by db" unless orig_name
     assert_equal k.reset_sequence_name, orig_name
   end
 
@@ -1301,9 +1302,11 @@ class BasicsTest < ActiveRecord::TestCase
   end
 
   def test_compute_type_nonexistent_constant
-    assert_raises NameError do
+    e = assert_raises NameError do
       ActiveRecord::Base.send :compute_type, 'NonexistentModel'
     end
+    assert_equal 'uninitialized constant ActiveRecord::Base::NonexistentModel', e.message
+    assert_equal 'ActiveRecord::Base::NonexistentModel', e.name
   end
 
   def test_compute_type_no_method_error
@@ -1377,6 +1380,8 @@ class BasicsTest < ActiveRecord::TestCase
       })
 
       rd, wr = IO.pipe
+      rd.binmode
+      wr.binmode
 
       ActiveRecord::Base.connection_handler.clear_all_connections!
 

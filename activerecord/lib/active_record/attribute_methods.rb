@@ -105,21 +105,40 @@ module ActiveRecord
           super
         else
           # If B < A and A defines its own attribute method, then we don't want to overwrite that.
-          defined = method_defined_within?(method_name, superclass, superclass.generated_attribute_methods)
-          defined && !ActiveRecord::Base.method_defined?(method_name) || super
+          defined = method_defined_within?(method_name, superclass) &&
+            superclass.instance_method(method_name).owner != superclass.generated_attribute_methods
+          defined || super
         end
       end
 
-      # A method name is 'dangerous' if it is already defined by Active Record, but
+      # A method name is 'dangerous' if it is already (re)defined by Active Record, but
       # not by any ancestors. (So 'puts' is not dangerous but 'save' is.)
       def dangerous_attribute_method?(name) # :nodoc:
         method_defined_within?(name, Base)
       end
 
-      def method_defined_within?(name, klass, sup = klass.superclass) # :nodoc:
+      def method_defined_within?(name, klass, superklass = klass.superclass) # :nodoc:
         if klass.method_defined?(name) || klass.private_method_defined?(name)
-          if sup.method_defined?(name) || sup.private_method_defined?(name)
-            klass.instance_method(name).owner != sup.instance_method(name).owner
+          if superklass.method_defined?(name) || superklass.private_method_defined?(name)
+            klass.instance_method(name).owner != superklass.instance_method(name).owner
+          else
+            true
+          end
+        else
+          false
+        end
+      end
+
+      # A class method is 'dangerous' if it is already (re)defined by Active Record, but
+      # not by any ancestors. (So 'puts' is not dangerous but 'new' is.)
+      def dangerous_class_method?(method_name)
+        class_method_defined_within?(method_name, Base)
+      end
+
+      def class_method_defined_within?(name, klass, superklass = klass.superclass) # :nodoc
+        if klass.respond_to?(name, true)
+          if superklass.respond_to?(name, true)
+            klass.method(name).owner != superklass.method(name).owner
           else
             true
           end
@@ -258,6 +277,11 @@ module ActiveRecord
       attribute_names.each_with_object({}) { |name, attrs|
         attrs[name] = read_attribute(name)
       }
+    end
+
+    # Placeholder so it can be overriden when needed by serialization
+    def attributes_for_coder # :nodoc:
+      attributes
     end
 
     # Returns an <tt>#inspect</tt>-like string for the value of the

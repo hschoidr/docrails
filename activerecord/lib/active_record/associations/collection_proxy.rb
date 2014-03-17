@@ -75,7 +75,7 @@ module ActiveRecord
       #   #      #<Pet id: nil, name: "Choo-Choo">
       #   #    ]
       #
-      #   person.pets.select([:id, :name])
+      #   person.pets.select(:id, :name )
       #   # => [
       #   #      #<Pet id: 1, name: "Fancy-Fancy">,
       #   #      #<Pet id: 2, name: "Spook">,
@@ -84,7 +84,7 @@ module ActiveRecord
       #
       # Be careful because this also means you're initializing a model
       # object with only the fields that you've selected. If you attempt
-      # to access a field that is not in the initialized record you'll
+      # to access a field except +id+ that is not in the initialized record you'll
       # receive:
       #
       #   person.pets.select(:name).first.person_id
@@ -106,13 +106,13 @@ module ActiveRecord
       #   #      #<Pet id: 2, name: "Spook">,
       #   #      #<Pet id: 3, name: "Choo-Choo">
       #   #    ]
-      def select(select = nil, &block)
-        @association.select(select, &block)
+      def select(*fields, &block)
+        @association.select(*fields, &block)
       end
 
       # Finds an object in the collection responding to the +id+. Uses the same
       # rules as <tt>ActiveRecord::Base.find</tt>. Returns <tt>ActiveRecord::RecordNotFound</tt>
-      # error if the object can not be found.
+      # error if the object cannot be found.
       #
       #   class Person < ActiveRecord::Base
       #     has_many :pets
@@ -168,6 +168,32 @@ module ActiveRecord
       #   another_person_without.pets.first(3) # => []
       def first(*args)
         @association.first(*args)
+      end
+
+      # Same as +first+ except returns only the second record.
+      def second(*args)
+        @association.second(*args)
+      end
+
+      # Same as +first+ except returns only the third record.
+      def third(*args)
+        @association.third(*args)
+      end
+
+      # Same as +first+ except returns only the fourth record.
+      def fourth(*args)
+        @association.fourth(*args)
+      end
+
+      # Same as +first+ except returns only the fifth record.
+      def fifth(*args)
+        @association.fifth(*args)
+      end
+
+      # Same as +first+ except returns only the forty second record.
+      # Also known as accessing "the reddit".
+      def forty_two(*args)
+        @association.forty_two(*args)
       end
 
       # Returns the last record, or the last +n+ records, from the collection.
@@ -976,6 +1002,28 @@ module ActiveRecord
       #   # => [#<Pet id: 1, name: "Snoop", group: "dogs", person_id: 1>]
       def reload
         proxy_association.reload
+        self
+      end
+
+      # Unloads the association. Returns +self+.
+      #
+      #   class Person < ActiveRecord::Base
+      #     has_many :pets
+      #   end
+      #
+      #   person.pets # fetches pets from the database
+      #   # => [#<Pet id: 1, name: "Snoop", group: "dogs", person_id: 1>]
+      #
+      #   person.pets # uses the pets cache
+      #   # => [#<Pet id: 1, name: "Snoop", group: "dogs", person_id: 1>]
+      #
+      #   person.pets.reset # clears the pets cache
+      #
+      #   person.pets  # fetches pets from the database
+      #   # => [#<Pet id: 1, name: "Snoop", group: "dogs", person_id: 1>]
+      def reset
+        proxy_association.reset
+        proxy_association.reset_scope
         self
       end
     end
