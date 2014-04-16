@@ -68,7 +68,7 @@ get '/patients/:id', to: 'patients#show', as: 'patient'
 [Resource Routing: the Rails Default] 리소스 라우팅: 레일스 디폴트
 -----------------------------------
 
-리소스풀 라우팅은 주어진 리소스풀 컨트롤러를 위한 모든 일반적인 라우트를 빠르게 선언할 수 있게 해줍니다.[[[Resource routing allows you to quickly declare all of the common routes for a given resourceful controller.]]]
+리소스 라우팅은 주어진 리소스풀 컨트롤러를 위한 모든 일반적인 라우트를 빠르게 선언할 수 있게 해줍니다.[[[Resource routing allows you to quickly declare all of the common routes for a given resourceful controller.]]]
 `index`, `show`, `new`, `edit`, `create`, `update` 그리고 `destroy`를 위한 라우트를 개별적으로 선언하는 대신, 리소스풀 라우트는 한 줄의 코드로 모두를 선언합니다. [[[Instead of declaring separate routes for your `index`, `show`, `new`, `edit`, `create`, `update` and `destroy` actions, a resourceful route declares them in a single line of code.]]]
 
 ### [Resources on the Web] 웹상의 리소스
@@ -94,7 +94,7 @@ resources :photos
 
 ### CRUD, Verbs, and Actions
 
-레일스에서 리소스풀 라우트는 HTTP verbs와 URL을 컨트롤러 액션에 연결하는 매핑을 제공합니다.[[[In Rails, a resourceful route provides a mapping between HTTP verbs and URLs to controller actions.]]]
+레일스에서 리소스풀 라우트는 HTTP 메서드와 URL을 컨트롤러 액션에 연결하는 매핑을 제공합니다.[[[In Rails, a resourceful route provides a mapping between HTTP verbs and URLs to controller actions.]]]
 규칙(컨벤션)에 따라, 각 액션은 데이터베이스의 특정 CRUD 작업에 매핑됩니다.[[[By convention, each action also maps to particular CRUD operations in a database.]]]
 라우팅 파일에 다음과 같은 단일 엔트리가 있다면,[[[A single entry in the routing file, such as:]]]
 
@@ -114,7 +114,7 @@ resources :photos
 | PATCH/PUT | /photos/:id      | update  | update a specific photo                      |
 | DELETE    | /photos/:id      | destroy | delete a specific photo                      |
 
-NOTE: 라우터는 HTTP verb와 URL을 인바운드 요청에 매치하기 위해 사용하기 때문에, 네 가지 URL은 일곱 가지 다른 액션에 매핑됩니다.[[[NOTE: Because the router uses the HTTP verb and URL to match inbound requests, four URLs map to seven different actions.]]]
+NOTE: 라우터는 HTTP 메서드와 URL을 인바운드 요청에 매치하기 위해 사용하기 때문에, 네 가지 URL은 일곱 가지 다른 액션에 매핑됩니다.[[[NOTE: Because the router uses the HTTP verb and URL to match inbound requests, four URLs map to seven different actions.]]]
 
 레일스 라우트는 명시된 순서에 따라 매치됩니다. 그래서 `get 'photos/poll'` 위에 `resources :photos`가 있다면 `resources` 행을 위한 `show` 액션의 라우트는 `get` 행보다 먼저 매칭됩니다.[[[NOTE: Rails routes are matched in the order they are specified, so if you have a `resources :photos` above a `get 'photos/poll'` the `show` action's route for the `resources` line will be matched before the `get` line.]]]
 이것을 바로잡기 위해서는 `get` 행을 `resources` 행 위로 옮겨서 먼저 매치되도록 해야 합니다.[[[To fix this, move the `get` line **above** the `resources` line so that it is matched first.]]]
@@ -134,7 +134,7 @@ NOTE: 라우터는 HTTP verb와 URL을 인바운드 요청에 매치하기 위�
 
 이들 핼퍼는 각각 그에 상응하는 `_url` 헬퍼(`photos_url` 같은)를 갖는데, 현재의 호스트, 포트 그리고 경로 접두사와 같은 경로 접두사를 반환합니다. [[[Each of these helpers has a corresponding `_url` helper (such as `photos_url`) which returns the same path prefixed with the current host, port and path prefix.]]]
 
-### [Defining Multiple Resources at the Same Time] 중복 리소스를 한번에 정의하기
+### [Defining Multiple Resources at the Same Time] 여러 리소스를 한번에 정의하기
 
 하나 이상의 리소스를 위한 라우트를 만들 필요가 있다면, `resources` 단일 호출로 그들 모두를 정의하여 타이핑을 줄일 수 있습니다.[[[If you need to create routes for more than one resource, you can save a bit of typing by defining them all with a single call to `resources`:]]]
 
@@ -262,7 +262,7 @@ resources :posts, path: '/admin/posts'
 | PATCH/PUT | /admin/posts/:id      | update  | post_path(:id)      |
 | DELETE    | /admin/posts/:id      | destroy | post_path(:id)      |
 
-### [Nested Resources] 내포 리소스
+### [Nested Resources] 중첩 리소스
 
 논리적으로 다른 리소스의 자식인 리소스를 갖는 것은 일반적인 일입니다. [[[It's common to have resources that are logically children of other resources.]]]
 예를 들어, 응용프로그램이 다음과 같은 모델을 포함하고 있다고 가정합니다.[[[For example, suppose your application includes these models:]]]
@@ -277,7 +277,7 @@ class Ad < ActiveRecord::Base
 end
 ```
 
-내포 라우트는 라우팅의 관계를 캡쳐할 수 있게 해줍니다. [[[Nested routes allow you to capture this relationship in your routing.]]]
+중첩 라우트는 라우팅의 관계를 캡쳐할 수 있게 해줍니다. [[[Nested routes allow you to capture this relationship in your routing.]]]
 이 경우, 다음과 같은 라우트선언을 포함할 수 있습니다. [[[In this case, you could include this route declaration:]]]
 
 ```ruby
@@ -302,9 +302,9 @@ ad URL은 magazine을 필요로 합니다.[[[The ad URLs require a magazine:]]]
 이것은 또한 `magazine_ads_url`와 `edit_magazine_ad_path` 같은 라우팅 펠퍼를 생성할 것입니다. [[[This will also create routing helpers such as `magazine_ads_url` and `edit_magazine_ad_path`.]]] 
 이러한 헬퍼들은 첫 번째 파라미터로서 Magazine의 인스턴스를 갖습니다. (`magazine_ads_url(@magazine)`)[[[These helpers take an instance of Magazine as the first parameter (`magazine_ads_url(@magazine)`).]]]
 
-#### [[[Limits to Nesting]]] 내포의 제한
+#### [[[Limits to Nesting]]] 중첩의 제한
 
-만약 원한다면, 다른 충첩된 리소스 안에 리소스를 내포할 수 있습니다. [[[You can nest resources within other nested resources if you like.]]]
+만약 원한다면, 다른 충첩된 리소스 안에 리소스를 중첩할 수 있습니다. [[[You can nest resources within other nested resources if you like.]]]
 예를 들면: [[[For example:]]]
 
 ```ruby
@@ -315,7 +315,7 @@ resources :publishers do
 end
 ```
 
-깊게-내포된 리소스는 급속도로 복잡해집니다. [[[Deeply-nested resources quickly become cumbersome.]]]
+깊게-중첩된 리소스는 급속도로 복잡해집니다. [[[Deeply-nested resources quickly become cumbersome.]]]
 이 경우, 예를 들면, 응용프로그램은 경로를 다음과 같이 인식할 것입니다.[[[In this case, for example, the application would recognize paths such as:]]]
 
 ```
@@ -325,11 +325,11 @@ end
 이에 대응하는 라우트 헬퍼는 `publisher_magazine_photo_url`가 될 것이고, 이 헬퍼는 세 레벨의 객체 모두를 지정해야  합니다. [[[The corresponding route helper would be `publisher_magazine_photo_url`, requiring you to specify objects at all three levels.]]]
 실제로 이 상황은 유명한 [article](http://weblog.jamisbuck.org/2007/2/5/nesting-resources)에서 제이미스 벅이 제안한 좋은 레일스 디자인을 위한 주먹구구식 방법만큼이나 혼란스럽습니다. [[[[Indeed, this situation is confusing enough that a popular [article](http://weblog.jamisbuck.org/2007/2/5/nesting-resources) by Jamis Buck proposes a rule of thumb for good Rails design:]]]
 
-TIP: 리소스는 1 레벨 이상으로 내포되어서는 안됩니다. [[[TIP: _Resources should never be nested more than 1 level deep._]]]
+TIP: 리소스는 1 레벨 이상으로 중첩되어서는 안됩니다. [[[TIP: _Resources should never be nested more than 1 level deep._]]]
 
 #### Shallow Nesting
 
-(위에서 추천한 바와 같이) 깊은 내포를 피하는 한 가지 방법은 부모 아래 범주화된(scoped) 액션의 컬렉션을 생성하여 멤버 액션을 내포하지 않고, 계층의 의미를 갖는 것입니다.[[[One way to avoid deep nesting (as recommended above) is to generate the collection actions scoped under the parent, so as to get a sense of the hierarchy, but to not nest the member actions.]]]
+(위에서 추천한 바와 같이) 깊은 중첩을 피하는 한 가지 방법은 부모 아래 범주화된(scoped) 액션의 컬렉션을 생성하여 멤버 액션을 중첩하지 않고, 계층의 의미를 갖는 것입니다.[[[One way to avoid deep nesting (as recommended above) is to generate the collection actions scoped under the parent, so as to get a sense of the hierarchy, but to not nest the member actions.]]]
 다시 말해, 단지 최소한의 정보로 고유하게 리소스를 식별하는 라우트를 만들는 방법은 다음과 같습니다:[[[In other words, to only build routes with the minimal amount of information to uniquely identify the resource, like this:]]]
 
 ```ruby
@@ -339,7 +339,7 @@ end
 resources :comments, only: [:show, :edit, :update, :destroy]
 ```
 
-본 아이디어는 기술적인 라우트(descriptive routes)와 깊은 내포 사이에서 절충합니다. [[[This idea strikes a balance between descriptive routes and deep nesting.]]]
+본 아이디어는 기술적인 라우트(descriptive routes)와 깊은 중첩 사이에서 절충합니다. [[[This idea strikes a balance between descriptive routes and deep nesting.]]]
 그렇게 하기 위한 축약 문법이 있는데, `:shallow` 옵션으로 할 수 있습니다.[[[There exists shorthand syntax to achieve just that, via the `:shallow` option:]]]
 
 ```ruby
@@ -349,7 +349,7 @@ end
 ```
 
 이 코드는 첫 번째 예제와 완전히 동일한 라우트를 생성할 것입니다. [[[This will generate the exact same routes as the first example.]]] 
-또한 `:shallow` 옵션을 부모 리소스에 지정할 수 있는데, 이 경우 모든 내포된 리소스들은 얕아지게 됩니다:[[[You can also specify the `:shallow` option in the parent resource, in which case all of the nested resources will be shallow:]]]
+또한 `:shallow` 옵션을 부모 리소스에 지정할 수 있는데, 이 경우 모든 중첩된 리소스들은 얕아지게 됩니다:[[[You can also specify the `:shallow` option in the parent resource, in which case all of the nested resources will be shallow:]]]
 
 ```ruby
 resources :posts, shallow: true do
@@ -359,7 +359,7 @@ resources :posts, shallow: true do
 end
 ```
 
-DSL의 `shallow` 메서드는 모든 내포가 얕아진 범위를 내부에 만듭니다. [[[The `shallow` method of the DSL creates a scope inside of which every nesting is shallow.]]]
+DSL의 `shallow` 메서드는 모든 중첩이 얕아진 범위를 내부에 만듭니다. [[[The `shallow` method of the DSL creates a scope inside of which every nesting is shallow.]]]
 이것은 이전 예제와 같은 라우트를 생성합니다. [[[This generates the same routes as the previous example:]]]
 
 ```ruby
@@ -525,7 +525,7 @@ end
 이것은 GET 방식으로 `/photos/1/preview`를 인식하고 `params[:id]`로 전달된 값의 리소스 id를 `PhotosController`의 `preview` 액션으로 라우트합니다. [[[This will recognize `/photos/1/preview` with GET, and route to the `preview` action of `PhotosController`, with the resource id value passed in `params[:id]`.]]]
 이것은 또한 `preview_photo_url`과 `preview_photo_path` 헬퍼를 생성합니다. [[[It will also create the `preview_photo_url` and `preview_photo_path` helpers.]]]
 
-member 라우트의 블록 내에서, 각 라우트명은 인식할 HTTP verb를 지정합니다. [[[Within the block of member routes, each route name specifies the HTTP verb that it will recognize.]]]
+member 라우트의 블록 내에서, 각 라우트명은 인식할 HTTP 메서드를 지정합니다. [[[Within the block of member routes, each route name specifies the HTTP verb that it will recognize.]]]
 여기에는 `get`, `patch`, `put`, `post`, 혹은 `delete`를 사용할 수 있습니다. [[[You can use `get`, `patch`, `put`, `post`, or `delete` here.]]]
 만약 중복된 `member` 라우트가 없다면, 블록을 제거하고 `:on`을 라우트에 전달할 수 있습니다. [[[If you don't have multiple `member` routes, you can also pass `:on` to a route, eliminating the block:]]]
 
@@ -686,7 +686,7 @@ get ':username', to: 'users#show', as: :user
 `UsersController`의 `show` 액션 내부에서, `params[:username]`는 user의 username을 포함할 것입니다. [[[Inside the `show` action of `UsersController`, `params[:username]` will contain the username for the user.]]]
 매개변수 이름이 `:username`이 되기를 원하지 않는다면 라우트 정의에 있는 `:username`을 변경하십시오. [[[Change `:username` in the route definition if you do not want your parameter name to be `:username`.]]]
 
-### [HTTP Verb Constraints] HTTP Verb 제약
+### [HTTP Verb Constraints] HTTP 메서드 제약
 
 일반적으로 특정 verb로 라우트를 제한하기 위해 `get`, `post`, `put` 그리고 `delete`를 사용해야 합니다. [[[In general, you should use the `get`, `post`, `put` and `delete` methods to constrain a route to a particular verb.]]]
 한번에 여러 verb를 매칭하려면 `match` 메서드를 `:via` 옵션과 함께 사용할 수 있습니다: [[[You can use the `match` method with the `:via` option to match multiple verbs at once:]]]
@@ -1100,9 +1100,9 @@ ActiveSupport::Inflector.inflections do |inflect|
 end
 ```
 
-### [Using `:as` in Nested Resources] 내포 리소스에 `:as` 사용하기
+### [Using `:as` in Nested Resources] 중첩 리소스에 `:as` 사용하기
 
-`:as` 옵션은 내포 라우트 헬퍼를 위해 자동 생성된 이름을 오버라이드합니다. 예를 들면: [[[The `:as` option overrides the automatically-generated name for the resource in nested route helpers. For example:]]]
+`:as` 옵션은 중첩 라우트 헬퍼를 위해 자동 생성된 이름을 오버라이드합니다. 예를 들면: [[[The `:as` option overrides the automatically-generated name for the resource in nested route helpers. For example:]]]
 
 ```ruby
 resources :magazines do
@@ -1119,7 +1119,7 @@ end
 
 ### [Listing Existing Routes] 기존 라우트 목록보기
 
-응용프로그램에서 사용가능한 전체 목록을 얻으려면, 서버가 **개발** 환경에서 구동되는 동안 부라우저로 `http://localhost:3000/rails/info/routes`를 방문하십시오. [[[To get a complete list of the available routes in your application, visit `http://localhost:3000/rails/info/routes` in your browser while your server is running in the **development** environment.]]]
+응용프로그램에서 사용가능한 전체 목록을 얻으려면, 서버가 **개발** 환경에서 구동되는 동안 브라우저로 `http://localhost:3000/rails/info/routes`를 방문하십시오. [[[To get a complete list of the available routes in your application, visit `http://localhost:3000/rails/info/routes` in your browser while your server is running in the **development** environment.]]]
 또한 터미널에서 `rake routes`를 실행하면 동일한 출력을 만들 수 있습니다. [[[You can also execute the `rake routes` command in your terminal to produce the same output.]]]
 
 두 메서드는 `routes.rb` 내에 나타나는 동일 순서대로 전체 라우트의 목록을 보여줄 것입니다. [[[Both methods will list all of your routes, in the same order that they appear in `routes.rb`.]]]
@@ -1127,7 +1127,7 @@ end
 
 * 라우트 이름 (만약 있다면) [[[The route name (if any)]]]
 
-* 사용되는 HTTP verb (만약 라우트가 모든 verb에 응답하는 것이 아니라면) [[[The HTTP verb used (if the route doesn't respond to all verbs)]]]
+* 사용되는 HTTP 메서드 (만약 라우트가 모든 verb에 응답하는 것이 아니라면) [[[The HTTP verb used (if the route doesn't respond to all verbs)]]]
 
 * 매칭될 URL 패턴 [[[The URL pattern to match]]]
 
@@ -1177,7 +1177,7 @@ assert_generates '/about', controller: 'pages', action: 'about'
 assert_recognizes({ controller: 'photos', action: 'show', id: '1' }, '/photos/1')
 ```
 
-`:method` 인수를 제공하여 HTTP verb를 지정할 수 있습니다.: [[[You can supply a `:method` argument to specify the HTTP verb:]]]
+`:method` 인수를 제공하여 HTTP 메서드를 지정할 수 있습니다.: [[[You can supply a `:method` argument to specify the HTTP verb:]]]
 
 ```ruby
 assert_recognizes({ controller: 'photos', action: 'create' }, { path: 'photos', method: :post })
