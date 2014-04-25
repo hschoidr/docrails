@@ -93,8 +93,8 @@ module ActiveRecord
       #    joins # =>  []
       #
       def initialize(base, associations, joins)
-        @alias_tracker = AliasTracker.new(base.connection, joins)
-        @alias_tracker.aliased_name_for(base.table_name) # Updates the count for base.table_name to 1
+        @alias_tracker = AliasTracker.create(base.connection, joins)
+        @alias_tracker.aliased_name_for(base.table_name, base.table_name) # Updates the count for base.table_name to 1
         tree = self.class.make_tree associations
         @join_root = JoinBase.new base, build(tree, base)
         @join_root.children.each { |child| construct_tables! @join_root, child }
@@ -114,7 +114,7 @@ module ActiveRecord
             walk join_root, oj.join_root
           else
             oj.join_root.children.flat_map { |child|
-              make_outer_joins join_root, child
+              make_outer_joins oj.join_root, child
             }
           end
         }
@@ -163,7 +163,7 @@ module ActiveRecord
 
       def make_outer_joins(parent, child)
         tables    = table_aliases_for(parent, child)
-        join_type = Arel::OuterJoin
+        join_type = Arel::Nodes::OuterJoin
         joins     = make_constraints parent, child, tables, join_type
 
         joins.concat child.children.flat_map { |c| make_outer_joins(child, c) }
@@ -171,7 +171,7 @@ module ActiveRecord
 
       def make_inner_joins(parent, child)
         tables    = child.tables
-        join_type = Arel::InnerJoin
+        join_type = Arel::Nodes::InnerJoin
         joins     = make_constraints parent, child, tables, join_type
 
         joins.concat child.children.flat_map { |c| make_inner_joins(child, c) }

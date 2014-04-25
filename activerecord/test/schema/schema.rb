@@ -45,6 +45,7 @@ ActiveRecord::Schema.define do
     t.string :preferences, null: true, default: '', limit: 1024
     t.string :json_data, null: true, limit: 1024
     t.string :json_data_empty, null: true, default: "", limit: 1024
+    t.text :params
     t.references :account
   end
 
@@ -96,6 +97,7 @@ ActiveRecord::Schema.define do
     t.column :name, :string
     t.column :status, :integer, default: 0
     t.column :read_status, :integer, default: 0
+    t.column :nullable_status, :integer
   end
 
   create_table :booleans, force: true do |t|
@@ -196,6 +198,7 @@ ActiveRecord::Schema.define do
   end
 
   create_table :computers, force: true do |t|
+    t.string :system
     t.integer :developer, null: false
     t.integer :extendedWarranty, null: false
   end
@@ -556,7 +559,12 @@ ActiveRecord::Schema.define do
 
   create_table :products, force: true do |t|
     t.references :collection
+    t.references :type
     t.string     :name
+  end
+
+  create_table :product_types, force: true do |t|
+    t.string :name
   end
 
   create_table :projects, force: true do |t|

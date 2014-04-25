@@ -385,8 +385,21 @@ module ActiveRecord
       attr_accessor :delegate # :nodoc:
       attr_accessor :disable_ddl_transaction # :nodoc:
 
-      def check_pending!
-        raise ActiveRecord::PendingMigrationError if ActiveRecord::Migrator.needs_migration?
+      def check_pending!(connection = Base.connection)
+        raise ActiveRecord::PendingMigrationError if ActiveRecord::Migrator.needs_migration?(connection)
+      end
+
+      def load_schema_if_pending!
+        if ActiveRecord::Migrator.needs_migration?
+          ActiveRecord::Tasks::DatabaseTasks.load_schema
+          check_pending!
+        end
+      end
+
+      def maintain_test_schema! # :nodoc:
+        if ActiveRecord::Base.maintain_test_schema
+          suppress_messages { load_schema_if_pending! }
+        end
       end
 
       def method_missing(name, *args, &block) # :nodoc:
@@ -746,7 +759,7 @@ module ActiveRecord
 
       def load_migration
         require(File.expand_path(filename))
-        name.constantize.new
+        name.constantize.new(name, version)
       end
 
   end
@@ -817,17 +830,17 @@ module ActiveRecord
         SchemaMigration.all.map { |x| x.version.to_i }.sort
       end
 
-      def current_version
+      def current_version(connection = Base.connection)
         sm_table = schema_migrations_table_name
-        if Base.connection.table_exists?(sm_table)
+        if connection.table_exists?(sm_table)
           get_all_versions.max || 0
         else
           0
         end
       end
 
-      def needs_migration?
-        current_version < last_version
+      def needs_migration?(connection = Base.connection)
+        current_version(connection) < last_version
       end
 
       def last_version

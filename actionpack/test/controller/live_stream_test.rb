@@ -1,5 +1,6 @@
 require 'abstract_unit'
 require 'active_support/concurrency/latch'
+Thread.abort_on_exception = true
 
 module ActionController
   class SSETest < ActionController::TestCase
@@ -43,9 +44,7 @@ module ActionController
     tests SSETestController
 
     def wait_for_response_stream_close
-      while !response.stream.closed?
-        sleep 0.01
-      end
+      response.stream.await_close
     end
 
     def test_basic_sse
@@ -91,6 +90,9 @@ module ActionController
   end
 
   class LiveStreamTest < ActionController::TestCase
+    class Exception < StandardError
+    end
+
     class TestController < ActionController::Base
       include ActionController::Live
 
@@ -153,7 +155,16 @@ module ActionController
           response.stream.close
         end
 
+        response.stream.write "" # make sure the response is committed
         raise 'An exception occurred...'
+      end
+
+      def exception_in_controller
+        raise Exception, 'Exception in controller'
+      end
+
+      def bad_request_error
+        raise ActionController::BadRequest
       end
 
       def exception_in_exception_callback
@@ -161,23 +172,15 @@ module ActionController
         response.stream.on_error do
           raise 'We need to go deeper.'
         end
+        response.stream.write ''
         response.stream.write params[:widget][:didnt_check_for_nil]
       end
     end
 
     tests TestController
 
-    class TestResponse < Live::Response
-      def recycle!
-        initialize
-      end
-    end
-
-    def build_response
-      TestResponse.new
-    end
-
     def assert_stream_closed
+      response.stream.await_close
       assert response.stream.closed?, 'stream should be closed'
     end
 
@@ -249,24 +252,19 @@ module ActionController
     end
 
     def test_exception_handling_html
-      capture_log_output do |output|
+      assert_raises(ActionView::MissingTemplate) do
         get :exception_in_view
-        assert_match %r((window\.location = "/500\.html"</script></html>)$), response.body
-        assert_match 'Missing template test/doesntexist', output.rewind && output.read
-        assert_stream_closed
       end
+      assert_stream_closed
     end
 
     def test_exception_handling_plain_text
-      capture_log_output do |output|
+      assert_raises(ActionView::MissingTemplate) do
         get :exception_in_view, format: :json
-        assert_equal '', response.body
-        assert_match 'Missing template test/doesntexist', output.rewind && output.read
-        assert_stream_closed
       end
     end
 
-    def test_exception_callback
+    def test_exception_callback_when_committed
       capture_log_output do |output|
         get :exception_with_callback, format: 'text/event-stream'
         assert_equal %(data: "500 Internal Server Error"\n\n), response.body
@@ -275,7 +273,19 @@ module ActionController
       end
     end
 
-    def test_exceptions_raised_handling_exceptions
+    def test_exception_in_controller_before_streaming
+      assert_raises(ActionController::LiveStreamTest::Exception) do
+        get :exception_in_controller, format: 'text/event-stream'
+      end
+    end
+
+    def test_bad_request_in_controller_before_streaming
+      assert_raises(ActionController::BadRequest) do
+        get :bad_request_error, format: 'text/event-stream'
+      end
+    end
+
+    def test_exceptions_raised_handling_exceptions_and_committed
       capture_log_output do |output|
         get :exception_in_exception_callback, format: 'text/event-stream'
         assert_equal '', response.body
@@ -293,6 +303,13 @@ module ActionController
       @request.if_none_match = Digest::MD5.hexdigest("123")
       get :with_stale
       assert_equal 304, @response.status.to_i
+    end
+  end
+
+  class BufferTest < ActionController::TestCase
+    def test_nil_callback
+      buf = ActionController::Live::Buffer.new nil
+      assert buf.call_on_error
     end
   end
 end
