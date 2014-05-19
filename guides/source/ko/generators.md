@@ -1,9 +1,9 @@
 [Creating and Customizing Rails Generators & Templates] 레일스 제너레이터 & 템플릿을 생성과 커스터마이즈하기
 =====================================================
 
-만약 당신이 작업 흐름을 향상시키려 한다면, 레일스 제너레이터는 필수적인 도구이다. 이 가이드에서, 당신은 제너레이터를 생성과 커스터마이즈하는 방법을 배울 수 있을 것이다. [[[Rails generators are an essential tool if you plan to improve your workflow. With this guide you will learn how to create generators and customize existing ones.]]]
+작업 흐름을 향상시키려 한다면, 레일스 제너레이터는 필수적인 도구입니다. 이 가이드는 제너레이터를 생성과 커스터마이즈하는 방법을 알려드립니다. [[[Rails generators are an essential tool if you plan to improve your workflow. With this guide you will learn how to create generators and customize existing ones.]]]
 
-본 가이드를 읽고나면 다음의 내용들을 이해할 수 있습니다: [[[After reading this guide, you will know:]]]
+본 가이드를 통해 다음의 내용들을 얻을 수 있습니다: [[[After reading this guide, you will know:]]]
 
 * 어플리케이션에서 이용가능한 제너레이터를 보는 방법. [[[How to see which generators are available in your application.]]]
 
@@ -11,9 +11,9 @@
 
 * 제너레이터를 호출할때, 레일스가 제너레이터를 찾는 방법. [[[How Rails searches for generators before invoking them.]]]
 
-* 새로운 제너레이터를 생성하여 당신의 scaffold를 커스터마이즈하는 방법. [[[How to customize your scaffold by creating new generators.]]]
+* 새로운 제너레이터를 생성하여 scaffold를 커스터마이즈하는 방법. [[[How to customize your scaffold by creating new generators.]]]
 
-* 제너레이터 템플릿을 변경하여 당신의 scaffold를 커스터마이즈하는 방법. [[[How to customize your scaffold by changing generator templates.]]]
+* 제너레이터 템플릿을 변경하여 scaffold를 커스터마이즈하는 방법. [[[How to customize your scaffold by changing generator templates.]]]
 
 * 수많은 제너레이터 세트들의 중복을 피하기 위한 방법. [[[How to use fallbacks to avoid overwriting a huge set of generators.]]]
 
@@ -24,7 +24,7 @@
 첫 대면 [[[First Contact]]]
 -------------
 
-당신이 `rails` 명령어를 사용하여 어플리케이션을 생성할 때, 사실 레일즈 제너레이터를 사용하는 것입니다. 어플리케이션 생성 후, `rails generate`를 호출함으로 사용가능한 제너레이터의 목록을 확인할 수 있습니다. [[[When you create an application using the `rails` command, you are in fact using a Rails generator. After that, you can get a list of all available generators by just invoking `rails generate`:]]]
+`rails` 명령어를 사용하여 어플리케이션을 생성할 때, 사실 레일즈 제너레이터를 사용하는 것입니다. 어플리케이션 생성 후, `rails generate`를 하면 사용가능한 제너레이터의 목록을 확인할 수 있습니다. [[[When you create an application using the `rails` command, you are in fact using a Rails generator. After that, you can get a list of all available generators by just invoking `rails generate`:]]]
 
 ```bash
 $ rails new myapp
@@ -32,7 +32,7 @@ $ cd myapp
 $ rails generate
 ```
 
-레일스에 딸려 있는 모든 제너레이터 목록을 확인할 수 있습니다. 예를 들어, 만약 helper 제너레이터의 자세한 설명이 필요하다면, 아래와 같이 실행하면 됩니다. [[[You will get a list of all generators that comes with Rails. If you need a detailed description of the helper generator, for example, you can simply do:]]]
+레일스에 딸려 있는 모든 제너레이터 목록을 확인할 수 있습니다. 예를 들어, helper 제너레이터의 자세한 설명이 필요하다면, 아래와 같이 실행하면 됩니다. [[[You will get a list of all generators that comes with Rails. If you need a detailed description of the helper generator, for example, you can simply do:]]]
 
 ```bash
 $ rails generate helper --help
