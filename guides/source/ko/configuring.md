@@ -166,7 +166,7 @@ config.active_record.schema_format = :ruby
 
 * `config.assets.precompile`는  `rake assets:precompile` 실행할때 미리 컴파일될 추가적인 에셋들을 (`application.css` 와 `application.js` 이외의) 지정할 수 있습니다. [[[`config.assets.precompile` allows you to specify additional assets (other than `application.css` and `application.js`) which are to be precompiled when `rake assets:precompile` is run.]]]
 
-* `config.assets.prefix`는 에셋에서 제공되는 접두사를 정합니다. 기본값으로는 `/assets` 입니다. [[[`config.assets.prefix` defines the prefix where assets are served from. Defaults to `/assets`.]]]
+* `config.assets.prefix`는 에셋을 위치시킬 경로의 접두사를 정합니다. 기본값으로는 `/assets` 입니다. [[[`config.assets.prefix` defines the prefix where assets are served from. Defaults to `/assets`.]]]
 
 * `config.assets.digest`은 asset 이름의 MD5 fingerprints의 사용을 활성화합니다. `production.rb`에서 기본적으로 `true`로 설정됩니다.  [[[`config.assets.digest` enables the use of MD5 fingerprints in asset names. Set to `true` by default in `production.rb`.]]]
 
@@ -197,7 +197,7 @@ end
 [[[ `assets` allows to create assets on generating a scaffold. Defaults to `true`. ]]]
 * `force_plural`는 모델 이름의 복수화를 합니다. 기본값은 `false` 입니다.   
 [[[`force_plural` allows pluralized model names. Defaults to `false`.]]]
-* `helper`는 제네레이트 헬퍼의 여부를 정의합니다. 기본값은 `true` 입니다. 
+* `helper`는 헬퍼 생성 여부를 정의합니다. 기본값은 `true` 입니다. 
 [[[`helper` defines whether or not to generate helpers. Defaults to `true`.]]]
 * `integration_tool`는 사용할 통합 도구를 정의합니다. 기본값은 `nil` 입니다. 
 [[[`integration_tool` defines which integration tool to use. Defaults to `nil`.]]]
