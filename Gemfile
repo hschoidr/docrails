@@ -11,6 +11,8 @@ gem 'rack-cache', '~> 1.2'
 gem 'jquery-rails', '~> 3.1.0'
 gem 'turbolinks'
 gem 'coffee-rails', '~> 4.0.0'
+gem 'arel', github: 'rails/arel', branch: 'master'
+gem 'sprockets-rails', github: 'rails/sprockets-rails', branch: '2-1-stable'
 
 # require: false so bcrypt is loaded only when has_secure_password is used.
 # This is to avoid ActiveModel (and by extension the entire framework)
@@ -23,7 +25,7 @@ gem 'uglifier', '>= 1.3.0', require: false
 
 group :doc do
   gem 'sdoc', '~> 0.4.0'
-  gem 'redcarpet', '~> 2.2.2', platforms: :ruby
+  gem 'redcarpet', '~> 3.1.0', platforms: :ruby
   gem 'w3c_validators'
   gem 'kindlerb'
 end

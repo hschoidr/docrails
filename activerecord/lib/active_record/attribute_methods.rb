@@ -29,6 +29,8 @@ module ActiveRecord
       end
     }
 
+    BLACKLISTED_CLASS_METHODS = %w(private public protected)
+
     class AttributeMethodCache
       def initialize
         @module = Module.new
@@ -105,9 +107,9 @@ module ActiveRecord
           super
         else
           # If B < A and A defines its own attribute method, then we don't want to overwrite that.
-          defined = method_defined_within?(method_name, superclass) &&
-            superclass.instance_method(method_name).owner != superclass.generated_attribute_methods
-          defined || super
+          defined = method_defined_within?(method_name, superclass, superclass.generated_attribute_methods)
+          base_defined = Base.method_defined?(method_name) || Base.private_method_defined?(method_name)
+          defined && !base_defined || super
         end
       end
 
@@ -132,7 +134,7 @@ module ActiveRecord
       # A class method is 'dangerous' if it is already (re)defined by Active Record, but
       # not by any ancestors. (So 'puts' is not dangerous but 'new' is.)
       def dangerous_class_method?(method_name)
-        class_method_defined_within?(method_name, Base)
+        BLACKLISTED_CLASS_METHODS.include?(method_name.to_s) || class_method_defined_within?(method_name, Base)
       end
 
       def class_method_defined_within?(name, klass, superklass = klass.superclass) # :nodoc

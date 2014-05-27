@@ -296,7 +296,6 @@ module ActiveRecord #:nodoc:
 
     include Core
     include Persistence
-    include NoTouching
     include ReadonlyAttributes
     include ModelSchema
     include Inheritance
@@ -310,14 +309,15 @@ module ActiveRecord #:nodoc:
     include Locking::Optimistic
     include Locking::Pessimistic
     include AttributeMethods
-    include Callbacks
     include Timestamp
+    include Callbacks
     include Associations
     include ActiveModel::SecurePassword
     include AutosaveAssociation
     include NestedAttributes
     include Aggregations
     include Transactions
+    include NoTouching
     include Reflection
     include Serialization
     include Store

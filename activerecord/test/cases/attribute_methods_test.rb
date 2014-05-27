@@ -22,7 +22,7 @@ class AttributeMethodsTest < ActiveRecord::TestCase
     @target.table_name = 'topics'
   end
 
-  def teardown
+  teardown do
     ActiveRecord::Base.send(:attribute_method_matchers).clear
     ActiveRecord::Base.send(:attribute_method_matchers).concat(@old_matchers)
   end
@@ -288,10 +288,10 @@ class AttributeMethodsTest < ActiveRecord::TestCase
   def test_read_attribute
     topic = Topic.new
     topic.title = "Don't change the topic"
-    assert_equal "Don't change the topic", topic.send(:read_attribute, "title")
+    assert_equal "Don't change the topic", topic.read_attribute("title")
     assert_equal "Don't change the topic", topic["title"]
 
-    assert_equal "Don't change the topic", topic.send(:read_attribute, :title)
+    assert_equal "Don't change the topic", topic.read_attribute(:title)
     assert_equal "Don't change the topic", topic[:title]
   end
 
@@ -358,10 +358,10 @@ class AttributeMethodsTest < ActiveRecord::TestCase
       super(attr_name).upcase
     end
 
-    assert_equal "STOP CHANGING THE TOPIC", topic.send(:read_attribute, "title")
+    assert_equal "STOP CHANGING THE TOPIC", topic.read_attribute("title")
     assert_equal "STOP CHANGING THE TOPIC", topic["title"]
 
-    assert_equal "STOP CHANGING THE TOPIC", topic.send(:read_attribute, :title)
+    assert_equal "STOP CHANGING THE TOPIC", topic.read_attribute(:title)
     assert_equal "STOP CHANGING THE TOPIC", topic[:title]
   end
 
@@ -744,6 +744,19 @@ class AttributeMethodsTest < ActiveRecord::TestCase
     assert @target, error.record
     assert "hello", error.attribute
     assert "unknown attribute: hello", error.message
+  end
+
+  def test_methods_override_in_multi_level_subclass
+    klass = Class.new(Developer) do
+      def name
+        "dev:#{read_attribute(:name)}"
+      end
+    end
+
+    2.times { klass = Class.new klass }
+    dev = klass.new(name: 'arthurnn')
+    dev.save!
+    assert_equal 'dev:arthurnn', dev.reload.name
   end
 
   def test_global_methods_are_overwritten

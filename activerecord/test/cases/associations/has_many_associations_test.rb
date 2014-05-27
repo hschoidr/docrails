@@ -22,6 +22,12 @@ require 'models/engine'
 require 'models/categorization'
 require 'models/minivan'
 require 'models/speedometer'
+require 'models/reference'
+require 'models/job'
+require 'models/college'
+require 'models/student'
+require 'models/pirate'
+require 'models/ship'
 
 class HasManyAssociationsTestForReorderWithJoinDependency < ActiveRecord::TestCase
   fixtures :authors, :posts, :comments
@@ -39,10 +45,16 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
   fixtures :accounts, :categories, :companies, :developers, :projects,
            :developers_projects, :topics, :authors, :comments,
            :people, :posts, :readers, :taggings, :cars, :essays,
-           :categorizations
+           :categorizations, :jobs, :tags
 
   def setup
     Client.destroyed_client_ids.clear
+  end
+
+  def test_sti_subselect_count
+    tag = Tag.first
+    len = Post.tagged_with(tag.id).limit(10).size
+    assert_operator len, :>, 0
   end
 
   def test_anonymous_has_many
@@ -61,6 +73,13 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
     assert_operator dev.developer_projects.count, :>, 0
     assert_equal named.projects.map(&:id).sort,
                  dev.developer_projects.map(&:project_id).sort
+  end
+
+  def test_has_many_build_with_options
+    college = College.create(name: 'UFMT')
+    Student.create(active: true, college_id: college.id, name: 'Sarah')
+
+    assert_equal college.students, Student.where(active: true, college_id: college.id)
   end
 
   def test_create_from_association_should_respect_default_scope
@@ -105,6 +124,32 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
     car.funky_bulbs.create!
     assert_nothing_raised { car.reload.funky_bulbs.delete_all }
     assert_equal 0, Bulb.count, "bulbs should have been deleted using :delete_all strategy"
+  end
+
+  def test_delete_all_on_association_is_the_same_as_not_loaded
+    author = authors :david
+    author.thinking_posts.create!(:body => "test")
+    author.reload
+    expected_sql = capture_sql { author.thinking_posts.delete_all }
+
+    author.thinking_posts.create!(:body => "test")
+    author.reload
+    author.thinking_posts.inspect
+    loaded_sql = capture_sql { author.thinking_posts.delete_all }
+    assert_equal(expected_sql, loaded_sql)
+  end
+
+  def test_delete_all_on_association_with_nil_dependency_is_the_same_as_not_loaded
+    author = authors :david
+    author.posts.create!(:title => "test", :body => "body")
+    author.reload
+    expected_sql = capture_sql { author.posts.delete_all }
+
+    author.posts.create!(:title => "test", :body => "body")
+    author.reload
+    author.posts.to_a
+    loaded_sql = capture_sql { author.posts.delete_all }
+    assert_equal(expected_sql, loaded_sql)
   end
 
   def test_building_the_associated_object_with_implicit_sti_base_class
@@ -1839,5 +1884,24 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
         end
       end
     end
+  end
+
+  test 'passes custom context validation to validate children' do
+    pirate = FamousPirate.new
+    pirate.famous_ships << ship = FamousShip.new
+
+    assert pirate.valid?
+    assert_not pirate.valid?(:conference)
+    assert_equal "can't be blank", ship.errors[:name].first
+  end
+
+  test 'association with instance dependent scope' do
+    bob = authors(:bob)
+    Post.create!(title: "signed post by bob", body: "stuff", author: authors(:bob))
+    Post.create!(title: "anonymous post", body: "more stuff", author: authors(:bob))
+    assert_equal ["misc post by bob", "other post by bob",
+                  "signed post by bob"], bob.posts_with_signature.map(&:title).sort
+
+    assert_equal [], authors(:david).posts_with_signature.map(&:title)
   end
 end

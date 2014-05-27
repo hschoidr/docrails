@@ -71,6 +71,24 @@ class TimestampTest < ActiveRecord::TestCase
     assert_equal @previously_updated_at, @developer.updated_at
   end
 
+  def test_saving_when_callback_sets_record_timestamps_to_false_doesnt_update_its_timestamp
+    klass = Class.new(Developer) do
+      before_update :cancel_record_timestamps
+      def cancel_record_timestamps
+        self.record_timestamps = false
+        return true
+      end
+    end
+
+    developer = klass.first
+    previously_updated_at = developer.updated_at
+
+    developer.name = "New Name"
+    developer.save!
+
+    assert_equal previously_updated_at, developer.updated_at
+  end
+
   def test_touching_an_attribute_updates_timestamp
     previously_created_at = @developer.created_at
     @developer.touch(:created_at)
@@ -86,6 +104,18 @@ class TimestampTest < ActiveRecord::TestCase
     previous_value = task.ending
     task.touch(:ending)
     assert_not_equal previous_value, task.ending
+    assert_in_delta Time.now, task.ending, 1
+  end
+
+  def test_touching_many_attributes_updates_them
+    task = Task.first
+    previous_starting = task.starting
+    previous_ending = task.ending
+    task.touch(:starting, :ending)
+
+    assert_not_equal previous_starting, task.starting
+    assert_not_equal previous_ending, task.ending
+    assert_in_delta Time.now, task.starting, 1
     assert_in_delta Time.now, task.ending, 1
   end
 
@@ -138,6 +168,25 @@ class TimestampTest < ActiveRecord::TestCase
     end
 
     assert !@developer.no_touching?
+  end
+
+  def test_no_touching_with_callbacks
+    klass = Class.new(ActiveRecord::Base) do
+      self.table_name = "developers"
+
+      attr_accessor :after_touch_called
+
+      after_touch do |user|
+        user.after_touch_called = true
+      end
+    end
+
+    developer = klass.first
+
+    klass.no_touching do
+      developer.touch
+      assert_not developer.after_touch_called
+    end
   end
 
   def test_saving_a_record_with_a_belongs_to_that_specifies_touching_the_parent_should_update_the_parent_updated_at

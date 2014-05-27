@@ -1,3 +1,5 @@
+require 'thread'
+
 module ActiveRecord
   # = Active Record Reflection
   module Reflection # :nodoc:
@@ -22,11 +24,11 @@ module ActiveRecord
     end
 
     def self.add_reflection(ar, name, reflection)
-      ar.reflections = ar.reflections.merge(name => reflection)
+      ar.reflections = ar.reflections.merge(name.to_s => reflection)
     end
 
     def self.add_aggregate_reflection(ar, name, reflection)
-      ar.aggregate_reflections = ar.aggregate_reflections.merge(name => reflection)
+      ar.aggregate_reflections = ar.aggregate_reflections.merge(name.to_s => reflection)
     end
 
     # \Reflection enables to interrogate Active Record classes and objects
@@ -48,7 +50,7 @@ module ActiveRecord
       #   Account.reflect_on_aggregation(:balance) # => the balance AggregateReflection
       #
       def reflect_on_aggregation(aggregation)
-        aggregate_reflections[aggregation]
+        aggregate_reflections[aggregation.to_s]
       end
 
       # Returns an array of AssociationReflection objects for all the
@@ -72,7 +74,7 @@ module ActiveRecord
       #   Invoice.reflect_on_association(:line_items).macro  # returns :has_many
       #
       def reflect_on_association(association)
-        reflections[association]
+        reflections[association.to_s]
       end
 
       # Returns an array of AssociationReflection objects for all associations which have <tt>:autosave</tt> enabled.
@@ -151,7 +153,7 @@ module ActiveRecord
         super ||
           other_aggregation.kind_of?(self.class) &&
           name == other_aggregation.name &&
-          other_aggregation.options &&
+          !other_aggregation.options.nil? &&
           active_record == other_aggregation.active_record
       end
 
@@ -199,6 +201,18 @@ module ActiveRecord
         @type         = options[:as] && "#{options[:as]}_type"
         @foreign_type = options[:foreign_type] || "#{name}_type"
         @constructable = calculate_constructable(macro, options)
+        @association_scope_cache = {}
+        @scope_lock = Mutex.new
+      end
+
+      def association_scope_cache(conn, owner)
+        key = conn.prepared_statements
+        if options[:polymorphic]
+          key = [key, owner.read_attribute(@foreign_type)]
+        end
+        @association_scope_cache[key] ||= @scope_lock.synchronize {
+          @association_scope_cache[key] ||= yield
+        }
       end
 
       # Returns a new, unsaved instance of the associated class. +attributes+ will
@@ -262,6 +276,25 @@ module ActiveRecord
             raise InverseOfAssociationNotFoundError.new(self)
           end
         end
+      end
+
+      def check_preloadable!
+        return unless scope
+
+        if scope.arity > 0
+          ActiveSupport::Deprecation.warn <<-WARNING
+The association scope '#{name}' is instance dependent (the scope block takes an argument).
+Preloading happens before the individual instances are created. This means that there is no instance
+being passed to the association scope. This will most likely result in broken or incorrect behavior.
+Joining, Preloading and eager loading of these associations is deprecated and will be removed in the future.
+          WARNING
+        end
+      end
+      alias :check_eager_loadable! :check_preloadable!
+
+      def join_id_for(owner) #:nodoc:
+        key = (source_macro == :belongs_to) ? foreign_key : active_record_primary_key
+        owner[key]
       end
 
       def through_reflection
@@ -449,9 +482,9 @@ module ActiveRecord
         end
 
         def derive_class_name
-          class_name = name.to_s.camelize
+          class_name = name.to_s
           class_name = class_name.singularize if collection?
-          class_name
+          class_name.camelize
         end
 
         def derive_foreign_key
@@ -617,7 +650,7 @@ module ActiveRecord
       #   # => [:tag, :tags]
       #
       def source_reflection_names
-        (options[:source] ? [options[:source]] : [name.to_s.singularize, name]).collect { |n| n.to_sym }.uniq
+        options[:source] ? [options[:source]] : [name.to_s.singularize, name].uniq
       end
 
       def source_reflection_name # :nodoc:

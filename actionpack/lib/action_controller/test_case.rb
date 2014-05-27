@@ -17,8 +17,9 @@ module ActionController
       @_templates = Hash.new(0)
       @_layouts = Hash.new(0)
       @_files = Hash.new(0)
+      @_subscribers = []
 
-      ActiveSupport::Notifications.subscribe("render_template.action_view") do |_name, _start, _finish, _id, payload|
+      @_subscribers << ActiveSupport::Notifications.subscribe("render_template.action_view") do |_name, _start, _finish, _id, payload|
         path = payload[:layout]
         if path
           @_layouts[path] += 1
@@ -28,7 +29,7 @@ module ActionController
         end
       end
 
-      ActiveSupport::Notifications.subscribe("!render_template.action_view") do |_name, _start, _finish, _id, payload|
+      @_subscribers << ActiveSupport::Notifications.subscribe("!render_template.action_view") do |_name, _start, _finish, _id, payload|
         path = payload[:virtual_path]
         next unless path
         partial = path =~ /^.*\/_[^\/]*$/
@@ -41,7 +42,7 @@ module ActionController
         @_templates[path] += 1
       end
 
-      ActiveSupport::Notifications.subscribe("!render_template.action_view") do |_name, _start, _finish, _id, payload|
+      @_subscribers << ActiveSupport::Notifications.subscribe("!render_template.action_view") do |_name, _start, _finish, _id, payload|
         next if payload[:virtual_path] # files don't have virtual path
 
         path = payload[:identifier]
@@ -53,8 +54,9 @@ module ActionController
     end
 
     def teardown_subscriptions
-      ActiveSupport::Notifications.unsubscribe("render_template.action_view")
-      ActiveSupport::Notifications.unsubscribe("!render_template.action_view")
+      @_subscribers.each do |subscriber|
+        ActiveSupport::Notifications.unsubscribe(subscriber)
+      end
     end
 
     def process(*args)
@@ -267,6 +269,18 @@ module ActionController
     def body
       @body ||= super
     end
+
+    # Was the response successful?
+    alias_method :success?, :successful?
+
+    # Was the URL not found?
+    alias_method :missing?, :not_found?
+
+    # Were we redirected?
+    alias_method :redirect?, :redirection?
+
+    # Was there a server-side error?
+    alias_method :error?, :server_error?
   end
 
   # Methods #destroy and #load! are overridden to avoid calling methods on the
@@ -474,8 +488,8 @@ module ActionController
       # - +session+: A hash of parameters to store in the session. This may be +nil+.
       # - +flash+: A hash of parameters to store in the flash. This may be +nil+.
       #
-      # You can also simulate POST, PATCH, PUT, DELETE, HEAD, and OPTIONS requests with
-      # +post+, +patch+, +put+, +delete+, +head+, and +options+.
+      # You can also simulate POST, PATCH, PUT, DELETE, and HEAD requests with
+      # +post+, +patch+, +put+, +delete+, and +head+.
       #
       # Note that the request method is not verified. The different methods are
       # available to make the tests more expressive.
@@ -536,6 +550,31 @@ module ActionController
         end
       end
 
+      # Simulate a HTTP request to +action+ by specifying request method,
+      # parameters and set/volley the response.
+      #
+      # - +action+: The controller action to call.
+      # - +http_method+: Request method used to send the http request. Possible values
+      #   are +GET+, +POST+, +PATCH+, +PUT+, +DELETE+, +HEAD+. Defaults to +GET+.
+      # - +parameters+: The HTTP parameters. This may be +nil+, a hash, or a
+      #   string that is appropriately encoded (+application/x-www-form-urlencoded+
+      #   or +multipart/form-data+).
+      # - +session+: A hash of parameters to store in the session. This may be +nil+.
+      # - +flash+: A hash of parameters to store in the flash. This may be +nil+.
+      #
+      # Example calling +create+ action and sending two params:
+      #
+      #   process :create, 'POST', user: { name: 'Gaurish Sharma', email: 'user@example.com' }
+      #
+      # Example sending parameters, +nil+ session and setting a flash message:
+      #
+      #   process :view, 'GET', { id: 7 }, nil, { notice: 'This is flash message' }
+      #
+      # To simulate +GET+, +POST+, +PATCH+, +PUT+, +DELETE+ and +HEAD+ requests
+      # prefer using #get, #post, #patch, #put, #delete and #head methods
+      # respectively which will make tests more expressive.
+      #
+      # Note that the request method is not verified.
       def process(action, http_method = 'GET', *args)
         check_required_ivars
 
@@ -583,7 +622,9 @@ module ActionController
         @controller.process(name)
 
         if cookies = @request.env['action_dispatch.cookies']
-          cookies.write(@response)
+          unless @response.committed?
+            cookies.write(@response)
+          end
         end
         @response.prepare!
 

@@ -11,6 +11,7 @@ require 'models/author'
 require 'models/tag'
 require 'models/tagging'
 require 'models/parrot'
+require 'models/person'
 require 'models/pirate'
 require 'models/treasure'
 require 'models/price_estimate'
@@ -20,6 +21,7 @@ require 'models/membership'
 require 'models/sponsor'
 require 'models/country'
 require 'models/treaty'
+require 'models/vertex'
 require 'active_support/core_ext/string/conversions'
 
 class ProjectWithAfterCreateHook < ActiveRecord::Base
@@ -79,6 +81,12 @@ class HasAndBelongsToManyAssociationsTest < ActiveRecord::TestCase
     treaty = Treaty.new(:name => 'peace')
     treaty.treaty_id = 't1'
     country.treaties << treaty
+  end
+
+  def test_marshal_dump
+    post = posts :welcome
+    preloaded = Post.includes(:categories).find post.id
+    assert_equal preloaded, Marshal.load(Marshal.dump(preloaded))
   end
 
   def test_should_property_quote_string_primary_keys
@@ -213,6 +221,24 @@ class HasAndBelongsToManyAssociationsTest < ActiveRecord::TestCase
   def test_habtm_unique_order_preserved
     assert_equal developers(:poor_jamis, :jamis, :david), projects(:active_record).non_unique_developers
     assert_equal developers(:poor_jamis, :jamis, :david), projects(:active_record).developers
+  end
+
+  def test_habtm_collection_size_from_build
+    devel = Developer.create("name" => "Fred Wu")
+    devel.projects << Project.create("name" => "Grimetime")
+    devel.projects.build
+
+    assert_equal 2, devel.projects.size
+  end
+
+  def test_habtm_collection_size_from_params
+    devel = Developer.new({
+      projects_attributes: {
+        '0' => {}
+      }
+    })
+
+    assert_equal 1, devel.projects.size
   end
 
   def test_build
@@ -795,4 +821,31 @@ class HasAndBelongsToManyAssociationsTest < ActiveRecord::TestCase
     end
   end
 
+  def test_association_with_validate_false_does_not_run_associated_validation_callbacks_on_create
+    rich_person = RichPerson.new
+
+    treasure = Treasure.new
+    treasure.rich_people << rich_person
+    treasure.valid?
+
+    assert_equal 1, treasure.rich_people.size
+    assert_nil rich_person.first_name, 'should not run associated person validation on create when validate: false'
+  end
+
+  def test_association_with_validate_false_does_not_run_associated_validation_callbacks_on_update
+    rich_person = RichPerson.create!
+    person_first_name = rich_person.first_name
+    assert_not_nil person_first_name
+
+    treasure = Treasure.new
+    treasure.rich_people << rich_person
+    treasure.valid?
+
+    assert_equal 1, treasure.rich_people.size
+    assert_equal person_first_name, rich_person.first_name, 'should not run associated person validation on update when validate: false'
+  end
+
+  def test_custom_join_table
+    assert_equal 'edges', Vertex.reflect_on_association(:sources).join_table
+  end
 end

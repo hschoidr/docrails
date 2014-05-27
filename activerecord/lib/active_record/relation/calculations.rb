@@ -188,7 +188,7 @@ module ActiveRecord
     private
 
     def has_include?(column_name)
-      eager_loading? || (includes_values.present? && (column_name || references_eager_loaded_tables?))
+      eager_loading? || (includes_values.present? && ((column_name && column_name != :all) || references_eager_loaded_tables?))
     end
 
     def perform_calculation(operation, column_name, options = {})
@@ -231,15 +231,18 @@ module ActiveRecord
 
     def execute_simple_calculation(operation, column_name, distinct) #:nodoc:
       # Postgresql doesn't like ORDER BY when there are no GROUP BY
-      relation = reorder(nil)
+      relation = unscope(:order)
 
       column_alias = column_name
+
+      bind_values = nil
 
       if operation == "count" && (relation.limit_value || relation.offset_value)
         # Shortcut when limit is zero.
         return 0 if relation.limit_value == 0
 
         query_builder = build_count_subquery(relation, column_name, distinct)
+        bind_values = query_builder.bind_values + relation.bind_values
       else
         column = aggregate_column(column_name)
 
@@ -249,9 +252,10 @@ module ActiveRecord
         relation.select_values = [select_value]
 
         query_builder = relation.arel
+        bind_values = query_builder.bind_values + relation.bind_values
       end
 
-      result = @klass.connection.select_all(query_builder, nil, relation.bind_values)
+      result = @klass.connection.select_all(query_builder, nil, bind_values)
       row    = result.first
       value  = row && row.values.first
       column = result.column_types.fetch(column_alias) do
@@ -385,9 +389,11 @@ module ActiveRecord
 
       aliased_column = aggregate_column(column_name == :all ? 1 : column_name).as(column_alias)
       relation.select_values = [aliased_column]
-      subquery = relation.arel.as(subquery_alias)
+      arel = relation.arel
+      subquery = arel.as(subquery_alias)
 
       sm = Arel::SelectManager.new relation.engine
+      sm.bind_values = arel.bind_values
       select_value = operation_over_aggregate_column(column_alias, 'count', distinct)
       sm.project(select_value).from(subquery)
     end

@@ -1031,6 +1031,136 @@ class TestRoutingMapper < ActionDispatch::IntegrationTest
     assert_equal 'users/home#index', @response.body
   end
 
+  def test_namespaced_shallow_routes_with_module_option
+    draw do
+      namespace :foo, module: 'bar' do
+        resources :posts, only: [:index, :show] do
+          resources :comments, only: [:index, :show], shallow: true
+        end
+      end
+    end
+
+    get '/foo/posts'
+    assert_equal '/foo/posts', foo_posts_path
+    assert_equal 'bar/posts#index', @response.body
+
+    get '/foo/posts/1'
+    assert_equal '/foo/posts/1', foo_post_path('1')
+    assert_equal 'bar/posts#show', @response.body
+
+    get '/foo/posts/1/comments'
+    assert_equal '/foo/posts/1/comments', foo_post_comments_path('1')
+    assert_equal 'bar/comments#index', @response.body
+
+    get '/foo/comments/2'
+    assert_equal '/foo/comments/2', foo_comment_path('2')
+    assert_equal 'bar/comments#show', @response.body
+  end
+
+  def test_namespaced_shallow_routes_with_path_option
+    draw do
+      namespace :foo, path: 'bar' do
+        resources :posts, only: [:index, :show] do
+          resources :comments, only: [:index, :show], shallow: true
+        end
+      end
+    end
+
+    get '/bar/posts'
+    assert_equal '/bar/posts', foo_posts_path
+    assert_equal 'foo/posts#index', @response.body
+
+    get '/bar/posts/1'
+    assert_equal '/bar/posts/1', foo_post_path('1')
+    assert_equal 'foo/posts#show', @response.body
+
+    get '/bar/posts/1/comments'
+    assert_equal '/bar/posts/1/comments', foo_post_comments_path('1')
+    assert_equal 'foo/comments#index', @response.body
+
+    get '/bar/comments/2'
+    assert_equal '/bar/comments/2', foo_comment_path('2')
+    assert_equal 'foo/comments#show', @response.body
+  end
+
+  def test_namespaced_shallow_routes_with_as_option
+    draw do
+      namespace :foo, as: 'bar' do
+        resources :posts, only: [:index, :show] do
+          resources :comments, only: [:index, :show], shallow: true
+        end
+      end
+    end
+
+    get '/foo/posts'
+    assert_equal '/foo/posts', bar_posts_path
+    assert_equal 'foo/posts#index', @response.body
+
+    get '/foo/posts/1'
+    assert_equal '/foo/posts/1', bar_post_path('1')
+    assert_equal 'foo/posts#show', @response.body
+
+    get '/foo/posts/1/comments'
+    assert_equal '/foo/posts/1/comments', bar_post_comments_path('1')
+    assert_equal 'foo/comments#index', @response.body
+
+    get '/foo/comments/2'
+    assert_equal '/foo/comments/2', bar_comment_path('2')
+    assert_equal 'foo/comments#show', @response.body
+  end
+
+  def test_namespaced_shallow_routes_with_shallow_path_option
+    draw do
+      namespace :foo, shallow_path: 'bar' do
+        resources :posts, only: [:index, :show] do
+          resources :comments, only: [:index, :show], shallow: true
+        end
+      end
+    end
+
+    get '/foo/posts'
+    assert_equal '/foo/posts', foo_posts_path
+    assert_equal 'foo/posts#index', @response.body
+
+    get '/foo/posts/1'
+    assert_equal '/foo/posts/1', foo_post_path('1')
+    assert_equal 'foo/posts#show', @response.body
+
+    get '/foo/posts/1/comments'
+    assert_equal '/foo/posts/1/comments', foo_post_comments_path('1')
+    assert_equal 'foo/comments#index', @response.body
+
+    get '/bar/comments/2'
+    assert_equal '/bar/comments/2', foo_comment_path('2')
+    assert_equal 'foo/comments#show', @response.body
+  end
+
+  def test_namespaced_shallow_routes_with_shallow_prefix_option
+    draw do
+      namespace :foo, shallow_prefix: 'bar' do
+        resources :posts, only: [:index, :show] do
+          resources :comments, only: [:index, :show], shallow: true
+        end
+      end
+    end
+
+    get '/foo/posts'
+    assert_equal '/foo/posts', foo_posts_path
+    assert_equal 'foo/posts#index', @response.body
+
+    get '/foo/posts/1'
+    assert_equal '/foo/posts/1', foo_post_path('1')
+    assert_equal 'foo/posts#show', @response.body
+
+    get '/foo/posts/1/comments'
+    assert_equal '/foo/posts/1/comments', foo_post_comments_path('1')
+    assert_equal 'foo/comments#index', @response.body
+
+    get '/foo/comments/2'
+    assert_equal '/foo/comments/2', bar_comment_path('2')
+    assert_equal 'foo/comments#show', @response.body
+  end
+
   def test_namespace_containing_numbers
     draw do
       namespace :v2 do
@@ -1826,6 +1956,60 @@ class TestRoutingMapper < ActionDispatch::IntegrationTest
     post '/comments/3/preview'
     assert_equal 'comments#preview', @response.body
     assert_equal '/comments/3/preview', preview_comment_path(:id => '3')
+  end
+
+  def test_shallow_nested_resources_inside_resource
+    draw do
+      resource :membership, shallow: true do
+        resources :cards
+      end
+    end
+
+    get '/membership/cards'
+    assert_equal 'cards#index', @response.body
+    assert_equal '/membership/cards', membership_cards_path
+
+    get '/membership/cards/new'
+    assert_equal 'cards#new', @response.body
+    assert_equal '/membership/cards/new', new_membership_card_path
+
+    post '/membership/cards'
+    assert_equal 'cards#create', @response.body
+
+    get '/cards/1'
+    assert_equal 'cards#show', @response.body
+    assert_equal '/cards/1', card_path('1')
+
+    get '/cards/1/edit'
+    assert_equal 'cards#edit', @response.body
+    assert_equal '/cards/1/edit', edit_card_path('1')
+
+    put '/cards/1'
+    assert_equal 'cards#update', @response.body
+
+    patch '/cards/1'
+    assert_equal 'cards#update', @response.body
+
+    delete '/cards/1'
+    assert_equal 'cards#destroy', @response.body
+  end
+
+  def test_shallow_deeply_nested_resources
+    draw do
+      resources :blogs do
+        resources :posts do
+          resources :comments, shallow: true
+        end
+      end
+    end
+
+    get '/comments/1'
+    assert_equal 'comments#show', @response.body
+
+    assert_equal '/comments/1', comment_path('1')
+    assert_equal '/blogs/new', new_blog_path
+    assert_equal '/blogs/1/posts/new', new_blog_post_path(:blog_id => 1)
+    assert_equal '/blogs/1/posts/2/comments/new', new_blog_post_comment_path(:blog_id => 1, :post_id => 2)
   end
 
   def test_shallow_nested_resources_within_scope
@@ -3033,6 +3217,114 @@ class TestRoutingMapper < ActionDispatch::IntegrationTest
     assert_equal '/admin/posts/1/comments', admin_post_comments_path('1')
   end
 
+  def test_shallow_path_and_prefix_are_not_added_to_non_shallow_routes
+    draw do
+      scope shallow_path: 'projects', shallow_prefix: 'project' do
+        resources :projects do
+          resources :files, controller: 'project_files', shallow: true
+        end
+      end
+    end
+
+    get '/projects'
+    assert_equal 'projects#index', @response.body
+    assert_equal '/projects', projects_path
+
+    get '/projects/new'
+    assert_equal 'projects#new', @response.body
+    assert_equal '/projects/new', new_project_path
+
+    post '/projects'
+    assert_equal 'projects#create', @response.body
+
+    get '/projects/1'
+    assert_equal 'projects#show', @response.body
+    assert_equal '/projects/1', project_path('1')
+
+    get '/projects/1/edit'
+    assert_equal 'projects#edit', @response.body
+    assert_equal '/projects/1/edit', edit_project_path('1')
+
+    patch '/projects/1'
+    assert_equal 'projects#update', @response.body
+
+    delete '/projects/1'
+    assert_equal 'projects#destroy', @response.body
+
+    get '/projects/1/files'
+    assert_equal 'project_files#index', @response.body
+    assert_equal '/projects/1/files', project_files_path('1')
+
+    get '/projects/1/files/new'
+    assert_equal 'project_files#new', @response.body
+    assert_equal '/projects/1/files/new', new_project_file_path('1')
+
+    post '/projects/1/files'
+    assert_equal 'project_files#create', @response.body
+
+    get '/projects/files/2'
+    assert_equal 'project_files#show', @response.body
+    assert_equal '/projects/files/2', project_file_path('2')
+
+    get '/projects/files/2/edit'
+    assert_equal 'project_files#edit', @response.body
+    assert_equal '/projects/files/2/edit', edit_project_file_path('2')
+
+    patch '/projects/files/2'
+    assert_equal 'project_files#update', @response.body
+
+    delete '/projects/files/2'
+    assert_equal 'project_files#destroy', @response.body
+  end
+
+  def test_scope_path_is_copied_to_shallow_path
+    draw do
+      scope path: 'foo' do
+        resources :posts do
+          resources :comments, shallow: true
+        end
+      end
+    end
+
+    assert_equal '/foo/comments/1', comment_path('1')
+  end
+
+  def test_scope_as_is_copied_to_shallow_prefix
+    draw do
+      scope as: 'foo' do
+        resources :posts do
+          resources :comments, shallow: true
+        end
+      end
+    end
+
+    assert_equal '/comments/1', foo_comment_path('1')
+  end
+
+  def test_scope_shallow_prefix_is_not_overwritten_by_as
+    draw do
+      scope as: 'foo', shallow_prefix: 'bar' do
+        resources :posts do
+          resources :comments, shallow: true
+        end
+      end
+    end
+
+    assert_equal '/comments/1', bar_comment_path('1')
+  end
+
+  def test_scope_shallow_path_is_not_overwritten_by_path
+    draw do
+      scope path: 'foo', shallow_path: 'bar' do
+        resources :posts do
+          resources :comments, shallow: true
+        end
+      end
+    end
+
+    assert_equal '/bar/comments/1', comment_path('1')
+  end
+
 private
 
   def draw(&block)
@@ -3304,8 +3596,8 @@ class TestUriPathEscaping < ActionDispatch::IntegrationTest
   include Routes.url_helpers
   def app; Routes end
 
-  test 'escapes generated path segment' do
-    assert_equal '/a%20b/c+d', segment_path(:segment => 'a b/c+d')
+  test 'escapes slash in generated path segment' do
+    assert_equal '/a%20b%2Fc+d', segment_path(:segment => 'a b/c+d')
   end
 
   test 'unescapes recognized path segment' do
@@ -3313,7 +3605,7 @@ class TestUriPathEscaping < ActionDispatch::IntegrationTest
     assert_equal 'a b/c+d', @response.body
   end
 
-  test 'escapes generated path splat' do
+  test 'does not escape slash in generated path splat' do
     assert_equal '/a%20b/c+d', splat_path(:splat => 'a b/c+d')
   end
 
@@ -3498,6 +3790,8 @@ class TestOptimizedNamedRoutes < ActionDispatch::IntegrationTest
       get '/post(/:action(/:id))' => ok, as: :posts
       get '/:foo/:foo_type/bars/:id' => ok, as: :bar
       get '/projects/:id.:format' => ok, as: :project
+      get '/pages/:id' => ok, as: :page
+      get '/wiki/*page' => ok, as: :wiki
     end
   end
 
@@ -3529,6 +3823,26 @@ class TestOptimizedNamedRoutes < ActionDispatch::IntegrationTest
   test 'segments separated with a period are replaced correctly' do
     assert_equal '/projects/1.json', Routes.url_helpers.project_path(1, :json)
     assert_equal '/projects/1.json', project_path(1, :json)
+  end
+
+  test 'segments with question marks are escaped' do
+    assert_equal '/pages/foo%3Fbar', Routes.url_helpers.page_path('foo?bar')
+    assert_equal '/pages/foo%3Fbar', page_path('foo?bar')
+  end
+
+  test 'segments with slashes are escaped' do
+    assert_equal '/pages/foo%2Fbar', Routes.url_helpers.page_path('foo/bar')
+    assert_equal '/pages/foo%2Fbar', page_path('foo/bar')
+  end
+
+  test 'glob segments with question marks are escaped' do
+    assert_equal '/wiki/foo%3Fbar', Routes.url_helpers.wiki_path('foo?bar')
+    assert_equal '/wiki/foo%3Fbar', wiki_path('foo?bar')
+  end
+
+  test 'glob segments with slashes are not escaped' do
+    assert_equal '/wiki/foo/bar', Routes.url_helpers.wiki_path('foo/bar')
+    assert_equal '/wiki/foo/bar', wiki_path('foo/bar')
   end
 end
 
@@ -3794,6 +4108,19 @@ class TestFormatConstraints < ActionDispatch::IntegrationTest
 
     get 'http://www.example.com/xml_only.json'
     assert_response :not_found
+  end
+end
+
+class TestCallableConstraintValidation < ActionDispatch::IntegrationTest
+  def test_constraint_with_object_not_callable
+    assert_raises(ArgumentError) do
+      ActionDispatch::Routing::RouteSet.new.tap do |app|
+        app.draw do
+          ok = lambda { |env| [200, { 'Content-Type' => 'text/plain' }, []] }
+          get '/test', to: ok, constraints: Object.new
+        end
+      end
+    end
   end
 end
 

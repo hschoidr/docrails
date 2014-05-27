@@ -1,3 +1,421 @@
+*   Deprecate joining, eager loading and preloading of instance dependent
+    associations without replacement. These operations happen before instances
+    are created. The current behavior is unexpected and can result in broken
+    behavior.
+
+    Fixes #15024.
+
+    *Yves Senn*
+
+*   Fixed HABTM's CollectionAssociation size calculation.
+
+    HABTM should fall back to using the normal CollectionAssociation's size
+    calculation if the collection is not cached or loaded.
+
+    Fixes #14913 and #14914.
+
+    *Fred Wu*
+
+*   Return a non zero status when running `rake db:migrate:status` and migration table does
+    not exist.
+
+    *Paul B.*
+
+*   Add support for module-level `table_name_suffix` in models.
+
+    This makes `table_name_suffix` work the same way as `table_name_prefix` when
+    using namespaced models.
+
+    *Jenner LaFave*
+
+*   Revert the behaviour of `ActiveRecord::Relation#join` changed through 4.0 => 4.1 to 4.0.
+
+    In 4.1.0 `Relation#join` is delegated to `Arel#SelectManager`.
+    In 4.0 series it is delegated to `Array#join`.
+
+    *Bogdan Gusiev*
+
+*   Log nil binary column values correctly.
+
+    When an object with a binary column is updated with a nil value
+    in that column, the SQL logger would throw an exception when trying
+    to log that nil value. This only occurs when updating a record
+    that already has a non-nil value in that column since an initial nil
+    value isn't included in the SQL anyway (at least, when dirty checking
+    is enabled.) The column's new value will now be logged as `<NULL binary data>`
+    to parallel the existing `<N bytes of binary data>` for non-nil values.
+
+    *James Coleman*
+
+*   Rails will now pass a custom validation context through to autosave associations
+    in order to validate child associations with the same context.
+
+    Fixes #13854.
+
+    *Eric Chahin*, *Aaron Nelson*, *Kevin Casey*
+
+*   Stringify all variable keys of mysql connection configuration.
+
+    When the `sql_mode` variable for mysql adapters is set in the configuration
+    as a `String`, it was ignored and overwritten by the strict mode option.
+
+    Fixes #14895.
+
+    *Paul Nikitochkin*
+
+*   Ensure SQLite3 statements are closed on errors.
+
+    Fixes #13631.
+
+    *Timur Alperovich*
+
+*   Give ActiveRecord::PredicateBuilder private methods the privacy they deserve.
+
+    *Hector Satre*
+
+*   When using a custom `join_table` name on a `habtm`, rails was not saving it
+    on Reflections. This causes a problem when rails loads fixtures, because it
+    uses the reflections to set database with fixtures.
+
+    Fixes #14845.
+
+    *Kassio Borges*
+
+*   Reset the cache when modifying a Relation with cached Arel.
+    Additionally display a warning message to make the user aware.
+
+    *Yves Senn*
+
+*   PostgreSQL should internally use `:datetime` consistently for TimeStamp. Assures
+    different spellings of timestamps are treated the same.
+
+    Example:
+
+        mytimestamp.simplified_type('timestamp without time zone')
+        # => :datetime
+        mytimestamp.simplified_type('timestamp(6) without time zone')
+        # => also :datetime (previously would be :timestamp)
+
+    See #14513.
+
+    *Jefferson Lai*
+
+*   `ActiveRecord::Base.no_touching` no longer triggers callbacks or start empty transactions.
+
+    Fixes #14841.
+
+    *Lucas Mazza*
+
+*   Fix name collision with `Array#select!` with `Relation#select!`.
+
+    Fixes #14752.
+
+    *Earl St Sauver*
+
+*   Fixed unexpected behavior for `has_many :through` associations going through a scoped `has_many`.
+
+    If a `has_many` association is adjusted using a scope, and another `has_many :through`
+    uses this association, then the scope adjustment is unexpectedly neglected.
+
+    Fixes #14537.
+
+    *Jan Habermann*
+
+*   `@destroyed` should always be set to `false` when an object is duped.
+
+    *Kuldeep Aggarwal*
+
+*   Fixed has_many association to make it support irregular inflections.
+
+    Fixes #8928.
+
+    *arthurnn*, *Javier Goizueta*
+
+*   Fixed a problem where count used with a grouping was not returning a Hash.
+
+    Fixes #14721.
+
+    *Eric Chahin*
+
+*   `sanitize_sql_like` helper method to escape a string for safe use in a SQL
+    LIKE statement.
+
+    Example:
+
+        class Article
+          def self.search(term)
+            where("title LIKE ?", sanitize_sql_like(term))
+          end
+        end
+
+        Article.search("20% _reduction_")
+        # => Query looks like "... title LIKE '20\% \_reduction\_' ..."
+
+    *Rob Gilson*, *Yves Senn*
+
+*   Do not quote uuid default value on `change_column`.
+
+    Fixes #14604.
+
+    *Eric Chahin*
+
+*   The comparison between `Relation` and `CollectionProxy` should be consistent.
+
+    Example:
+
+        author.posts == Post.where(author_id: author.id)
+        # => true
+        Post.where(author_id: author.id) == author.posts
+        # => true
+
+    Fixes #13506.
+
+    *Lauro Caetano*
+
+*   Calling `delete_all` on an unloaded `CollectionProxy` no longer
+    generates a SQL statement containing each id of the collection:
+
+    Before:
+
+        DELETE FROM `model` WHERE `model`.`parent_id` = 1
+        AND `model`.`id` IN (1, 2, 3...)
+
+    After:
+
+        DELETE FROM `model` WHERE `model`.`parent_id` = 1
+
+    *Eileen M. Uchitelle*, *Aaron Patterson*
+
+*   Fixed error for aggregate methods (`empty?`, `any?`, `count`) with `select`
+    which created invalid SQL.
+
+    Fixes #13648.
+
+    *Simon Woker*
+
+*   PostgreSQL adapter only warns once for every missing OID per connection.
+
+    Fixes #14275.
+
+    *Matthew Draper*, *Yves Senn*
+
+*   PostgreSQL adapter automatically reloads it's type map when encountering
+    unknown OIDs.
+
+    Fixes #14678.
+
+    *Matthew Draper*, *Yves Senn*
+
+*   Fix insertion of records via `has_many :through` association with scope.
+
+    Fixes #3548.
+
+    *Ivan Antropov*
+
+*   Auto-generate stable fixture UUIDs on PostgreSQL.
+
+    Fixes: #11524
+
+    *Roderick van Domburg*
+
+*   Fixed a problem where an enum would overwrite values of another enum
+    with the same name in an unrelated class.
+
+    Fixes #14607.
+
+    *Evan Whalen*
+
+*   PostgreSQL and SQLite string columns no longer have a default limit of 255.
+
+    Fixes #13435, #9153.
+
+    *Vladimir Sazhin*, *Toms Mikoss*, *Yves Senn*
+
+*   Make possible to have an association called `records`.
+
+    Fixes #11645.
+
+    *prathamesh-sonpatki*
+
+*   `to_sql` on an association now matches the query that is actually executed, where it
+    could previously have incorrectly accrued additional conditions (e.g. as a result of
+    a previous query). CollectionProxy now always defers to the association scope's
+    `arel` method so the (incorrect) inherited one should be entirely concealed.
+
+    Fixes #14003.
+
+    *Jefferson Lai*
+
+*   Block a few default Class methods as scope name.
+
+    For instance, this will raise:
+
+        scope :public, -> { where(status: 1) }
+
+    *arthurnn*
+
+*   Fixed error when using `with_options` with lambda.
+
+    Fixes #9805.
+
+    *Lauro Caetano*
+
+*   Switch `sqlite3:///` URLs (which were temporarily
+    deprecated in 4.1) from relative to absolute.
+
+    If you still want the previous interpretation, you should replace
+    `sqlite3:///my/path` with `sqlite3:my/path`.
+
+    *Matthew Draper*
+
+*   Treat blank UUID values as `nil`.
+
+    Example:
+
+        Sample.new(uuid_field: '') #=> <Sample id: nil, uuid_field: nil>
+
+    *Dmitry Lavrov*
+
+*   Enable support for materialized views on PostgreSQL >= 9.3.
+
+    *Dave Lee*
+
+*   The PostgreSQL adapter supports custom domains. Fixes #14305.
+
+    *Yves Senn*
+
+*   PostgreSQL `Column#type` is now determined through the corresponding OID.
+    The column types stay the same except for enum columns. They no longer have
+    `nil` as type but `enum`.
+
+    See #7814.
+
+    *Yves Senn*
+
+*   Fixed error when specifying a non-empty default value on a PostgreSQL array column.
+
+    Fixes #10613.
+
+    *Luke Steensen*
+
+*   Make possible to change `record_timestamps` inside Callbacks.
+
+    *Tieg Zaharia*
+
+*   Fixed error where .persisted? throws SystemStackError for an unsaved model with a
+    custom primary key that didn't save due to validation error.
+
+    Fixes #14393.
+
+    *Chris Finne*
+
+*   Introduce `validate` as an alias for `valid?`.
+
+    This is more intuitive when you want to run validations but don't care about the return value.
+
+    *Henrik Nyh*
+
+*   Create indexes inline in CREATE TABLE for MySQL.
+
+    This is important, because adding an index on a temporary table after it has been created
+    would commit the transaction.
+
+    It also allows creating and dropping indexed tables with fewer queries and fewer permissions
+    required.
+
+    Example:
+
+        create_table :temp, temporary: true, as: "SELECT id, name, zip FROM a_really_complicated_query" do |t|
+          t.index :zip
+        end
+        # => CREATE TEMPORARY TABLE temp (INDEX (zip)) AS SELECT id, name, zip FROM a_really_complicated_query
+
+    *Cody Cutrer*, *Steve Rice*, *Rafael Mendonça Franca*
+
+*   Save `has_one` association even if the record doesn't changed.
+
+    Fixes #14407.
+
+    *Rafael Mendonça França*
+
+*   Use singular table name in generated migrations when
+    `ActiveRecord::Base.pluralize_table_names` is `false`.
+
+    Fixes #13426.
+
+    *Kuldeep Aggarwal*
+
+*   `touch` accepts many attributes to be touched at once.
+
+    Example:
+
+        # touches :signed_at, :sealed_at, and :updated_at/on attributes.
+        Photo.last.touch(:signed_at, :sealed_at)
+
+    *James Pinto*
+
+*   `rake db:structure:dump` only dumps schema information if the schema
+    migration table exists.
+
+    Fixes #14217.
+
+    *Yves Senn*
+
+*   Reap connections that were checked out by now-dead threads, instead
+    of waiting until they disconnect by themselves. Before this change,
+    a suitably constructed series of short-lived threads could starve
+    the connection pool, without ever having more than a couple alive at
+    the same time.
+
+    *Matthew Draper*
+
+*   `pk_and_sequence_for` now ensures that only the pg_depend entries
+    pointing to pg_class, and thus only sequence objects, are considered.
+
+    *Josh Williams*
+
+*   `where.not` adds `references` for `includes` like normal `where` calls do.
+
+    Fixes #14406.
+
+    *Yves Senn*
+
+*   Extend fixture `$LABEL` replacement to allow string interpolation.
+
+    Example:
+
+        martin:
+          email: $LABEL@email.com
+
+        users(:martin).email # => martin@email.com
+
+    *Eric Steele*
+
+*   Add support for `Relation` be passed as parameter on `QueryCache#select_all`.
+
+    Fixes #14361.
+
+    *arthurnn*
+
+*   Passing an Active Record object to `find` is now deprecated.  Call `.id`
+    on the object first.
+
+*   Passing an Active Record object to `find` or `exists?` is now deprecated.
+    Call `.id` on the object first.
+
+*   Only use BINARY for MySQL case sensitive uniqueness check when column has a case insensitive collation.
+
+    *Ryuta Kamizono*
+
+*   Support for MySQL 5.6 fractional seconds.
+
+    *arthurnn*, *Tatsuhiko Miyagawa*
+
+*   Support for Postgres `citext` data type enabling case-insensitive where
+    values without needing to wrap in UPPER/LOWER sql functions.
+
+    *Troy Kruthoff*, *Lachlan Sylvester*
+
 *   Allow strings to specify the `#order` value.
 
     Example:

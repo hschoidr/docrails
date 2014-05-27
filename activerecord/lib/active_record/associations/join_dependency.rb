@@ -164,17 +164,17 @@ module ActiveRecord
       def make_outer_joins(parent, child)
         tables    = table_aliases_for(parent, child)
         join_type = Arel::Nodes::OuterJoin
-        joins     = make_constraints parent, child, tables, join_type
+        info      = make_constraints parent, child, tables, join_type
 
-        joins.concat child.children.flat_map { |c| make_outer_joins(child, c) }
+        [info] + child.children.flat_map { |c| make_outer_joins(child, c) }
       end
 
       def make_inner_joins(parent, child)
         tables    = child.tables
         join_type = Arel::Nodes::InnerJoin
-        joins     = make_constraints parent, child, tables, join_type
+        info      = make_constraints parent, child, tables, join_type
 
-        joins.concat child.children.flat_map { |c| make_inner_joins(child, c) }
+        [info] + child.children.flat_map { |c| make_inner_joins(child, c) }
       end
 
       def table_aliases_for(parent, node)
@@ -215,6 +215,7 @@ module ActiveRecord
         associations.map do |name, right|
           reflection = find_reflection base_klass, name
           reflection.check_validity!
+          reflection.check_eager_loadable!
 
           if reflection.options[:polymorphic]
             raise EagerLoadPolymorphicError.new(reflection)

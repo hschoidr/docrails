@@ -258,8 +258,6 @@ class RespondToController < ActionController::Base
 end
 
 class RespondToControllerTest < ActionController::TestCase
-  tests RespondToController
-
   def setup
     super
     @request.host = "www.example.com"
@@ -489,6 +487,11 @@ class RespondToControllerTest < ActionController::TestCase
   def test_handle_any_any_xml
     @request.accept = "text/xml"
     get :handle_any_any
+    assert_equal 'Whatever you ask for, I got it', @response.body
+  end
+
+  def test_handle_any_any_unkown_format
+    get :handle_any_any, { format: 'php' }
     assert_equal 'Whatever you ask for, I got it', @response.body
   end
 

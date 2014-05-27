@@ -6,18 +6,31 @@ module ActiveRecord
       include Savepoints
 
       class SchemaCreation < AbstractAdapter::SchemaCreation
-
         def visit_AddColumn(o)
           add_column_position!(super, column_options(o))
         end
 
         private
+
+        def visit_TableDefinition(o)
+          name = o.name
+          create_sql = "CREATE#{' TEMPORARY' if o.temporary} TABLE #{quote_table_name(name)} "
+
+          statements = o.columns.map { |c| accept c }
+          statements.concat(o.indexes.map { |column_name, options| index_in_create(name, column_name, options) })
+
+          create_sql << "(#{statements.join(', ')}) " if statements.present?
+          create_sql << "#{o.options}"
+          create_sql << " AS #{@conn.to_sql(o.as)}" if o.as
+          create_sql
+        end
+
         def visit_ChangeColumnDefinition(o)
           column = o.column
           options = o.options
           sql_type = type_to_sql(o.type, options[:limit], options[:precision], options[:scale])
           change_column_sql = "CHANGE #{quote_column_name(column.name)} #{quote_column_name(options[:name])} #{sql_type}"
-          add_column_options!(change_column_sql, options)
+          add_column_options!(change_column_sql, options.merge(column: column))
           add_column_position!(change_column_sql, options)
         end
 
@@ -28,6 +41,11 @@ module ActiveRecord
             sql << " AFTER #{quote_column_name(options[:after])}"
           end
           sql
+        end
+
+        def index_in_create(table_name, column_name, options)
+          index_name, index_type, index_columns, index_options, index_algorithm, index_using = @conn.add_index_options(table_name, column_name, options)
+          "#{index_type} INDEX #{quote_column_name(index_name)} #{index_using} (#{index_columns})#{index_options} #{index_algorithm}"
         end
       end
 
@@ -165,21 +183,18 @@ module ActiveRecord
       INDEX_TYPES  = [:fulltext, :spatial]
       INDEX_USINGS = [:btree, :hash]
 
-      class BindSubstitution < Arel::Visitors::MySQL # :nodoc:
-        include Arel::Visitors::BindVisitor
-      end
-
       # FIXME: Make the first parameter more similar for the two adapters
       def initialize(connection, logger, connection_options, config)
         super(connection, logger)
         @connection_options, @config = connection_options, config
         @quoted_column_names, @quoted_table_names = {}, {}
 
+        @visitor = Arel::Visitors::MySQL.new self
+
         if self.class.type_cast_config_to_boolean(config.fetch(:prepared_statements) { true })
           @prepared_statements = true
-          @visitor = Arel::Visitors::MySQL.new self
         else
-          @visitor = unprepared_visitor
+          @prepared_statements = false
         end
       end
 
@@ -223,6 +238,10 @@ module ActiveRecord
       # http://bugs.mysql.com/bug.php?id=39170
       def supports_transaction_isolation?
         version[0] >= 5
+      end
+
+      def supports_indexes_in_create?
+        true
       end
 
       def native_database_types
@@ -459,7 +478,7 @@ module ActiveRecord
       end
 
       def bulk_change_table(table_name, operations) #:nodoc:
-        sqls = operations.map do |command, args|
+        sqls = operations.flat_map do |command, args|
           table, arguments = args.shift, args
           method = :"#{command}_sql"
 
@@ -468,7 +487,7 @@ module ActiveRecord
           else
             raise "Unknown method called : #{method}(#{arguments.inspect})"
           end
-        end.flatten.join(", ")
+        end.join(", ")
 
         execute("ALTER TABLE #{quote_table_name(table_name)} #{sqls}")
       end
@@ -588,8 +607,17 @@ module ActiveRecord
         pk_and_sequence && pk_and_sequence.first
       end
 
-      def case_sensitive_modifier(node)
+      def case_sensitive_modifier(node, table_attribute)
+        node = Arel::Nodes.build_quoted node, table_attribute
         Arel::Nodes::Bin.new(node)
+      end
+
+      def case_sensitive_comparison(table, attribute, column, value)
+        if column.case_sensitive?
+          table[attribute].eq(value)
+        else
+          super
+        end
       end
 
       def case_insensitive_comparison(table, attribute, column, value)
@@ -683,15 +711,13 @@ module ActiveRecord
       end
 
       def rename_column_sql(table_name, column_name, new_column_name)
-        options = { name: new_column_name }
-
-        if column = columns(table_name).find { |c| c.name == column_name.to_s }
-          options[:default] = column.default
-          options[:null] = column.null
-          options[:auto_increment] = (column.extra == "auto_increment")
-        else
-          raise ActiveRecordError, "No such column: #{table_name}.#{column_name}"
-        end
+        column  = column_for(table_name, column_name)
+        options = {
+          name: new_column_name,
+          default: column.default,
+          null: column.null,
+          auto_increment: column.extra == "auto_increment"
+        }
 
         current_type = select_one("SHOW COLUMNS FROM #{quote_table_name(table_name)} LIKE '#{column_name}'", 'SCHEMA')["Type"]
         schema_creation.accept ChangeColumnDefinition.new column, current_type, options
@@ -729,30 +755,23 @@ module ActiveRecord
         version[0] >= 5
       end
 
-      def column_for(table_name, column_name)
-        unless column = columns(table_name).find { |c| c.name == column_name.to_s }
-          raise "No such column: #{table_name}.#{column_name}"
-        end
-        column
-      end
-
       def configure_connection
-        variables = @config[:variables] || {}
+        variables = @config.fetch(:variables, {}).stringify_keys
 
         # By default, MySQL 'where id is null' selects the last inserted id.
         # Turn this off. http://dev.rubyonrails.org/ticket/6778
-        variables[:sql_auto_is_null] = 0
+        variables['sql_auto_is_null'] = 0
 
         # Increase timeout so the server doesn't disconnect us.
         wait_timeout = @config[:wait_timeout]
         wait_timeout = 2147483 unless wait_timeout.is_a?(Fixnum)
-        variables[:wait_timeout] = self.class.type_cast_config_to_integer(wait_timeout)
+        variables['wait_timeout'] = self.class.type_cast_config_to_integer(wait_timeout)
 
         # Make MySQL reject illegal values rather than truncating or blanking them, see
         # http://dev.mysql.com/doc/refman/5.0/en/server-sql-mode.html#sqlmode_strict_all_tables
         # If the user has provided another value for sql_mode, don't replace it.
-        if strict_mode? && !variables.has_key?(:sql_mode)
-          variables[:sql_mode] = 'STRICT_ALL_TABLES'
+        if strict_mode? && !variables.has_key?('sql_mode')
+          variables['sql_mode'] = 'STRICT_ALL_TABLES'
         end
 
         # NAMES does not have an equals sign, see

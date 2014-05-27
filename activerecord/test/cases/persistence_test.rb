@@ -1,4 +1,5 @@
 require "cases/helper"
+require 'models/aircraft'
 require 'models/post'
 require 'models/comment'
 require 'models/author'
@@ -233,6 +234,15 @@ class PersistenceTest < ActiveRecord::TestCase
     assert_nothing_raised { Minimalistic.create!(:id => 2) }
   end
 
+  def test_save_with_duping_of_destroyed_object
+    developer = Developer.first
+    developer.destroy
+    new_developer = developer.dup
+    new_developer.save
+    assert new_developer.persisted?
+    assert_not new_developer.destroyed?
+  end
+
   def test_create_many
     topics = Topic.create([ { "title" => "first" }, { "title" => "second" }])
     assert_equal 2, topics.size
@@ -452,7 +462,7 @@ class PersistenceTest < ActiveRecord::TestCase
 
   def test_update_attribute_for_updated_at_on
     developer = Developer.find(1)
-    prev_month = Time.now.prev_month
+    prev_month = Time.now.prev_month.change(usec: 0)
 
     developer.update_attribute(:updated_at, prev_month)
     assert_equal prev_month, developer.updated_at
@@ -523,7 +533,7 @@ class PersistenceTest < ActiveRecord::TestCase
 
   def test_update_column_should_not_modify_updated_at
     developer = Developer.find(1)
-    prev_month = Time.now.prev_month
+    prev_month = Time.now.prev_month.change(usec: 0)
 
     developer.update_column(:updated_at, prev_month)
     assert_equal prev_month, developer.updated_at
@@ -620,7 +630,7 @@ class PersistenceTest < ActiveRecord::TestCase
 
   def test_update_columns_should_not_modify_updated_at
     developer = Developer.find(1)
-    prev_month = Time.now.prev_month
+    prev_month = Time.now.prev_month.change(usec: 0)
 
     developer.update_columns(updated_at: prev_month)
     assert_equal prev_month, developer.updated_at
@@ -820,4 +830,17 @@ class PersistenceTest < ActiveRecord::TestCase
     end
   end
 
+  def test_persist_inherited_class_with_different_table_name
+    minimalistic_aircrafts = Class.new(Minimalistic) do
+      self.table_name = "aircraft"
+    end
+
+    assert_difference "Aircraft.count", 1 do
+      aircraft = minimalistic_aircrafts.create(name: "Wright Flyer")
+      aircraft.name = "Wright Glider"
+      aircraft.save
+    end
+
+    assert_equal "Wright Glider", Aircraft.last.name
+  end
 end
