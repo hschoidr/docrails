@@ -191,11 +191,11 @@ config.generators do |g|
 end
 ```
 
-블럭에서 사용할 수 있는 메소드의 세팅은 다음과 같습니다. [[[The full set of methods that can be used in this block are as follows:]]]
+블럭에서 사용할 수 있는 메소드의 집합은 다음과 같습니다. [[[The full set of methods that can be used in this block are as follows:]]]
 
-* `assets`은 scaffold를 실행으로 에셋을 생성할 수 있습니다. 기본값은 `true` 입니다. 
+* `assets`은 발판의 실행으로 에셋을 생성할 수 있습니다. 기본값은 `true` 입니다. 
 [[[ `assets` allows to create assets on generating a scaffold. Defaults to `true`. ]]]
-* `force_plural`는 모델 이름의 복수화를 합니다. 기본값은 `false` 입니다.   
+* `force_plural`는 모델 이름의 복수화를 허용 합니다. 기본값은 `false` 입니다.   
 [[[`force_plural` allows pluralized model names. Defaults to `false`.]]]
 * `helper`는 헬퍼 생성 여부를 정의합니다. 기본값은 `true` 입니다. 
 [[[`helper` defines whether or not to generate helpers. Defaults to `true`.]]]
@@ -209,9 +209,9 @@ end
 [[[`orm` defines which orm to use. Defaults to `false` and will use Active Record by default.]]]
 * `resource_controller`는  `rails generate resource`을 이용할때 컨트롤러를 생성하기 위해 사용하는 제네레이터를 정의합니다.  기본값은 `:controller` 입니다. 
 [[[`resource_controller` defines which generator to use for generating a controller when using `rails generate resource`. Defaults to `:controller`.]]]
-* `scaffold_controller`는 `resource_controller`와 다릅니다, `rails generate scaffold`을 이용할때 _scaffolded_ 컨트롤러를 생성하기 위해 사용하는 제네레이터를 정의합니다. 기본값은 `:scaffold_controller` 입니다.  
+* `resource_controller`에서 다른 `scaffold_controller`는 `rails generate scaffold`을 이용할때 _scaffolded_ 컨트롤러를 생성하기 위해 사용하는 제네레이터를 정의합니다. 기본값은 `:scaffold_controller` 입니다.  
 [[[`scaffold_controller` different from `resource_controller`, defines which generator to use for generating a _scaffolded_ controller when using `rails generate scaffold`. Defaults to `:scaffold_controller`.]]]
-* `stylesheets` 제네레이터의 스타일시트에 대해 설정합니다. 레일즈에서 `scaffold` 제네레이터가 실행될때 사용되지만, 다른 제네레이터에서도 마찬가지 입니다.기본값은 `true` 입니다. 
+* `stylesheets` 제네레이터의 스타일시트에 대해 설정합니다. 레일즈에서 `scaffold` 제네레이터가 실행될때 사용되지만, 다른 제네레이터에서 마찬가지로 사용할 수 있습니다.기본값은 `true` 입니다. 
 [[[`stylesheets` turns on the hook for stylesheets in generators. Used in Rails for when the `scaffold` generator is run, but this hook can be used in other generates as well. Defaults to `true`.]]]
 * `stylesheet_engine`은 에셋을 생성할때 사용할 스타일시트 엔진(예: sass)을 설정합니다. 기본값은 `:css` 입니다. 
 [[[`stylesheet_engine` configures the stylesheet engine (for eg. sass) to be used when generating assets. Defaults to `:css`.]]]
@@ -286,6 +286,7 @@ config.middleware.delete "Rack::MethodOverride"
 `config.active_record`는 다양한 설정 옵션을 포함합니다. [[[`config.active_record` includes a variety of configuration options:]]]
 
 * `config.active_record.logger` accepts a logger conforming to the interface of Log4r or the default Ruby Logger class, which is then passed on to any new database connections made. You can retrieve this logger by calling `logger` on either an Active Record model class or an Active Record model instance. Set to `nil` to disable logging.
+
 
 * `config.active_record.primary_key_prefix_type` lets you adjust the naming for primary key columns. By default, Rails assumes that primary key columns are named `id` (and this configuration option doesn't need to be set.) There are two other choices:
 ** `:table_name` would make the primary key for the Customer class `customerid`
