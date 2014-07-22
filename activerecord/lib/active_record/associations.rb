@@ -50,7 +50,7 @@ module ActiveRecord
     def initialize(reflection)
       through_reflection      = reflection.through_reflection
       source_reflection_names = reflection.source_reflection_names
-      source_associations     = reflection.through_reflection.klass.reflect_on_all_associations.collect { |a| a.name.inspect }
+      source_associations     = reflection.through_reflection.klass._reflections.keys
       super("Could not find the source association(s) #{source_reflection_names.collect{ |a| a.inspect }.to_sentence(:two_words_connector => ' or ', :last_word_connector => ', or ', :locale => :en)} in model #{through_reflection.klass}. Try 'has_many #{reflection.name.inspect}, :through => #{through_reflection.name.inspect}, :source => <name>'. Is it one of #{source_associations.to_sentence(:two_words_connector => ' or ', :last_word_connector => ', or ', :locale => :en)}?")
     end
   end
@@ -151,7 +151,7 @@ module ActiveRecord
       association = association_instance_get(name)
 
       if association.nil?
-        raise AssociationNotFoundError.new(self, name) unless reflection = self.class.reflect_on_association(name)
+        raise AssociationNotFoundError.new(self, name) unless reflection = self.class._reflect_on_association(name)
         association = reflection.association_class.new(self, reflection)
         association_instance_set(name, association)
       end
@@ -202,12 +202,13 @@ module ActiveRecord
     # For instance, +attributes+ and +connection+ would be bad choices for association names.
     #
     # == Auto-generated methods
+    # See also Instance Public methods below for more details.
     #
     # === Singular associations (one-to-one)
     #                                     |            |  belongs_to  |
     #   generated methods                 | belongs_to | :polymorphic | has_one
     #   ----------------------------------+------------+--------------+---------
-    #   other                             |     X      |      X       |    X
+    #   other(force_reload=false)         |     X      |      X       |    X
     #   other=(other)                     |     X      |      X       |    X
     #   build_other(attributes={})        |     X      |              |    X
     #   create_other(attributes={})       |     X      |              |    X
@@ -217,7 +218,7 @@ module ActiveRecord
     #                                     |       |          | has_many
     #   generated methods                 | habtm | has_many | :through
     #   ----------------------------------+-------+----------+----------
-    #   others                            |   X   |    X     |    X
+    #   others(force_reload=false)        |   X   |    X     |    X
     #   others=(other,other,...)          |   X   |    X     |    X
     #   other_ids                         |   X   |    X     |    X
     #   other_ids=(id,id,...)             |   X   |    X     |    X
@@ -419,8 +420,8 @@ module ActiveRecord
     #     has_many :birthday_events, ->(user) { where starts_on: user.birthday }, class_name: 'Event'
     #   end
     #
-    # Note: Joining, eager loading and preloading of these associations is not fully possibly.
-    # These operations happen before instance creation. The scope will be called with a +nil+ argument.
+    # Note: Joining, eager loading and preloading of these associations is not fully possible.
+    # These operations happen before instance creation and the scope will be called with a +nil+ argument.
     # This can lead to unexpected behavior and is deprecated.
     #
     # == Association callbacks
@@ -1308,6 +1309,10 @@ module ActiveRecord
       #   that is the inverse of this <tt>has_one</tt> association. Does not work in combination
       #   with <tt>:through</tt> or <tt>:as</tt> options.
       #   See ActiveRecord::Associations::ClassMethods's overview on Bi-directional associations for more detail.
+      # [:required]
+      #   When set to +true+, the association will also have its presence validated.
+      #   This will validate the association itself, not the id. You can use
+      #   +:inverse_of+ to avoid an extra query during validation.
       #
       # Option examples:
       #   has_one :credit_card, dependent: :destroy  # destroys the associated credit card
@@ -1319,6 +1324,7 @@ module ActiveRecord
       #   has_one :boss, readonly: :true
       #   has_one :club, through: :membership
       #   has_one :primary_address, -> { where primary: true }, through: :addressables, source: :addressable
+      #   has_one :credit_card, required: true
       def has_one(name, scope = nil, options = {})
         reflection = Builder::HasOne.build(self, name, scope, options)
         Reflection.add_reflection self, name, reflection
@@ -1420,6 +1426,10 @@ module ActiveRecord
       #   object that is the inverse of this <tt>belongs_to</tt> association. Does not work in
       #   combination with the <tt>:polymorphic</tt> options.
       #   See ActiveRecord::Associations::ClassMethods's overview on Bi-directional associations for more detail.
+      # [:required]
+      #   When set to +true+, the association will also have its presence validated.
+      #   This will validate the association itself, not the id. You can use
+      #   +:inverse_of+ to avoid an extra query during validation.
       #
       # Option examples:
       #   belongs_to :firm, foreign_key: "client_of"
@@ -1432,6 +1442,7 @@ module ActiveRecord
       #   belongs_to :post, counter_cache: true
       #   belongs_to :company, touch: true
       #   belongs_to :company, touch: :employees_last_updated_at
+      #   belongs_to :company, required: true
       def belongs_to(name, scope = nil, options = {})
         reflection = Builder::BelongsTo.build(self, name, scope, options)
         Reflection.add_reflection self, name, reflection
@@ -1576,6 +1587,8 @@ module ActiveRecord
           scope   = nil
         end
 
+        habtm_reflection = ActiveRecord::Reflection::HasAndBelongsToManyReflection.new(:has_and_belongs_to_many, name, scope, options, self)
+
         builder = Builder::HasAndBelongsToMany.new name, self, options
 
         join_model = builder.through_model
@@ -1589,6 +1602,7 @@ module ActiveRecord
 
         Builder::HasMany.define_callbacks self, middle_reflection
         Reflection.add_reflection self, middle_reflection.name, middle_reflection
+        middle_reflection.parent_reflection = [name.to_s, habtm_reflection]
 
         include Module.new {
           class_eval <<-RUBY, __FILE__, __LINE__ + 1
@@ -1609,6 +1623,7 @@ module ActiveRecord
         end
 
         has_many name, scope, hm_options, &extension
+        self._reflections[name.to_s].parent_reflection = [name.to_s, habtm_reflection]
       end
     end
   end
