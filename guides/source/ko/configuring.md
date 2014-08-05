@@ -222,28 +222,29 @@ end
 
 ### [Configuring Middleware] 미들웨어 구성하기
 
-모든 레일즈 어플리케이션은 아래와 같이 개발 환경에서 사용하는 미들웨어의 표준 설정을 제공합니다. [[[Every Rails application comes with a standard set of middleware which it uses in this order in the development environment:]]]
+모든 레일즈 어플리케이션은 개발 환경에서 사용하는 미들웨어의 표준 설정을 따릅니다.
+[[[Every Rails application comes with a standard set of middleware which it uses in this order in the development environment:]]]
 
-* `ActionDispatch::SSL`는 모든 요청을 HTTPS 프로토콜 아래로 강제 합니다. `config.force_ssl`이 `true`로 설정되어 있는 경우 사용할 수 있습니다. `config.ssl_options`를 사용하여 옵션을 설정할 수 있습니다.  [[[`ActionDispatch::SSL` forces every request to be under HTTPS protocol. Will be available if `config.force_ssl` is set to `true`. Options passed to this can be configured by using `config.ssl_options`.]]]
-* `ActionDispatch::Static`은 동적 에셋을 제공하는데 사용됩니다. 만약 `config.serve_static_assets`이 `false`일 경우 비활성화 됩니다. [[[`ActionDispatch::Static` is used to serve static assets. Disabled if `config.serve_static_assets` is `false`.]]]
-* `Rack::Lock`은 한번에 하나의 스레드로 호출될 수 있도록 뮤텍스의 어플리케이션을 래핑합니다. `config.cache_classes`가 `false` 일때만 활성화 됩니다. ?? [[[`Rack::Lock` wraps the app in mutex so it can only be called by a single thread at a time. Only enabled when `config.cache_classes` is `false`.]]]
-* `ActiveSupport::Cache::Strategy::LocalCache`은 기본 메모리 캐시를 백업 역할을 합니다. 이 캐시는 쓰레드에 안전하지 않고 하나의 쓰레드를 위한 임시 메모리 캐시를 제공하기 위한 목적이 있습니다. [[[`ActiveSupport::Cache::Strategy::LocalCache` serves as a basic memory backed cache. This cache is not thread safe and is intended only for serving as a temporary memory cache for a single thread.]]]
-* `Rack::Runtime`은 요청을 실행하는데 걸리는 시간(초)을 포함하는 `X-Runtime` 헤더를 설정합니다. [[[`Rack::Runtime` sets an `X-Runtime` header, containing the time (in seconds) taken to execute the request.]]]
+* `ActionDispatch::SSL`는 모든 요청을 HTTPS 프로토콜로 강제 합니다. `config.force_ssl`이 `true`로 설정되어 있는 경우 사용할 수 있습니다. `config.ssl_options`를 사용하여 옵션을 설정할 수 있습니다.  [[[`ActionDispatch::SSL` forces every request to be under HTTPS protocol. Will be available if `config.force_ssl` is set to `true`. Options passed to this can be configured by using `config.ssl_options`.]]]
+* `ActionDispatch::Static`은 정적 에셋을 제공하는데 사용됩니다. 만약 `config.serve_static_assets`이 `false`일 경우 비활성화 됩니다. [[[`ActionDispatch::Static` is used to serve static assets. Disabled if `config.serve_static_assets` is `false`.]]]
+* `Rack::Lock`은 한번에 하나의 쓰레드로 호출될 수 있어 뮤텍스의 어플리케이션을 래핑합니다. `config.cache_classes`가 `false` 일때만 활성화 됩니다. [[[`Rack::Lock` wraps the app in mutex so it can only be called by a single thread at a time. Only enabled when `config.cache_classes` is `false`.]]]
+* `ActiveSupport::Cache::Strategy::LocalCache`은 기본 메모리 캐시의 백업을 제공 합니다. 이 캐시는 Not-Thread safe(한 객체에 대해서 쓰레드가 쓰기동작을 하고 있다면, 다른 모든 쓰레드에서의 읽기/쓰기 동작은 보호)하며 단일 쓰레드를 위한 임시 메모리 캐시를 제공하기 위한 목적이 있습니다. [[[`ActiveSupport::Cache::Strategy::LocalCache` serves as a basic memory backed cache. This cache is not thread safe and is intended only for serving as a temporary memory cache for a single thread.]]]
+* `Rack::Runtime`은 요청을 수행하는데 걸리는 시간(초)을 포함하는 `X-Runtime` 헤더를 설정합니다. [[[`Rack::Runtime` sets an `X-Runtime` header, containing the time (in seconds) taken to execute the request.]]]
 * `Rails::Rack::Logger`는 요청이 시작된 로그를 알립니다. 요청이 완료된 후에는 모든 로그를 날려버립니다. [[[`Rails::Rack::Logger` notifies the logs that the request has began. After request is complete, flushes all the logs.]]]
-* `ActionDispatch::ShowExceptions`은 어플리케이션에서 반환된 예외와 만약 요청이 로컬에서 발생한 경우 또는  `config.consider_all_requests_local` 이 값이 `true`로 설정되어있는 경우에 예외 페이지를 렌더링 합니다.!? 만약 `config.action_dispatch.show_exceptions`값이 `false` 라면, 예외에 관계없이 발생합니다.
+* `ActionDispatch::ShowExceptions`은 어플리케이션에 의해 예외를 반환하고 요청이 로컬에서 발생한 경우 또는  `config.consider_all_requests_local` 이 값이 `true`로 설정되어있는 경우에 예외 페이지를 렌더링 합니다. `config.action_dispatch.show_exceptions`값이 `false`로 설정되어 있는 경우 예외에 관계없이 발생합니다.
 * [[[`ActionDispatch::ShowExceptions` rescues any exception returned by the application and renders nice exception pages if the request is local or if `config.consider_all_requests_local` is set to `true`. If `config.action_dispatch.show_exceptions` is set to `false`, exceptions will be raised regardless.]]]
 * `ActionDispatch::RequestId`는 응답을 위해 고유한 X-Request-Id 헤더를 사용할 수 있도록 하고 `ActionDispatch::Request#uuid` 메소드를 활성화합니다. [[[`ActionDispatch::RequestId` makes a unique X-Request-Id header available to the response and enables the `ActionDispatch::Request#uuid` method.]]]
 * `ActionDispatch::RemoteIp`는 IP 스푸핑 공격에 대한 확인과 요청 헤더로부터 유효한 `client_ip`를 얻습니다.  `config.action_dispatch.ip_spoofing_check`와 `config.action_dispatch.trusted_proxies` 옵션으로 구성되어 있습니다. [[[`ActionDispatch::RemoteIp` checks for IP spoofing attacks and gets valid `client_ip` from request headers. Configurable with the `config.action_dispatch.ip_spoofing_check`, and `config.action_dispatch.trusted_proxies` options.]]]
-* `Rack::Sendfile`은 파일에서 제공되고 있던 본문과 서버에서 특정 X-Sendfile 헤더로 대체되는 응답을 차단합니다. `config.action_dispatch.x_sendfile_header`로 구성되어 있습니다. [[[`Rack::Sendfile` intercepts responses whose body is being served from a file and replaces it with a server specific X-Sendfile header. Configurable with `config.action_dispatch.x_sendfile_header`.]]]
+* `Rack::Sendfile`은 파일에서 제공되고 있던 본문과 서버에서 특정 X-Sendfile 헤더로 대체 된 응답을 가로챕니다. `config.action_dispatch.x_sendfile_header`로 설정이 가능 합니다. [[[`Rack::Sendfile` intercepts responses whose body is being served from a file and replaces it with a server specific X-Sendfile header. Configurable with `config.action_dispatch.x_sendfile_header`.]]]
 * `ActionDispatch::Callbacks`은 요청을 제공하기 전에 콜백을 준비하고 실행합니다. [[[`ActionDispatch::Callbacks` runs the prepare callbacks before serving the request.]]]
-* `ActiveRecord::ConnectionAdapters::ConnectionManagement`은 요청 환경에서 `rack.test`가 `true`로 설정되어 있지 않으면 각 요청 후에 활성화된 연결을 제거합니다.[[[`ActiveRecord::ConnectionAdapters::ConnectionManagement` cleans active connections after each request, unless the `rack.test` key in the request environment is set to `true`.]]]
+* `ActiveRecord::ConnectionAdapters::ConnectionManagement`은 요청 환경에서 `rack.test` 키가 `true`로 설정되어 있지 않으면 각 요청 후에 활성화된 연결을 제거합니다.[[[`ActiveRecord::ConnectionAdapters::ConnectionManagement` cleans active connections after each request, unless the `rack.test` key in the request environment is set to `true`.]]]
 * `ActiveRecord::QueryCache`는 요청으로 생성된 모든 SELECT 쿼리를 캐시합니다. 만약 INSERT나 UPDATE가 발생하는 경우엔 캐시를 비웁니다. [[[`ActiveRecord::QueryCache` caches all SELECT queries generated in a request. If any INSERT or UPDATE takes place then the cache is cleaned.]]]
 * `ActionDispatch::Cookies`는 요청에 대한 쿠키들을 설정합니다. [[[`ActionDispatch::Cookies` sets cookies for the request.]]]
-* `ActionDispatch::Session::CookieStore`은 쿠키에 세션을 저장하기 위한 책임이 있습니다. `config.action_controller.session_store`의 값을 변경하여 다른 미들웨어를 사용할 수 있습니다. 또한, `config.action_controller.session_options`을 사용하여 옵션을 설정 할 수 있습니다. [[[`ActionDispatch::Session::CookieStore` is responsible for storing the session in cookies. An alternate middleware can be used for this by changing the `config.action_controller.session_store` to an alternate value. Additionally, options passed to this can be configured by using `config.action_controller.session_options`.]]]
-* `ActionDispatch::Flash`는 `flash`키를 설정합니다.  오직 `config.action_controller.session_store`의 값이 세팅됬을때만 이용 가능합니다. [[[`ActionDispatch::Flash` sets up the `flash` keys. Only available if `config.action_controller.session_store` is set to a value.]]]
+* `ActionDispatch::Session::CookieStore`은 쿠키에 세션을 저장하는 역할을 합니다. `config.action_controller.session_store`의 값을 변경하여 다른 미들웨어를 사용할 수 있습니다. 또한, `config.action_controller.session_options`을 사용하여 전달된 옵션을 설정 할 수 있습니다. [[[`ActionDispatch::Session::CookieStore` is responsible for storing the session in cookies. An alternate middleware can be used for this by changing the `config.action_controller.session_store` to an alternate value. Additionally, options passed to this can be configured by using `config.action_controller.session_options`.]]]
+* `ActionDispatch::Flash`는 `flash`키를 설정합니다.  오직 `config.action_controller.session_store`의 값이 설정 되었을 때만 이용 가능합니다. [[[`ActionDispatch::Flash` sets up the `flash` keys. Only available if `config.action_controller.session_store` is set to a value.]]]
 * `ActionDispatch::ParamsParser`는 `params`의 요청으로 부터 매개 변수를 분석합니다. [[[`ActionDispatch::ParamsParser` parses out parameters from the request into `params`.]]]
 * `Rack::MethodOverride`은 `params[:_method]`가 설정 되어있을때 메소드를 오버라이드(override) 할 수 있습니다. 이는 HTTP 메소드 유형인 PATCH, PUT 그리고 DELETE를 지원하는 미들웨어입니다. [[[`Rack::MethodOverride` allows the method to be overridden if `params[:_method]` is set. This is the middleware which supports the PATCH, PUT, and DELETE HTTP method types.]]]
-* `ActionDispatch::Head`는 HEAD 요청을 GET 요청으로 변환하고 그것들을 제공합니다.  [[[`ActionDispatch::Head` converts HEAD requests to GET requests and serves them as so.]]]
+* `ActionDispatch::Head`는 HEAD 요청을 GET 요청으로 변환하고 제공합니다.  [[[`ActionDispatch::Head` converts HEAD requests to GET requests and serves them as so.]]]
 
 이러한 일반적인 미들웨어에 자신만의 `config.middleware.use` 메소드를 사용하여 추가할 수 있습니다.   [[[Besides these usual middleware, you can add your own by using the `config.middleware.use` method:]]]
 
@@ -251,13 +252,13 @@ end
 config.middleware.use Magical::Unicorns
 ```
 
-`Magical::Unicorns` 미들웨어를 마지막 끝에 입력합니다. 다른 미들웨어를 추가하고 싶다면 `insert_before`을 이용하여 추가할 수 있습니다. [[[This will put the `Magical::Unicorns` middleware on the end of the stack. You can use `insert_before` if you wish to add a middleware before another.]]]
+아래 코드처럼 `Magical::Unicorns` 미들웨어를 마지막에 입력합니다. 다른 미들웨어 전에 추가하고 싶다면 `insert_before`을 이용하여 추가할 수 있습니다. [[[This will put the `Magical::Unicorns` middleware on the end of the stack. You can use `insert_before` if you wish to add a middleware before another.]]]
 
 ```ruby
 config.middleware.insert_before ActionDispatch::Head, Magical::Unicorns
 ```
 
-`insert_after`  다른 미들웨어 후에 추가할 수 있습니다. [[[There's also `insert_after` which will insert a middleware after another:]]]
+아래와 같이 `insert_after`로 다른 미들웨어 후에 추가할 수 있습니다. [[[There's also `insert_after` which will insert a middleware after another:]]]
 
 ```ruby
 config.middleware.insert_after ActionDispatch::Head, Magical::Unicorns
@@ -269,7 +270,7 @@ config.middleware.insert_after ActionDispatch::Head, Magical::Unicorns
 config.middleware.swap ActionController::Failsafe, Lifo::Failsafe
 ```
 
-그것들을 스택에서 완전히 제거할 수도 있습니다. [[[They can also be removed from the stack completely:]]]
+이 미들웨어들을 스택에서 완전히 제거할 수도 있습니다. [[[They can also be removed from the stack completely:]]]
 
 ```ruby
 config.middleware.delete "Rack::MethodOverride"
