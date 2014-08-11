@@ -399,7 +399,7 @@ concern :image_attachable do
 end
 ```
 
-이러한 배려들(concerns)은 코드 중복을 피하고 라우크간 행동을 공유하기 위해서 리소스 내부에 사용할 수 있습니다.[[[These concerns can be used in resources to avoid code duplication and share behavior across routes:]]]
+이러한 배려들(concerns)은 코드 중복을 피하고 라우트간 행동을 공유하기 위해서 리소스 내부에 사용할 수 있습니다.[[[These concerns can be used in resources to avoid code duplication and share behavior across routes:]]]
 
 ```ruby
 resources :messages, concerns: :commentable
