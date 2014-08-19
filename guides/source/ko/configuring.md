@@ -280,42 +280,47 @@ config.middleware.delete "Rack::MethodOverride"
 
 * `config.i18n.default_locale`은 국제화를 위해 어플리케이션의 기본 로케일을 설정합니다. 기본값은 `:en` 입니다.  [[[`config.i18n.default_locale` sets the default locale of an application used for i18n. Defaults to `:en`.]]]
 
-* `config.i18n.load_path`는 레일즈에서 사용하는 로케일 파일의 검색 경로를 설정합니다. 기본값은 `config/locales/*.{yml,rb}` 입니다.  [[[`config.i18n.load_path` sets the path Rails uses to look for locale files. Defaults to `config/locales/*.{yml,rb}`.]]]
+* `config.i18n.load_path`는 레일즈에서 사용하는 로케일(locale) 파일의 검색 경로를 설정합니다. 기본값은 `config/locales/*.{yml,rb}` 입니다.  [[[`config.i18n.load_path` sets the path Rails uses to look for locale files. Defaults to `config/locales/*.{yml,rb}`.]]]
 
 ### [Configuring Active Record] Active Record 구성하기
 
 `config.active_record`는 다양한 설정 옵션을 포함합니다. [[[`config.active_record` includes a variety of configuration options:]]]
 
-* `config.active_record.logger` accepts a logger conforming to the interface of Log4r or the default Ruby Logger class, which is then passed on to any new database connections made. You can retrieve this logger by calling `logger` on either an Active Record model class or an Active Record model instance. Set to `nil` to disable logging.
+
+* `config.active_record.logger`는 Log4r의 인터페이스 또는 새로운 데이터베이스 연결에 전달되는 기본 Ruby Logger 클래스에 부합하는 Logger를 사용할 수 있습니다. 엑티브 레코드 모델 클래스 또는 엑티브 레코드 모델 인스턴스 중 하나로 `logger`을 호출하여 logger를 찾을 수 있습니다. `nil`로 설정시 logging이 비활성화 됩니다. [[[`config.active_record.logger` accepts a logger conforming to the interface of Log4r or the default Ruby Logger class, which is then passed on to any new database connections made. You can retrieve this logger by calling `logger` on either an Active Record model class or an Active Record model instance. Set to `nil` to disable logging.]]]
 
 
-* `config.active_record.primary_key_prefix_type` lets you adjust the naming for primary key columns. By default, Rails assumes that primary key columns are named `id` (and this configuration option doesn't need to be set.) There are two other choices:
+* `config.active_record.primary_key_prefix_type`은 기본 키 컬럼들의 네이밍시 사용합니다. 기본적으로 레일즈는 `id` 라는 이름이 붙여진 컬럼을 기본키로 가정합니다.(이 옵션은 설정할 필요가 없습니다.) 아래에 두개의 선택사항이 있습니다.
+** `:table_name` Customer 클래스의 기본 키를 만들시 `customerid`
+** `:table_name_with_underscore` Customer 클래스의 기본 키를 만들시 `customer_id`
+[[[`config.active_record.primary_key_prefix_type` lets you adjust the naming for primary key columns. By default, Rails assumes that primary key columns are named `id` (and this configuration option doesn't need to be set.) There are two other choices:
 ** `:table_name` would make the primary key for the Customer class `customerid`
-** `:table_name_with_underscore` would make the primary key for the Customer class `customer_id`
+** `:table_name_with_underscore` would make the primary key for the Customer class `customer_id`]]]
 
-* `config.active_record.table_name_prefix` lets you set a global string to be prepended to table names. If you set this to `northwest_`, then the Customer class will look for `northwest_customers` as its table. The default is an empty string.
+* `config.active_record.table_name_prefix` 테이블 이름 앞에 문자열을 설정하고 싶을 때 사용합니다. 만약 `northwest_` 라고 옵션을 설정하게 되면 Customer 클래스는 테이블에서 `northwest_customers`으로 찾게 됩니다. 기본 값으로는 빈 문자열이 설정되어 있습니다. [[[`config.active_record.table_name_prefix` lets you set a global string to be prepended to table names. If you set this to `northwest_`, then the Customer class will look for `northwest_customers` as its table. The default is an empty string.]]]
 
-* `config.active_record.table_name_suffix` lets you set a global string to be appended to table names. If you set this to `_northwest`, then the Customer class will look for `customers_northwest` as its table. The default is an empty string.
+* `config.active_record.table_name_suffix` 테이블 이름 뒤에 문자열을 설정하고 싶을 때 사용합니다. 만약 `_northwest` 라고 옵션을 설정하게 되면 Customer 클래스는 테이블에서 `customers_northwest`으로 찾게 됩니다. 기본 값으로는 빈 문자열이 설정되어 있습니다.
+    [[`config.active_record.table_name_suffix` lets you set a global string to be appended to table names. If you set this to `_northwest`, then the Customer class will look for `customers_northwest` as its table. The default is an empty string.]]]
 
-* `config.active_record.pluralize_table_names` specifies whether Rails will look for singular or plural table names in the database. If set to true (the default), then the Customer class will use the `customers` table. If set to false, then the Customer class will use the `customer` table.
+* `config.active_record.pluralize_table_names` 테이블 이름이 구체적인 설정에 따라 복수화 또는 단수화로 찾게 됩니다. 만약 true(기본 값)로 설정이 되어있다면, Customer 클래스는 `customers`라는 이름으로 테이블에서 사용됩니다. 만약 false로 설정이 되어있다면, Customer 클래스는 `customer`라는 이름으로 테이블에서 사용됩니다. [[[`config.active_record.pluralize_table_names` specifies whether Rails will look for singular or plural table names in the database. If set to true (the default), then the Customer class will use the `customers` table. If set to false, then the Customer class will use the `customer` table.]]]
 
-* `config.active_record.default_timezone` determines whether to use `Time.local` (if set to `:local`) or `Time.utc` (if set to `:utc`) when pulling dates and times from the database. The default is `:utc` for Rails, although Active Record defaults to `:local` when used outside of Rails.
+* `config.active_record.default_timezone` 데이터베이스로 부터 날짜와 시간을 가져올 때 `Time.local`(`:local`로 설정되어 있다면) 또는 `Time.utc`(`:utc`로 설정되어 있다면)로 결정됩니다. 기본 값으로 Active Record 값이 `:local` 일지라도  레일즈 외부에서 사용할 땐 `:utc` 으로 적용됩니다. [[[`config.active_record.default_timezone` determines whether to use `Time.local` (if set to `:local`) or `Time.utc` (if set to `:utc`) when pulling dates and times from the database. The default is `:utc` for Rails, although Active Record defaults to `:local` when used outside of Rails.]]]
 
-* `config.active_record.schema_format` controls the format for dumping the database schema to a file. The options are `:ruby` (the default) for a database-independent version that depends on migrations, or `:sql` for a set of (potentially database-dependent) SQL statements.
+* `config.active_record.schema_format` 파일에 데이터베이스 스키마 덤프 형식 변경을 위해 사용합니다. 옵션은 마이그레이션에 따라 데이터베이스에 독립적인 버전 `:ruby`(기본 값)과 SQL 구문(데이터베이스에 의존적인)의 설정에 대한 `:sql`이 있습니다. [[[`config.active_record.schema_format` controls the format for dumping the database schema to a file. The options are `:ruby` (the default) for a database-independent version that depends on migrations, or `:sql` for a set of (potentially database-dependent) SQL statements.]]]
 
-* `config.active_record.timestamped_migrations` controls whether migrations are numbered with serial integers or with timestamps. The default is true, to use timestamps, which are preferred if there are multiple developers working on the same application.
+* `config.active_record.timestamped_migrations` 마이그레이션 파일의 식별자를 시리얼 정수 또는 타임 스탬프로 설정합니다.  기본값은 true이며 타임 스탬프를 사용합니다. 이는 동일한 응용 프로그램 개발 작업에 여러 개발자가 있는 경우에 적합합니다. [[[`config.active_record.timestamped_migrations` controls whether migrations are numbered with serial integers or with timestamps. The default is true, to use timestamps, which are preferred if there are multiple developers working on the same application.]]]
 
-* `config.active_record.lock_optimistically` controls whether Active Record will use optimistic locking and is true by default.
+* `config.active_record.lock_optimistically` 엑티브 레코드를 기본값(true)에 의해 낙관적 잠금을 사용할 것인지 여부를 정합니다.  [[[`config.active_record.lock_optimistically` controls whether Active Record will use optimistic locking and is true by default.]]]
 
-* `config.active_record.cache_timestamp_format` controls the format of the timestamp value in the cache key. Default is `:number`.
+* `config.active_record.cache_timestamp_format` 캐시 키의 타임 스탬프 값의 형식을 정합니다. 기본 값으로는 `:number` 입니다. [[[`config.active_record.cache_timestamp_format` controls the format of the timestamp value in the cache key. Default is `:number`.]]]
 
-The MySQL adapter adds one additional configuration option:
+MySQL의 어댑터의 설정 추가 옵션이 있습니다. [[[The MySQL adapter adds one additional configuration option:]]]
 
-* `ActiveRecord::ConnectionAdapters::MysqlAdapter.emulate_booleans` controls whether Active Record will consider all `tinyint(1)` columns in a MySQL database to be booleans and is true by default.
+* `ActiveRecord::ConnectionAdapters::MysqlAdapter.emulate_booleans` 엑티브 레코드가 MySQL 데이터베이스의 모든 `tinyint(1)`의 컬럼을 부울로 고려할지 여부를 정합니다. 기본 값은 true 입니다. [[[`ActiveRecord::ConnectionAdapters::MysqlAdapter.emulate_booleans` controls whether Active Record will consider all `tinyint(1)` columns in a MySQL database to be booleans and is true by default.]]]
 
-The schema dumper adds one additional configuration option:
+스키마 덤퍼의 설정 추가 옵션이 있습니다. [[[The schema dumper adds one additional configuration option:]]]
 
-* `ActiveRecord::SchemaDumper.ignore_tables` accepts an array of tables that should _not_ be included in any generated schema file. This setting is ignored unless `config.active_record.schema_format == :ruby`.
+* `ActiveRecord::SchemaDumper.ignore_tables`는 스키마 파일 생성에 포함되지 _않을_ 테이블들을 받습니다. 이 설정은 `config.active_record.schema_format == :ruby`가 아니라면 무시됩니다.  [[[`ActiveRecord::SchemaDumper.ignore_tables` accepts an array of tables that should _not_ be included in any generated schema file. This setting is ignored unless `config.active_record.schema_format == :ruby`.]]]
 
 ### Configuring Action Controller
 
