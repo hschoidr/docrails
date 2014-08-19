@@ -19,7 +19,7 @@ pkg
 /railties/test/initializer/root/log
 /railties/doc
 /railties/tmp
-/guides/output
+/guides/output/ko
 
 # Added by ROR Lab.
 .DS_Store

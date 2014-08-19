@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+<title></title>
+<link rel="stylesheet" type="text/css" href="stylesheets/style.css" />
+<link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+
+<link rel="stylesheet" type="text/css" href="stylesheets/syntaxhighlighter/shCore.css" />
+<link rel="stylesheet" type="text/css" href="stylesheets/syntaxhighlighter/shThemeRailsGuides.css" />
+
+<link rel="stylesheet" type="text/css" href="stylesheets/fixes.css" />
+
+<link href="images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+</head>
+<body class="guide">
+  <div id="topNav">
+    <div class="wrapper">
+      <strong class="more-info-label">More at <a href="http://rubyonrails.org/">rubyonrails.org:</a> </strong>
+      <span class="red-button more-info-button">
+        More Ruby on Rails
+      </span>
+      <ul class="more-info-links s-hidden">
+        <li class="more-info"><a href="http://rubyonrails.org/">Overview</a></li>
+        <li class="more-info"><a href="http://rubyonrails.org/download">Download</a></li>
+        <li class="more-info"><a href="http://rubyonrails.org/deploy">Deploy</a></li>
+        <li class="more-info"><a href="https://github.com/rails/rails">Code</a></li>
+        <li class="more-info"><a href="http://rubyonrails.org/screencasts">Screencasts</a></li>
+        <li class="more-info"><a href="http://rubyonrails.org/documentation">Documentation</a></li>
+        <li class="more-info"><a href="http://rubyonrails.org/community">Community</a></li>
+        <li class="more-info"><a href="http://weblog.rubyonrails.org/">Blog</a></li>
+      </ul>
+    </div>
+  </div>
+  <div id="header">
+    <div class="wrapper clearfix">
+      <h1><a href="index.html" title="Return to home page">Guides.rubyonrails.org</a></h1>
+      <ul class="nav">
+        <li><a class="nav-item" href="index.html">Home</a></li>
+        <li class="guides-index guides-index-large">
+          <a href="index.html" id="guidesMenu" class="guides-index-item nav-item">Guides Index</a>
+          <div id="guides" class="clearfix" style="display: none;">
+            <hr />
+              <dl class="L">
+                <dt>입문하기</dt>
+                <dd><a href="getting_started.html">레일스 시작하기</a></dd>
+                <dt>모델</dt>
+                <dd><a href="active_record_basics.html">액티브레코드의 기초</a></dd>
+                <dd><a href="migrations.html">레일스 데이터베이스 마이그레이션</a></dd>
+                <dd><a href="active_record_validations.html">액티브레코드 유효성 검증</a></dd>
+                <dd><a href="active_record_callbacks.html">액티브레코드 콜백</a></dd>
+                <dd><a href="association_basics.html">액티브레코드 Associations</a></dd>
+                <dd><a href="active_record_querying.html">액티브레코드 쿼리 인터페이스</a></dd>
+                <dt>뷰</dt>
+                <dd><a href="layouts_and_rendering.html">레일스 레이아웃과 렌더링</a></dd>
+                <dd><a href="form_helpers.html">액션 뷰 폼 헬퍼메소드</a></dd>
+                <dt>컨트롤러</dt>
+                <dd><a href="action_controller_overview.html">액션 컨트롤러 개요</a></dd>
+                <dd><a href="routing.html">외부로부터 들어오는 레일스 라우팅</a></dd>
+              </dl>
+              <dl class="R">
+                <dt>Digging Deeper</dt>
+                <dd><a href="active_support_core_extensions.html">액티브서포트 코어 확장</a></dd>
+                <dd><a href="i18n.html">레일스 국제화 API</a></dd>
+                <dd><a href="action_mailer_basics.html">액션 메일러의 기본</a></dd>
+                <dd><a href="security.html">레일스 어플리케이션 보안</a></dd>
+                <dd><a href="debugging_rails_applications.html">레일스 어플리케이션 디버깅</a></dd>
+                <dd><a href="configuring.html">레일스 어플리케이션 구성하기</a></dd>
+                <dd><a href="command_line.html">레일스 커맨드라인 툴과 Rake Tasks</a></dd>
+                <dd><a href="asset_pipeline.html">Asset Pipeline</a></dd>
+                <dd><a href="working_with_javascript_in_rails.html">레일스에서 자바스크립트로 작업하기</a></dd>
+                <dt>레일스 기능 확장하기</dt>
+                <dd><a href="rails_on_rack.html">Rails on Rack</a></dd>
+                <dd><a href="generators.html">레일스 제너레이터 제작과 기능변경</a></dd>
+                <dt>루비온레일스에 기여하기</dt>
+                <dd><a href="contributing_to_ruby_on_rails.html">루비온레일스에 기여하기</a></dd>
+                <dd><a href="api_documentation_guidelines.html">API 도큐먼트 가이드라인</a></dd>
+                <dd><a href="ruby_on_rails_guides_guidelines.html">루비온레일스 가이드 지침서</a></dd>
+                <dt>릴리스 노트</dt>
+                <dd><a href="4_0_release_notes.html">루비온레일스 4.0 릴리스 노트</a></dd>
+                <dd><a href="3_2_release_notes.html">루비온레일스 3.2 릴리스 노트</a></dd>
+                <dd><a href="3_1_release_notes.html">루비온레일스 3.1 릴리스 노트</a></dd>
+                <dd><a href="3_0_release_notes.html">루비온레일스 3.0 릴리스 노트</a></dd>
+                <dd><a href="2_3_release_notes.html">루비온레일스 2.3 릴리스 노트</a></dd>
+                <dd><a href="2_2_release_notes.html">루비온레일스 2.2 릴리스 노트</a></dd>
+              </dl>
+          </div>
+        </li>
+        <li><a class="nav-item" href="contributing_to_ruby_on_rails.html">Contribute</a></li>
+        <li><a class="nav-item" href="credits.html">Credits</a></li>
+        <li class="guides-index guides-index-small">
+          <select class="guides-index-item nav-item">
+            <option value="index.html">Guides Index</option>
+              <optgroup label="입문하기">
+                  <option value="getting_started.html">레일스 시작하기</option>
+              </optgroup>
+              <optgroup label="모델">
+                  <option value="active_record_basics.html">액티브레코드의 기초</option>
+                  <option value="migrations.html">레일스 데이터베이스 마이그레이션</option>
+                  <option value="active_record_validations.html">액티브레코드 유효성 검증</option>
+                  <option value="active_record_callbacks.html">액티브레코드 콜백</option>
+                  <option value="association_basics.html">액티브레코드 Associations</option>
+                  <option value="active_record_querying.html">액티브레코드 쿼리 인터페이스</option>
+              </optgroup>
+              <optgroup label="뷰">
+                  <option value="layouts_and_rendering.html">레일스 레이아웃과 렌더링</option>
+                  <option value="form_helpers.html">액션 뷰 폼 헬퍼메소드</option>
+              </optgroup>
+              <optgroup label="컨트롤러">
+                  <option value="action_controller_overview.html">액션 컨트롤러 개요</option>
+                  <option value="routing.html">외부로부터 들어오는 레일스 라우팅</option>
+              </optgroup>
+              <optgroup label="Digging Deeper">
+                  <option value="active_support_core_extensions.html">액티브서포트 코어 확장</option>
+                  <option value="i18n.html">레일스 국제화 API</option>
+                  <option value="action_mailer_basics.html">액션 메일러의 기본</option>
+                  <option value="security.html">레일스 어플리케이션 보안</option>
+                  <option value="debugging_rails_applications.html">레일스 어플리케이션 디버깅</option>
+                  <option value="configuring.html">레일스 어플리케이션 구성하기</option>
+                  <option value="command_line.html">레일스 커맨드라인 툴과 Rake Tasks</option>
+                  <option value="asset_pipeline.html">Asset Pipeline</option>
+                  <option value="working_with_javascript_in_rails.html">레일스에서 자바스크립트로 작업하기</option>
+              </optgroup>
+              <optgroup label="레일스 기능 확장하기">
+                  <option value="rails_on_rack.html">Rails on Rack</option>
+                  <option value="generators.html">레일스 제너레이터 제작과 기능변경</option>
+              </optgroup>
+              <optgroup label="루비온레일스에 기여하기">
+                  <option value="contributing_to_ruby_on_rails.html">루비온레일스에 기여하기</option>
+                  <option value="api_documentation_guidelines.html">API 도큐먼트 가이드라인</option>
+                  <option value="ruby_on_rails_guides_guidelines.html">루비온레일스 가이드 지침서</option>
+              </optgroup>
+              <optgroup label="릴리스 노트">
+                  <option value="4_0_release_notes.html">루비온레일스 4.0 릴리스 노트</option>
+                  <option value="3_2_release_notes.html">루비온레일스 3.2 릴리스 노트</option>
+                  <option value="3_1_release_notes.html">루비온레일스 3.1 릴리스 노트</option>
+                  <option value="3_0_release_notes.html">루비온레일스 3.0 릴리스 노트</option>
+                  <option value="2_3_release_notes.html">루비온레일스 2.3 릴리스 노트</option>
+                  <option value="2_2_release_notes.html">루비온레일스 2.2 릴리스 노트</option>
+              </optgroup>
+          </select>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <hr class="hide" />
+
+  <div id="feature">
+    <div class="wrapper">
+      
+
+      
+    </div>
+  </div>
+
+  <div id="container">
+    <div class="wrapper">
+      <div id="mainCol">
+        <p>This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International</a> License</p>
+<p>"Rails", "Ruby on Rails", and the Rails logo are trademarks of David Heinemeier Hansson. All rights reserved.</p>
+
+
+        <h3>Feedback</h3>
+        <p>
+          You're encouraged to help improve the quality of this guide.
+        </p>
+        <p>
+          Please contribute if you see any typos or factual errors.
+          To get started, you can read our <a href="http://edgeguides.rubyonrails.org/contributing_to_ruby_on_rails.html#contributing-to-the-rails-documentation">documentation contributions</a> section.
+        </p>
+        <p>
+          You may also find incomplete content, or stuff that is not up to date.
+          Please do add any missing documentation for master. Make sure to check
+          <a href="http://edgeguides.rubyonrails.org">Edge Guides</a> first to verify
+          if the issues are already fixed or not on the master branch.
+          Check the <a href="ruby_on_rails_guides_guidelines.html">Ruby on Rails Guides Guidelines</a>
+          for style and conventions.
+        </p>
+        <p>
+          If for whatever reason you spot something to fix but cannot patch it yourself, please
+          <a href="https://github.com/rails/rails/issues">open an issue</a>.
+        </p>
+        <p>And last but not least, any kind of discussion regarding Ruby on Rails
+          documentation is very welcome in the <a href="http://groups.google.com/group/rubyonrails-docs">rubyonrails-docs mailing list</a>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <hr class="hide" />
+  <div id="footer">
+    <div class="wrapper">
+      <p>This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International</a> License</p>
+<p>"Rails", "Ruby on Rails", and the Rails logo are trademarks of David Heinemeier Hansson. All rights reserved.</p>
+
+    </div>
+  </div>
+
+  <script type="text/javascript" src="javascripts/jquery.min.js"></script>
+  <script type="text/javascript" src="javascripts/responsive-tables.js"></script>
+  <script type="text/javascript" src="javascripts/guides.js"></script>
+  <script type="text/javascript" src="javascripts/syntaxhighlighter/shCore.js"></script>
+  <script type="text/javascript" src="javascripts/syntaxhighlighter/shBrushRuby.js"></script>
+  <script type="text/javascript" src="javascripts/syntaxhighlighter/shBrushXml.js"></script>
+  <script type="text/javascript" src="javascripts/syntaxhighlighter/shBrushSql.js"></script>
+  <script type="text/javascript" src="javascripts/syntaxhighlighter/shBrushPlain.js"></script>
+  <script type="text/javascript">
+    SyntaxHighlighter.all();
+    $(guidesIndex.bind);
+  </script>
+</body>
+</html>
