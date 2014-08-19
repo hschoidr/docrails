@@ -551,7 +551,7 @@ TIP: 만약 리소스풀 라우트에 많은 추가 액션을 추가하고 있�
 get ':controller(/:action(/:id))'
 ```
 
-만약 들어오는 요청 `/photos/show/1`이 (파일 내 이전의 어떤 라우트에도 일지하지 않아) 위 라우트에 의해 처리되었다면, 결과는 `PhotosController`의 `show` 액션을 불러들일 것이고 마지막 매개변수 `"1"`을 `params[:id]`로 사용 가능하게 할 것입니다. `:action`과 `:id`는 괄호로 표시된 선택적 매개변수이기 때문에, 이 라우트는 또한 `/photos`의 들어오는 요청을 `PhotosController#index`에 라우트할 것입니다. [[[If an incoming request of `/photos/show/1` is processed by this route (because it hasn't matched any previous route in the file), then the result will be to invoke the `show` action of the `PhotosController`, and to make the final parameter `"1"` available as `params[:id]`. This route will also route the incoming request of `/photos` to `PhotosController#index`, since `:action` and `:id` are optional parameters, denoted by parentheses.]]]
+만약 들어오는 요청 `/photos/show/1`이 (파일 내 이전의 어떤 라우트에도 일치하지 않아) 위 라우트에 의해 처리되었다면, 결과는 `PhotosController`의 `show` 액션을 불러들일 것이고 마지막 매개변수 `"1"`을 `params[:id]`로 사용 가능하게 할 것입니다. `:action`과 `:id`는 괄호로 표시된 선택적 매개변수이기 때문에, 이 라우트는 또한 `/photos`의 들어오는 요청을 `PhotosController#index`에 라우트할 것입니다. [[[If an incoming request of `/photos/show/1` is processed by this route (because it hasn't matched any previous route in the file), then the result will be to invoke the `show` action of the `PhotosController`, and to make the final parameter `"1"` available as `params[:id]`. This route will also route the incoming request of `/photos` to `PhotosController#index`, since `:action` and `:id` are optional parameters, denoted by parentheses.]]]
 
 ### [Dynamic Segments] 동적 세그먼트
 
@@ -563,7 +563,7 @@ get ':controller/:action/:id/:user_id'
 
 `/photos/show/1/2`의 들어오는 경로는 `PhotosController`의 `show` 액션에 보내질 것입니다. `params[:id]`는 `"1"`, `params[:user_id]`는 2가 될 것입니다.  [[[An incoming path of `/photos/show/1/2` will be dispatched to the `show` action of the `PhotosController`. `params[:id]` will be `"1"`, and `params[:user_id]` will be `"2"`.]]]
 
-NOTE: `:controller` 경로 세그먼트와 함께 `:namespace` 혹은 `:module`을 사용할 수 있습니다. 이렇게 해야한다면, 다음과 같이 필요로 하는 네임스페이스와 일치하는 :controller상에 제약을 사용합니다. [[[NOTE: You can't use `:namespace` or `:module` with a `:controller` path segment. If you need to do this then use a constraint on :controller that matches the namespace you require. e.g:]]]
+NOTE: `:controller` 경로 세그먼트와 함께 `:namespace` 혹은 `:module`을 사용할 수 없습니다. 이렇게 해야한다면, 다음과 같이 필요로 하는 네임스페이스와 일치하는 :controller상에 제약을 사용합니다. [[[NOTE: You can't use `:namespace` or `:module` with a `:controller` path segment. If you need to do this then use a constraint on :controller that matches the namespace you require. e.g:]]]
 
 ```ruby
 get ':controller(/:action(/:id))', controller: /admin\/[^\/]+/
