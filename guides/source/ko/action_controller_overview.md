@@ -551,6 +551,44 @@ end
 
 세션 값에 대해서는 키 값을 `nil` 로 할당하는 반면, 쿠키 값을 삭제하기 위해서는 `cookies.delete(:key)` 를 사용해야 함을 주목하기 바랍니다. [[[Note that while for session values you set the key to `nil`, to delete a cookie value you should use `cookies.delete(:key)`.]]]
 
+레일스는 중요한 데이터를 저장하기 위한 서명된 쿠키 jar, 암호화된 쿠키 jar를 제공합니다. 서명된 쿠키 jar는 무결성을 위해 암호화 서명값을 쿠키값에 추가합니다. 암호화된 쿠키 jar는 서명하는것에 추가로 값을 암호화해서 사용자에 의해 읽을수 없도록 합니다. 자세한 정보는 [API 문서](http://api.rubyonrails.org/classes/ActionDispatch/Cookies.html)를 참고바랍니다. [[[Rails also provides a signed cookie jar and an encrypted cookie jar for storing sensitive data. The signed cookie jar appends a cryptographic signature on the cookie values to protect their integrity. The encrypted cookie jar encrypts the values in addition to signing them, so that they cannot be read by the end user. Refer to the [API documentation](http://api.rubyonrails.org/classes/ActionDispatch/Cookies.html) for more details. ]]]
+
+이러한 특별한 쿠키 jar들은 값을 문자열로 변환하거나 데이터를 읽기위해 루비 객체로 역변환 하는데 serializer를 사용합니다. [[[These special cookie jars use a serializer to serialize the assigned values into strings and deserializes them into Ruby objects on read.]]]
+
+사용하고자 하는 serializer를 지정 할 수 있습니다: [[[You can specify what serializer to use:]]]
+
+```ruby
+Rails.application.config.action_dispatch.cookies_serializer = :json
+```
+
+새로운 어플리케이션의 기본 serializer는 `:json` 입니다. 오래된 어플리케이션의 기존 쿠키와의 호환성을 위해 `serializer` 옵션이 지정되어 있지 않은경우 `:marshal`을 사용합니다. [[[The default serializer for new applications is `:json`. For compatibility with old applications with existing cookies, `:marshal` is used when `serializer` option is not specified.]]]
+
+옵션값을 `:hybrid`로 지정 할 수 있는데 이경우 레일스는 알아서 기존 쿠키를(`Marshal` 변환된) 역변환 해서 읽을수 있게 하고 다시 저장할때는 `JSON` 포맷으로 저장합니다. 이는 기존 어플리케이션을 `:json` serializer로 변경할때 유용합니다. [[[You may also set this option to `:hybrid`, in which case Rails would transparently deserialize existing (`Marshal`-serialized) cookies on read and re-write them in the `JSON` format. This is useful for migrating existing applications to the `:json` serializer.]]]
+
+또한 `load`, `dump`를 구현한 사용자가 직접 작성한 serializer를 지정할 수 있습니다: [[[It is also possible to pass a custom serializer that responds to `load` and `dump`:]]]
+
+```ruby
+Rails.application.config.action_dispatch.cookies_serializer = MyCustomSerializer
+```
+
+`:json`, `:hybrid` serializer를 사용할때, 모든 루비 객체가 JSON으로 변환되는것이 아니라는것을 유의해야합니다. 예를 들어 `Date`, `Time` 객체는 문자열로 변환되고 `Hash`의 키값도 문자열로 변경됩니다. [[[When using the `:json` or `:hybrid` serializer, you should beware that not all Ruby objects can be serialized as JSON. For example, `Date` and `Time` objects will be serialized as strings, and `Hash`es will have their keys stringified.]]]
+
+```ruby
+class CookiesController < ApplicationController
+  def set_cookie
+    cookies.encrypted[:expiration_date] = Date.tomorrow # => Thu, 20 Mar 2014
+    redirect_to action: 'read_cookie'
+  end
+
+  def read_cookie
+    cookies.encrypted[:expiration_date] # => "2014-03-20"
+  end
+end
+```
+
+이렇기에 단순한 데이터(문자열, 숫자)만 저장하는것을 권장합니다. 만약 복잡한 객체를 저장한다면, 이후 요청시마다 데이터를 읽기 위해서 변환을 직접 다루어야합니다. [[[It's advisable that you only store simple data (strings and numbers) in cookies. If you have to store complex objects, you would need to handle the conversion manually when reading the values on subsequent requests.]]]
+
+만약 세션을 쿠키 저장소에 저장한다면 이는 `session`, `flash`에도 적용됩니다. [[[If you use the cookie session store, this would apply to the `session` and `flash` hash as well.]]]
 
 [Rendering xml and json data] xml과 json 데이터 렌더링하기
 ---------------------------
@@ -583,7 +621,7 @@ end
 
 ```ruby
 class ApplicationController < ActionController::Base
-  before_filter :require_login
+  before_action :require_login
 
   private
 
@@ -593,24 +631,16 @@ class ApplicationController < ActionController::Base
       redirect_to new_login_url # halts request cycle
     end
   end
-
-  # logged_in? 메소드는 사용자가 로그인한 경우에는 true 값을, 그렇지 않은 경우
-  # false 값을 반환합니다. 이것은 이전에 작성했던 current_user 메소드를 !! 연산자를
-  # 이용하여 논리값으로 변환하므로써 가능합니다. 이런한 방법은 루비에서 흔하지 않으며
-  # 분명하게 특정값을 논리값으로 변환하고자 할 경우 외에는 권장하지 않습니다.
-  def logged_in?
-    !!current_user
-  end
 end
 ```
 
 위의 예에서 require_login 메소드는 에러 메시지를 플래시에 저장하고 사용자가 로그인하지 않은 상태라면 로그인 폼으로 리디렉트하게 됩니다. "before" 필터 메소드가 렌더링을 하거나 리디렉트할 경우 해당 액션은 실행되지 않을 것입니다. 만약 해당 필터이후에 실행되어야할 또 다른 필터가 있는 경우, 그 필터 또한 취소될 것입니다. [[[The method simply stores an error message in the flash and redirects to the login form if the user is not logged in. If a "before" filter renders or redirects, the action will not run. If there are additional filters scheduled to run after that filter, they are also cancelled.]]]
 
-위의 예에서, 필터가 `ApplicationController` 에 추가되기 때문에 어플리케이션내에 있는 모든 컨트롤러는 해당 필터를 상속받게 됩니다. 이것은 어플리케이션에 있는 모든 것이 사용자가 그것을 사용하기 위해서는 로그인을 하도록 요구하게 만듭니다. 이런 경우, 최초 사용자가 까지도 로그인을 할 수 없게 되므로 모든 컨트롤러나 액션이 로그인을 요구하게 해서는 안 됩니다. 따라서 `skip_before_filter` 를 사용해서 해당 필터가 특정 before 액션을 실행하지 못하도록 할 수 있습니다. [[[In this example the filter is added to `ApplicationController` and thus all controllers in the application inherit it. This will make everything in the application require the user to be logged in in order to use it. For obvious reasons (the user wouldn't be able to log in in the first place!), not all controllers or actions should require this. You can prevent this filter from running before particular actions with `skip_before_action`:]]]
+위의 예에서, 필터가 `ApplicationController` 에 추가되기 때문에 어플리케이션내에 있는 모든 컨트롤러는 해당 필터를 상속받게 됩니다. 이것은 어플리케이션에 있는 모든 것이 사용자가 그것을 사용하기 위해서는 로그인을 하도록 요구하게 만듭니다. 이런 경우, 최초 사용자가 까지도 로그인을 할 수 없게 되므로 모든 컨트롤러나 액션이 로그인을 요구하게 해서는 안 됩니다. 따라서 `skip_before_action` 를 사용해서 해당 필터가 특정 before 액션을 실행하지 못하도록 할 수 있습니다. [[[In this example the filter is added to `ApplicationController` and thus all controllers in the application inherit it. This will make everything in the application require the user to be logged in in order to use it. For obvious reasons (the user wouldn't be able to log in in the first place!), not all controllers or actions should require this. You can prevent this filter from running before particular actions with `skip_before_action`:]]]
 
 ```ruby
 class LoginsController < ApplicationController
-  skip_before_filter :require_login, only: [:new, :create]
+  skip_before_action :require_login, only: [:new, :create]
 end
 ```
 
@@ -628,7 +658,7 @@ end
 
 ```ruby
 class ChangesController < ActionController::Base
-  around_filter :wrap_in_transaction, only: :show
+  around_action :wrap_in_transaction, only: :show
 
   private
 
@@ -651,14 +681,17 @@ end
 
 ### [Other Ways to Use Filters] 필터를 사용하는 다른 방법들
 
-필터를 사용할 때 private 메소드를 작성해서 *_filter에 추가하는 것이 가장 일반적인 방법이지만, 여기에는 두가지 방법이 더 있습니다. [[[While the most common way to use filters is by creating private methods and using *_action to add them, there are two other ways to do the same thing.]]]
+필터를 사용할 때 private 메소드를 작성해서 *_action에 추가하는 것이 가장 일반적인 방법이지만, 여기에는 두가지 방법이 더 있습니다. [[[While the most common way to use filters is by creating private methods and using *_action to add them, there are two other ways to do the same thing.]]]
 
-첫번째 방법은 *_filter 메소드에 직접 블록을 사용하는 것입니다. 그 블록은 컨트롤러를 인수로 받게 되는데 위에서 언급했던 `require_login` 필터는 블록을 사용해서 다음과 같이 다시 작성할 수 있습니다: [[[The first is to use a block directly with the *_action methods. The block receives the controller as an argument, and the `require_login` filter from above could be rewritten to use a block:]]]
+첫번째 방법은 *_action 메소드에 직접 블록을 사용하는 것입니다. 그 블록은 컨트롤러를 인수로 받게 되는데 위에서 언급했던 `require_login` 필터는 블록을 사용해서 다음과 같이 다시 작성할 수 있습니다: [[[The first is to use a block directly with the *_action methods. The block receives the controller as an argument, and the `require_login` filter from above could be rewritten to use a block:]]]
 
 ```ruby
 class ApplicationController < ActionController::Base
-  before_filter do |controller|
-    redirect_to new_login_url unless controller.send(:logged_in?)
+  before_action do |controller|
+    unless controller.send(:logged_in?)
+      flash[:error] = "You must be Logged in to access this section"
+      redirect_to new_login_url
+    end
   end
 end
 ```
@@ -669,20 +702,21 @@ end
 
 ```ruby
 class ApplicationController < ActionController::Base
-  before_filter LoginFilter
+  before_action LoginFilter
 end
 
 class LoginFilter
-  def self.filter(controller)
+  def self.before(controller)
     unless controller.send(:logged_in?)
-      controller.flash[:error] = "You must be logged in"
+      controller.flash[:error] = "You must be Logged in to access this section"
       controller.redirect_to controller.new_login_url
     end
   end
 end
 ```
 
-또한, 이것은 해당 컨트롤러의 영역에서 실행되지 않고 그 컨트롤러를 인수로서 받기 때문에 그렇게 이상적인 예라고 볼 수는 없습니다. 필터 클래스는 `filter` 클래스 메소드를 가지는데 그것이 before 또는 after 필터인 여부에 따라 액션 전 또는 후에 실행됩니다. around 필터로 사용되는 클래스도 같은 `filter` 메소드를 사용할 수 있는데, 동일한 방식으로 실행될 것입니다. 그러나 이 때는 해당 액션을 실행하여 `yield` 를 해야 합니다. 다른 방법으로, `before` 와 `after` 메소드를 작성해서 액션 전후에 실행되도록 할 수도 있습니다. [[[Again, this is not an ideal example for this filter, because it's not run in the scope of the controller but gets the controller passed as an argument. The filter class has a class method `filter` which gets run before or after the action, depending on if it's a before or after filter. Classes used as around filters can also use the same `filter` method, which will get run in the same way. The method must `yield` to execute the action. Alternatively, it can have both a `before` and an `after` method that are run before and after the action.]]]
+또한, 이것은 해당 컨트롤러의 영역에서 실행되지 않고 그 컨트롤러를 인수로서 받기 때문에 그렇게 이상적인 예라고 볼 수는 없습니다. 필터 클래스는 필터의 이름과 동일한 메소드를 구현해야해서 before_action 필터는 before 메소드를 구현합니다. around 메소드는 액션을 실행하기 위해 꼭 yield 메소드를 구현해야합니다. [[[Again, this is not an ideal example for this filter, because it's not run in the scope of the controller but gets the controller passed as an argument. The filter class must implement a method with the same name as the filter, so for the before_action filter the class must implement a before method, and so on. The around method must yield to execute the action.]]]
+
 
 [Request Forgery Protection] 요청 위조방지
 --------------------------
@@ -702,7 +736,7 @@ end
 <% end %>
 ```
 
-해당 토큰이 hidden 필드로서 추가되는 방법을 알게 될 것입니다:
+해당 토큰이 hidden 필드로서 추가되는 방법을 알게 될 것입니다: [[[You will see how the token gets added as a hidden field:]]]
 
 ```html
 <form accept-charset="UTF-8" action="/users/1" method="post">
@@ -792,7 +826,7 @@ end
 
 ### [HTTP Digest Authentication] HTTP Digest 인증
 
-HTTP digest 인증은 기본 인증보다 더 우수해서 클라이언트로 하여금 네트워크상에서 암호화되지 않는 비밀번호를 보내도록 요구하지 않습니다(물론 HTTP 기본 인증이 HTTPS 보다 안전하기 하지만). 레일스에서 digest 인증을 사용하는 것을 매우 쉬워서 `authenticate_or_request_with_http_digest` 메소드만 필요로 합니다. HTTP digest authentication is superior to the basic authentication as it does not require the client to send an unencrypted password over the network (though HTTP basic authentication is safe over HTTPS). Using digest authentication with Rails is quite easy and only requires using one method, `authenticate_or_request_with_http_digest`.
+HTTP digest 인증은 기본 인증보다 더 우수해서 클라이언트로 하여금 네트워크상에서 암호화되지 않은 비밀번호를 보내도록 요구하지 않습니다(물론 HTTPS를 이용한 HTTP 기본 인증이 보다 안전하기 하지만). 레일스에서 digest 인증을 사용하는 것을 매우 쉬워서 `authenticate_or_request_with_http_digest` 메소드만 있으면 됩니다. [[[HTTP digest authentication is superior to the basic authentication as it does not require the client to send an unencrypted password over the network (though HTTP basic authentication is safe over HTTPS). Using digest authentication with Rails is quite easy and only requires using one method, `authenticate_or_request_with_http_digest`.]]]
 
 ```ruby
 class AdminController < ApplicationController
@@ -901,50 +935,121 @@ NOTE: 레일스의 구성 파일(configuration file)은 매 요청시마다 다�
 GET /clients/1.pdf
 ```
 
-[Parameter Filtering] 파라메터 필터하기
--------------------
+### [Live Streaming of Arbitrary Data] 임의의 데이터 라이브 스트리밍 
 
-레일스는 `log` 폴더에 해당 환경에 대한 로그 파일을 유지합니다. 이것은 어플리케이션에서 실제로 일어나는 일을 디버깅할 때 매우 유용하지만, 운영환경에서는 모든 정보를 로그파일에 저장하기를 원치 않을 수 있습니다. 이 때 어플리케이션 구성 파일 내의 `config.filter_parameters` 에 요청하는 파라메터를 지정해 두면 로그파일에 해당 파라메터를 필터할 수 있게 됩니다. 즉, 이 파라메터는 로그파일에서 [FILTERED]로 표기될 것입니다. [[[Rails keeps a log file for each environment in the `log` folder. These are extremely useful when debugging what's actually going on in your application, but in a live application you may not want every bit of information to be stored in the log file.]]]
+레일스는 파일뿐만 아니라 다른 데이터의 스트림도 가능합니다. 사실 응답객체에 있는 어떤것도 스트림 할 수 있습니다. `ActionController::Live` 모듈은 브라우저와 지속적인 접속을 생성 할 수 있도록 합니다. 이 모듈을 사용하면 임의의 데이터를 특정시점에 브라우저에 전송할 수 있습니다. [[[Rails allows you to stream more than just files. In fact, you can stream anything you would like in a response object. The `ActionController::Live` module allows you to create a persistent connection with a browser. Using this module, you will be able to send arbitrary data to the browser at specific points in time.]]]
+
+#### [Incorporating Live Streaming] 라이브 스트리밍 통합
+
+컨트롤러에 `ActionController::Live`를 추가하면 컨트롤러의 모든 액션은 임의의 데이터를 스트림 할 수 있습니다. 모듈을 다음과 같이 결합할 수 있습니다. [[[Including `ActionController::Live` inside of your controller class will provide all actions inside of the controller the ability to stream data. You can mix in the module like so:]]]
+
+```ruby
+class MyController < ActionController::Base
+  include ActionController::Live
+
+  def stream
+    response.headers['Content-Type'] = 'text/event-stream'
+    100.times {
+      response.stream.write "hello world\n"
+      sleep 1
+    }
+  ensure
+    response.stream.close
+  end
+end
+```
+
+위의 코드는 브라우저와 지속적인 접속을 유지하고 1초마다 1개 총 100개의 `"hello world\n"` 메시지를 전송합니다. [[[The above code will keep a persistent connection with the browser and send 100 messages of `"hello world\n"`, each one second apart.]]]
+
+위 예제에서 몇가지 주의 할것들이 있습니다. 응답 스트림을 확실히 닫을수 있도록 해야합니다. 스트림 닫는것을 잊으면 소켓은 평생 열려 있게됩니다. 추가로 응답 스트림에 데이터를 쓰기전에 컨텐츠 타입을 `text/event-stream`으로 설정해야합니다. 이는 응답객체에 `write`, `commit`가 일어나면 응답객체가 커밋되는데(`response.committed`의 반환값이 참인경우 커밋된상태) 이후에는 헤더를 쓸수 없기 때문입니다. [[[There are a couple of things to notice in the above example. We need to make sure to close the response stream. Forgetting to close the stream will leave the socket open forever. We also have to set the content type to `text/event-stream` before we write to the response stream. This is because headers cannot be written after the response has been committed (when `response.committed` returns a truthy value), which occurs when you `write` or `commit` the response stream.]]]
+
+#### [Example Usage] 사용 예
+
+노래방 기기를 만드는데 사용자가 특정 노래 가사 가져오는것을 원한다고 가정해보겠습니다. 각 `Song`은 여러개의 줄로 이루어져있고 줄마다 `num_beats`라는 가사의 소요시간정보를 가집니다. [[[Let's suppose that you were making a Karaoke machine and a user wants to get the lyrics for a particular song. Each `Song` has a particular number of lines and each line takes time `num_beats` to finish singing.]]]
+
+노래방 스타일로 가사가 출력되기 원한다면(가수가 이전 줄의 노래를 끝냈을때만 가사줄을 보내는 방식) 다음과 같이 `ActionController::Live`를 사용할 수 있습니다: [[[If we wanted to return the lyrics in Karaoke fashion (only sending the line when the singer has finished the previous line), then we could use `ActionController::Live` as follows:]]]
+
+```ruby
+class LyricsController < ActionController::Base
+  include ActionController::Live
+
+  def show
+    response.headers['Content-Type'] = 'text/event-stream'
+    song = Song.find(params[:id])
+
+    song.each do |line|
+      response.stream.write line.lyrics
+      sleep line.num_beats
+    end
+  ensure
+    response.stream.close
+  end
+end
+```
+
+위의 코드는 가수가 이전 가사를 다 불렀을때 새로운 가사줄을 전송합니다. [[[The above code sends the next line only after the singer has completed the previous
+line.]]]
+
+#### [Streaming Considerations] 스트리밍 고려사항
+
+임의의 데이터 스트리밍은 정말로 강력한 도구입니다. 이전 예제에서 보다시피 응답 스트림을 언제 전송할지 선택 할 수 있습니다. 하지만 또한 다음사항을 주의해야합니다. [[[Streaming arbitrary data is an extremely powerful tool. As shown in the previous examples, you can choose when and what to send across a response stream. However, you should also note the following things:]]]
+
+* 각 응답객체는 새로운 스레드를 생성하고 원본 스레드로부터 스레드 지역변수를 복사합니다. 너무 많은 스레드 지역변수를 가지면 성능에 부정적인 영향을 미칩니다. 유사하게 아주 많은수의 스레드 역시 성능을 저해합니다. [[[Each response stream creates a new thread and copies over the thread local variables from the original thread. Having too many thread local variables can negatively impact performance. Similarly, a large number of threads can also hinder performance.]]]
+
+* 응답 스트림을 닫는데 실패하면 소켓을 영원히 열린 상태로 두게됩니다. 응답 스트림을 사용할때마다 `close` 호출을 확인해야합니다. [[[Failing to close the response stream will leave the corresponding socket open forever. Make sure to call `close` whenever you are using a response stream.]]]
+
+* WEBrick 서버는 모든 응답객체들을 버퍼해서 `ActionController::Live`가 작동하지 않습니다. 자동으로 응답을 버퍼하지 않는 웹서버를 사용해야합니다. [[[WEBrick servers buffer all responses, and so including `ActionController::Live` will not work. You must use a web server which does not automatically buffer responses.]]]
+
+
+[Log Filtering] 로그 필터링
+-------------
+
+레일스는 `log` 폴더에 해당 환경에 대한 로그 파일을 유지합니다. 이것은 어플리케이션에서 실제로 일어나는 일을 디버깅할 때 매우 유용하지만, 운영환경에서는 모든 정보를 로그파일에 저장하기를 원치 않을 수 있습니다. [[[Rails keeps a log file for each environment in the `log` folder. These are extremely useful when debugging what's actually going on in your application, but in a live application you may not want every bit of information to be stored in the log file.]]]
+
+### [Parameters Filtering] 파라미터 필터링
+
+민감한 요청 파라미터를 로그파일에서 안보이게 하려면 어플리케이션 환경설정의 `config.filter_parameters`에 해당 정보를 추가합니다. 이 파라미터들은 로그파일에서 [FILTERED]로 가려져서 보입니다. [[[You can filter out sensitive request parameters from your log files by appending them to `config.filter_parameters` in the application configuration. These parameters will be marked [FILTERED] in the log.]]]
 
 ```ruby
 config.filter_parameters << :password
 ```
 
-### Redirects Filtering
+### [Redirects Filtering] 리다이렉트 필터링
 
-Sometimes it's desirable to filter out from log files some sensible locations your application is redirecting to.
-You can do that by using the `config.filter_redirect` configuration option:
+때로는 리다이렉트 할때 민감한 정보가 포함되는데 이를 가리는것이 바랍직합니다. 이를 위해 환경설정의 `config.filter_redirect` 옵션을 이용합니다: [[[Sometimes it's desirable to filter out from log files some sensitive locations your application is redirecting to. You can do that by using the `config.filter_redirect` configuration option:]]]
 
 ```ruby
 config.filter_redirect << 's3.amazonaws.com'
 ```
 
-You can set it to a String, a Regexp, or an array of both.
+문자열, 정규식이나 배열에 이 둘을 섞어서 설정 할 수 있습니다. [[[You can set it to a String, a Regexp, or an array of both.]]]
 
 ```ruby
 config.filter_redirect.concat ['s3.amazonaws.com', /private_path/]
 ```
 
-Matching URLs will be marked as '[FILTERED]'.
+해당하는 URL들은 '[FILTERED]'로 가려집니다. [[[Matching URLs will be marked as '[FILTERED]'.]]]
+
 
 [Rescue] 예외처리
 ------
 
-어플리케이션은, 처리해 주어야 하는, 버그나 예외가 발생할 가능이 많습니다. 예를 들어, 사용자가 데이터베이스에서 더 이상 존재하지 않는 데이터 리소스를 찾고자 한다면, 액티브 레코드는 `ActiveRecord::RecordNotFound` 예외를 발생시킬 것입니다.
+어플리케이션은 처리해 주어야 하는 버그나 예외가 발생할 가능이 많습니다. 예를 들어, 사용자가 데이터베이스에서 더 이상 존재하지 않는 데이터 리소스를 찾고자 한다면, 액티브 레코드는 `ActiveRecord::RecordNotFound` 예외를 발생시킬 것입니다. [[[Most likely your application is going to contain bugs or otherwise throw an exception that needs to be handled. For example, if the user follows a link to a resource that no longer exists in the database, Active Record will throw the `ActiveRecord::RecordNotFound` exception.]]]
 
-레일스의 기본 예외처리 기전은 모든 예외에 대해서 "500 Server Error" 메시지를 보여주게 됩니다. 로컬 웹서버에서 요청이 발생할 경우에는, 코드 추적과 이와 관련된 몇가지 추가 정보들이 나타나서 무슨 문제가 발생했는지를 알 수 있어 금방 해결할 수 있습니다. 그러나 원격 웹서버에 대해서 요청이 발생할 경우, 라우팅 에러나 레코드를 찾을 수 없을 때 레일스는 "500 Server Error" 나 "404 Not Found" 메시지만 단순하게 보여 줄 것입니다. 때때로 이러한 에러를 잡아내는 방법과 사용자에게 표시해 주는 방법을 변경하고자 할 경우가 있습니다. 레일스 어플리케이션에서는 예외 처리하는 방법에 대한 몇가지 레벨이 있습니다:
+레일스의 기본 예외처리는 모든 예외에 대해서 "500 Server Error" 메시지를 보여주게 됩니다. 로컬 웹서버에서 요청이 발생할 경우에는, 코드 추적과 이와 관련된 몇가지 추가 정보들이 나타나서 무슨 문제가 발생했는지를 알 수 있어 금방 해결할 수 있습니다. 그러나 원격 웹서버에 대해서 요청이 발생할 경우, 라우팅 에러나 레코드를 찾을 수 없을 때 레일스는 "500 Server Error" 나 "404 Not Found" 메시지만 단순하게 보여 줄 것입니다. 때때로 이러한 에러를 잡아내는 방법과 사용자에게 표시해 주는 방법을 변경하고자 할 경우가 있습니다. 레일스 어플리케이션에서는 예외 처리하는 방법에 대한 몇가지 레벨이 있습니다: [[[Rails' default exception handling displays a "500 Server Error" message for all exceptions. If the request was made locally, a nice traceback and some added information gets displayed so you can figure out what went wrong and deal with it. If the request was remote Rails will just display a simple "500 Server Error" message to the user, or a "404 Not Found" if there was a routing error or a record could not be found. Sometimes you might want to customize how these errors are caught and how they're displayed to the user. There are several levels of exception handling available in a Rails application:]]]
 
-### [The Default 500 and 404 Templates]디폴트 500과 404 에러 템플릿 파일
 
-기본적으로 운영환경상의 어플리케이션은 404 또는 500 에러 메시지를 보여 줄 것입니다. 이 메시지는 `public` 폴더에 있는 정적 HTML 파일(`404.html` 과 `500.html`)내에 포함되어 있습니다. 이 파일들을 수정해서 몇가지 특수 정보와 레이아웃을 추가할 수 있지만, 기억할 것은 이 파일들은 정적, 즉, 단순한 HTML 파일이라서 RHTML이나 레이아웃을 사용할 수 없다는 것입니다.
+### [The Default 500 and 404 Templates] 디폴트 500과 404 에러 템플릿 파일
+
+기본적으로 운영환경상의 어플리케이션은 404 또는 500 에러 메시지를 보여 줄 것입니다. 이 메시지는 `public` 폴더에 있는 정적 HTML 파일(`404.html` 과 `500.html`)내에 포함되어 있습니다. 이 파일들을 수정해서 몇가지 특수 정보와 레이아웃을 추가할 수 있지만, 기억할 것은 이 파일들은 정적, 즉, 단순한 HTML 파일이라서 RHTML이나 레이아웃을 사용할 수 없다는 것입니다. [[[By default a production application will render either a 404 or a 500 error message. These messages are contained in static HTML files in the `public` folder, in `404.html` and `500.html` respectively. You can customize these files to add some extra information and layout, but remember that they are static; i.e. you can't use RHTML or layouts in them, just plain HTML.]]]
 
 ### `rescue_from`
 
-에러를 잡아서 좀 더 정교하게 처리하고자 한다면, `rescue_from` 메소드를 이용할 수 있습니다. 이 경우, 전체 컨트롤러와 하부 클래스에서 임의의 형태(들)의 예외를 처리할 수 있습니다.
+에러를 잡아서 좀 더 정교하게 처리하고자 한다면, `rescue_from` 메소드를 이용할 수 있습니다. 이 경우, 전체 컨트롤러와 하부 클래스에서 임의의 형태(들)의 예외를 처리할 수 있습니다. [[[If you want to do something a bit more elaborate when catching errors, you can use `rescue_from`, which handles exceptions of a certain type (or multiple types) in an entire controller and its subclasses.]]]
 
-예외가 발생하여 `rescue_from` 이 잡아낼 경우 해당 예외 객체가 핸들러에게로 넘겨가게 됩니다. 이 때 핸들러는 하나의 메소드이거나 `Proc` 객체일 수 있으며 `:with` 옵션으로 명시할 수 있습니다. 아니면 명시적으로 `Proc` 객체로 지정하는 대신, 바로 블록을 사용할 수도 있습니다.
+예외가 발생하여 `rescue_from` 이 잡아낼 경우 해당 예외 객체가 핸들러에게로 넘겨가게 됩니다. 이 때 핸들러는 하나의 메소드이거나 `Proc` 객체일 수 있으며 `:with` 옵션으로 명시할 수 있습니다. 아니면 명시적으로 `Proc` 객체로 지정하는 대신, 바로 블록을 사용할 수도 있습니다. [[[When an exception occurs which is caught by a `rescue_from` directive, the exception object is passed to the handler. The handler can be a method or a `Proc` object passed to the `:with` option. You can also use a block directly instead of an explicit `Proc` object.]]]
 
-아래에서, `rescue_from` 을 사용하여, 모든 `ActiveRecord::RecordNotFound` 에러를 감지해서 조치를 취하는 방법을 보여 줍니다.
+아래에서, `rescue_from` 을 사용하여, 모든 `ActiveRecord::RecordNotFound` 에러를 감지해서 조치를 취하는 방법을 보여 줍니다. [[[Here's how you can use `rescue_from` to intercept all `ActiveRecord::RecordNotFound` errors and do something with them.]]]
 
 ```ruby
 class ApplicationController < ActionController::Base
@@ -958,7 +1063,8 @@ class ApplicationController < ActionController::Base
 end
 ```
 
-물론, 위의 예는 복잡할 뿐 기본 예외처리를 전혀 개선하지 않았습니다. 그러나 일단 모든 예외처리를 잡아낼 수 있다면 원하는 데로 자유롭게 처리할 수 있게 됩니다. 예를 들면, 사용자정의 예외 클래스를 만들어서 사용자가 어플리케이션의 특정 부분을 접근할 수 없을 때 예외를 발생시킬 수 있습니다:
+물론, 위의 예는 복잡할 뿐 기본 예외처리를 전혀 개선하지 않았습니다. 그러나 일단 모든 예외처리를 잡아낼 수 있다면 원하는 데로 자유롭게 처리할 수 있게 됩니다. 예를 들면, 사용자정의 예외 클래스를 만들어서 사용자가 어플리케이션의 특정 부분을 접근할 수 없을 때 예외를 발생시킬 수 있습니다: [[[Of course, this example is anything but elaborate and doesn't improve on the default exception handling at all, but once you can catch all those exceptions you're free to do whatever you want with them. For example, you could create custom exception classes that will be thrown when a user doesn't have access to a certain section of your application:]]]
+
 
 ```ruby
 class ApplicationController < ActionController::Base
@@ -990,12 +1096,69 @@ class ClientsController < ApplicationController
 end
 ```
 
-NOTE: 어떤 예외는 해당 컨트롤러가 초기화되어 액션이 실행되기 전에 발생하기 때문에 `ApplicationController` 클래스에서만 복구할 수 있습니다. Pratik Naik의 [기사](http://m.onkey.org/2008/7/20/rescue-from-dispatching) 를 보면 이것에 대한 대한 더 자세한 내용을 알게 될 것입니다.
+WARNING: `rescue_from Exception`, `rescue_from StandardError`는 사이드이펙트가 발생할 수 있으므로 특별한 이유가 있는것이 아니면 사용하지 않는것이 좋습니다.(개발중에 에러의 상세 내용을 보지 못하거나 추적하지 못합니다.) 동적으로 에러 페이지를 생성하고 싶다면 [Custom errors page](#custom-errors-page)를 참고합니다. [[[WARNING: You shouldn't do `rescue_from Exception` or `rescue_from StandardError` unless you have a particular reason as it will cause serious side-effects (e.g. you won't be able to see exception details and tracebacks during development). If you would like to dynamically generate error pages, see [Custom errors page](#custom-errors-page).]]]
 
-[Force HTTPS protocol]강제로 HTTPS 프로토콜 사용하기
+NOTE: 어떤 예외는 해당 컨트롤러가 초기화되어 액션이 실행되기 전에 발생하기 때문에 `ApplicationController` 클래스에서만 복구할 수 있습니다. Pratik Naik의 [기사](http://m.onkey.org/2008/7/20/rescue-from-dispatching) 를 보면 이것에 대한 대한 더 자세한 내용을 알게 될 것입니다. [[[NOTE: Certain exceptions are only rescuable from the `ApplicationController` class, as they are raised before the controller gets initialized and the action gets executed. See Pratik Naik's [article](http://m.onkey.org/2008/7/20/rescue-from-dispatching) on the subject for more information.]]]
+
+### [Custom errors page] 사용자정의 에러 페이지
+
+에러를 다루는 컨트롤러나 뷰의 레이아웃을 직접 수정할 수 있습니다. 먼저 에러페이지를 위한 어플리케이션의 라우트를 설정합니다. [[[You can customize the layout of your error handling using controllers and views. First define your app own routes to display the errors page.]]]
+
+* `config/application.rb`
+
+  ```ruby
+  config.exceptions_app = self.routes
+  ```
+
+* `config/routes.rb`
+
+  ```ruby
+  get '/404', to: 'errors#not_found'
+  get '/422', to: 'errors#unprocessable_entity'
+  get '/500', to: 'errors#server_error'
+  ```
+
+Create the controller and views.
+
+* `app/controllers/errors_controller.rb`
+
+  ```ruby
+  class ErrorsController < ActionController::Base
+    layout 'error'
+
+    def not_found
+      render status: :not_found
+    end
+
+    def unprocessable_entity
+      render status: :unprocessable_entity
+    end
+
+    def server_error
+      render status: :server_error
+    end
+  end
+  ```
+
+* `app/views`
+
+  ```
+    errors/
+      not_found.html.erb
+      unprocessable_entity.html.erb
+      server_error.html.erb
+    layouts/
+      error.html.erb
+  ```
+
+컨트롤러에서 알맞은 상태 코드를 설정하는것을 잊으면 안됩니다. 사용자는 이미 에러페이지상에 있기 때문에 데이터베이스를 사용하거나 복잡한 동작을 하지 않도록 해야합니다. 에러페이지에서 새로운 에러를 생성하게되면 문제가 발생 할 수 있습니다. [[[Do not forget to set the correct status code on the controller as shown before. You should avoid using the database or any complex operations because the user is already on the error page. Generating another error while on an error page could cause issues.]]]
+
+
+[Force HTTPS protocol] 강제로 HTTPS 프로토콜 사용하기
 --------------------
 
-어떤 경우에는, 보안상의 이유로 HTTPS 프로토콜로만 특정 컨트롤러를 접근하도록 할 때가 있을 수 있습니다. 레일스 3.1 부터는 `force_ssl` 메소드를 이용하여 해결할 수 있습니다:
+어떤 경우에는, 보안상의 이유로 HTTPS 프로토콜로만 특정 컨트롤러를 접근하도록 할 때가 있을 수 있습니다. `force_ssl` 메소드를 이용하여 해결 할 수 있습니다: [[[Sometime you might want to force a particular controller to only be accessible via an HTTPS protocol for security reasons. You can use the `force_ssl` method in your controller to enforce that:]]]
+
 
 ```ruby
 class DinnerController
@@ -1003,7 +1166,7 @@ class DinnerController
 end
 ```
 
-필터와 같이, `:only` 와 `:except` 옵션을 이용하면 특정 액션에 대해서만 보안 연결을 할 수 있습니다.
+필터와 같이, `:only` 와 `:except` 옵션을 이용하면 특정 액션에 대해서만 보안 연결을 할 수 있습니다. [[[Just like the filter, you could also pass `:only` and `:except` to enforce the secure connection only to specific actions:]]]
 
 ```ruby
 class DinnerController
@@ -1013,6 +1176,4 @@ class DinnerController
 end
 ```
 
-다수의 컨트롤러에 대해서 `force_ssl` 을 추가할 경우에는 어플리케이션 전체에 대해서 HTTPS 프로토콜을 사용하는 것을 생각해 볼 필요가 있습니다. 이런 경우에는, 환경파일에 `config.force_ssl` 을 설정할 수 있습니다.
-
-NOTE: 초벌번역: 2012년 5월 7일 ~ 최효성(hschoidr@gmail.com), 2차번역: 2013년 1월 7일 ~ 최효성(hschoidr@gmail.com) 譯
+다수의 컨트롤러에 대해서 `force_ssl` 을 추가할 경우에는 어플리케이션 전체에 대해서 HTTPS 프로토콜을 사용하는 것을 생각해 볼 필요가 있습니다. 이런 경우에는, 환경파일에 `config.force_ssl` 을 설정할 수 있습니다. [[[Please note that if you find yourself adding `force_ssl` to many controllers, you may want to force the whole application to use HTTPS instead. In that case, you can set the `config.force_ssl` in your environment file.]]]

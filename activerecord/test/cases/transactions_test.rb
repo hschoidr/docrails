@@ -5,6 +5,7 @@ require 'models/developer'
 require 'models/book'
 require 'models/author'
 require 'models/post'
+require 'models/movie'
 
 class TransactionTest < ActiveRecord::TestCase
   self.use_transactional_fixtures = false
@@ -12,6 +13,11 @@ class TransactionTest < ActiveRecord::TestCase
 
   def setup
     @first, @second = Topic.find(1, 2).sort_by { |t| t.id }
+  end
+
+  def test_persisted_in_a_model_with_custom_primary_key_after_failed_save
+    movie = Movie.create
+    assert !movie.persisted?
   end
 
   def test_raise_after_destroy
@@ -115,6 +121,19 @@ class TransactionTest < ActiveRecord::TestCase
     e = assert_raises(RuntimeError) { @first.save }
     assert_equal "Make the transaction rollback", e.message
     assert !Topic.find(1).approved?
+  end
+
+  def test_rolling_back_in_a_callback_rollbacks_before_save
+    def @first.before_save_for_transaction
+      raise ActiveRecord::Rollback
+    end
+    assert !@first.approved
+
+    Topic.transaction do
+      @first.approved  = true
+      @first.save!
+    end
+    assert !Topic.find(@first.id).approved?, "Should not commit the approved flag"
   end
 
   def test_raising_exception_in_nested_transaction_restore_state_in_save

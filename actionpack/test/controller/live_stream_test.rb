@@ -39,12 +39,19 @@ module ActionController
       ensure
         sse.close
       end
+
+      def sse_with_multiple_line_message
+        sse = SSE.new(response.stream)
+        sse.write("first line.\nsecond line.")
+      ensure
+        sse.close
+      end
     end
 
     tests SSETestController
 
     def wait_for_response_stream_close
-      response.stream.await_close
+      response.body
     end
 
     def test_basic_sse
@@ -87,6 +94,15 @@ module ActionController
       assert_match(/data: {\"name\":\"Ryan\"}/, second_response)
       assert_match(/id: 2/, second_response)
     end
+
+    def test_sse_with_multiple_line_message
+      get :sse_with_multiple_line_message
+
+      wait_for_response_stream_close
+      first_response, second_response = response.body.split("\n")
+      assert_match(/data: first line/, first_response)
+      assert_match(/data: second line/, second_response)
+    end
   end
 
   class LiveStreamTest < ActionController::TestCase
@@ -100,6 +116,12 @@ module ActionController
 
       def self.controller_path
         'test'
+      end
+
+      def set_cookie
+        cookies[:hello] = "world"
+        response.stream.write "hello world"
+        response.close
       end
 
       def render_text
@@ -147,6 +169,11 @@ module ActionController
         render 'doesntexist'
       end
 
+      def exception_in_view_after_commit
+        response.stream.write ""
+        render 'doesntexist'
+      end
+
       def exception_with_callback
         response.headers['Content-Type'] = 'text/event-stream'
 
@@ -175,13 +202,46 @@ module ActionController
         response.stream.write ''
         response.stream.write params[:widget][:didnt_check_for_nil]
       end
+
+      def overfill_buffer_and_die
+        # Write until the buffer is full. It doesn't expose that
+        # information directly, so we must hard-code its size:
+        10.times do
+          response.stream.write '.'
+        end
+        # .. plus one more, because the #each frees up a slot:
+        response.stream.write '.'
+
+        latch.release
+
+        # This write will block, and eventually raise
+        response.stream.write 'x'
+
+        20.times do
+          response.stream.write '.'
+        end
+      end
+
+      def ignore_client_disconnect
+        response.stream.ignore_disconnect = true
+
+        response.stream.write '' # commit
+
+        # These writes will be ignored
+        15.times do
+          response.stream.write 'x'
+        end
+
+        logger.info 'Work complete'
+        latch.release
+      end
     end
 
     tests TestController
 
     def assert_stream_closed
-      response.stream.await_close
       assert response.stream.closed?, 'stream should be closed'
+      assert response.sent?, 'stream should be sent'
     end
 
     def capture_log_output
@@ -193,6 +253,13 @@ module ActionController
       ensure
         ActionController::Base.logger = old_logger
       end
+    end
+
+    def test_set_cookie
+      @controller = TestController.new
+      get :set_cookie
+      assert_equal({'hello' => 'world'}, @response.cookies)
+      assert_equal "hello world", @response.body
     end
 
     def test_set_response!
@@ -216,6 +283,7 @@ module ActionController
       @controller.response = @response
 
       t = Thread.new(@response) { |resp|
+        resp.await_commit
         resp.stream.each do |part|
           assert_equal parts.shift, part
           ol = @controller.latch
@@ -227,6 +295,62 @@ module ActionController
       @controller.process :blocking_stream
 
       assert t.join(3), 'timeout expired before the thread terminated'
+    end
+
+    def test_abort_with_full_buffer
+      @controller.latch = ActiveSupport::Concurrency::Latch.new
+
+      @request.parameters[:format] = 'plain'
+      @controller.request  = @request
+      @controller.response = @response
+
+      got_error = ActiveSupport::Concurrency::Latch.new
+      @response.stream.on_error do
+        ActionController::Base.logger.warn 'Error while streaming'
+        got_error.release
+      end
+
+      t = Thread.new(@response) { |resp|
+        resp.await_commit
+        _, _, body = resp.to_a
+        body.each do |part|
+          @controller.latch.await
+          body.close
+          break
+        end
+      }
+
+      capture_log_output do |output|
+        @controller.process :overfill_buffer_and_die
+        t.join
+        got_error.await
+        assert_match 'Error while streaming', output.rewind && output.read
+      end
+    end
+
+    def test_ignore_client_disconnect
+      @controller.latch = ActiveSupport::Concurrency::Latch.new
+
+      @controller.request  = @request
+      @controller.response = @response
+
+      t = Thread.new(@response) { |resp|
+        resp.await_commit
+        _, _, body = resp.to_a
+        body.each do |part|
+          body.close
+          break
+        end
+      }
+
+      capture_log_output do |output|
+        @controller.process :ignore_client_disconnect
+        t.join
+        Timeout.timeout(3) do
+          @controller.latch.await
+        end
+        assert_match 'Work complete', output.rewind && output.read
+      end
     end
 
     def test_thread_locals_get_copied
@@ -255,12 +379,27 @@ module ActionController
       assert_raises(ActionView::MissingTemplate) do
         get :exception_in_view
       end
+
+      capture_log_output do |output|
+        get :exception_in_view_after_commit
+        assert_match %r((window\.location = "/500\.html"</script></html>)$), response.body
+        assert_match 'Missing template test/doesntexist', output.rewind && output.read
+        assert_stream_closed
+      end
+      assert response.body
       assert_stream_closed
     end
 
     def test_exception_handling_plain_text
       assert_raises(ActionView::MissingTemplate) do
         get :exception_in_view, format: :json
+      end
+
+      capture_log_output do |output|
+        get :exception_in_view_after_commit, format: :json
+        assert_equal '', response.body
+        assert_match 'Missing template test/doesntexist', output.rewind && output.read
+        assert_stream_closed
       end
     end
 

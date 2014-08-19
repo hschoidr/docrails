@@ -1,11 +1,33 @@
 module ActiveRecord
   module Associations
     class AssociationScope #:nodoc:
-      INSTANCE = new
-
       def self.scope(association, connection)
         INSTANCE.scope association, connection
       end
+
+      class BindSubstitution
+        def initialize(block)
+          @block = block
+        end
+
+        def bind_value(scope, column, value, alias_tracker)
+          substitute = alias_tracker.connection.substitute_at(
+            column, scope.bind_values.length)
+          scope.bind_values += [[column, @block.call(value)]]
+          substitute
+        end
+      end
+
+      def self.create(&block)
+        block = block ? block : lambda { |val| val }
+        new BindSubstitution.new(block)
+      end
+
+      def initialize(bind_substitution)
+        @bind_substitution = bind_substitution
+      end
+
+      INSTANCE = create
 
       def scope(association, connection)
         klass         = association.klass
@@ -20,6 +42,23 @@ module ActiveRecord
 
       def join_type
         Arel::Nodes::InnerJoin
+      end
+
+      def self.get_bind_values(owner, chain)
+        bvs = []
+        chain.each_with_index do |reflection, i|
+          if reflection == chain.last
+            bvs << reflection.join_id_for(owner)
+            if reflection.type
+              bvs << owner.class.base_class.name
+            end
+          else
+            if reflection.type
+              bvs << chain[i + 1].klass.base_class.name
+            end
+          end
+        end
+        bvs
       end
 
       private
@@ -49,10 +88,7 @@ module ActiveRecord
       end
 
       def bind_value(scope, column, value, alias_tracker)
-        substitute = alias_tracker.connection.substitute_at(
-          column, scope.bind_values.length)
-        scope.bind_values += [[column, value]]
-        substitute
+        @bind_substitution.bind_value scope, column, value, alias_tracker
       end
 
       def bind(scope, table_name, column_name, value, tracker)
@@ -69,18 +105,9 @@ module ActiveRecord
         chain.each_with_index do |reflection, i|
           table, foreign_table = tables.shift, tables.first
 
-          if reflection.source_macro == :belongs_to
-            if reflection.options[:polymorphic]
-              key = reflection.association_primary_key(assoc_klass)
-            else
-              key = reflection.association_primary_key
-            end
-
-            foreign_key = reflection.foreign_key
-          else
-            key         = reflection.foreign_key
-            foreign_key = reflection.active_record_primary_key
-          end
+          join_keys = reflection.join_keys(assoc_klass)
+          key = join_keys.key
+          foreign_key = join_keys.foreign_key
 
           if reflection == chain.last
             bind_val = bind scope, table.table_name, key.to_s, owner[foreign_key], tracker
@@ -120,6 +147,7 @@ module ActiveRecord
             end
 
             scope.where_values += item.where_values
+            scope.bind_values  += item.bind_values
             scope.order_values |= item.order_values
           end
         end

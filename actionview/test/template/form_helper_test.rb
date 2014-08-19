@@ -10,15 +10,20 @@ class FormHelperTest < ActionView::TestCase
     @output_buffer = super
   end
 
-  def setup
-    super
+  teardown do
+    I18n.backend.reload!
+  end
 
+  setup do
     # Create "label" locale for testing I18n label helpers
     I18n.backend.store_translations 'label', {
       activemodel: {
         attributes: {
           post: {
             cost: "Total cost"
+          },
+          :"post/language" => {
+            spanish: "Espanol"
           }
         }
       },
@@ -154,6 +159,12 @@ class FormHelperTest < ActionView::TestCase
     end
   end
 
+  def test_label_with_human_attribute_name_and_options
+    with_locale :label do
+      assert_dom_equal('<label for="post_language_spanish">Espanol</label>', label(:post, :language, value: "spanish"))
+    end
+  end
+
   def test_label_with_locales_symbols
     with_locale :label do
       assert_dom_equal('<label for="post_body">Write entire text here</label>', label(:post, :body))
@@ -262,6 +273,13 @@ class FormHelperTest < ActionView::TestCase
     assert_dom_equal(
       '<label for="post_title">The title, please:</label>',
       label(:post, :title) { "The title, please:" }
+    )
+  end
+
+  def test_label_with_block_and_html
+    assert_dom_equal(
+      '<label for="post_terms">Accept <a href="/terms">Terms</a>.</label>',
+      label(:post, :terms) { 'Accept <a href="/terms">Terms</a>.'.html_safe }
     )
   end
 
@@ -758,6 +776,22 @@ class FormHelperTest < ActionView::TestCase
     assert_dom_equal(expected, date_field("post", "written_on"))
   end
 
+  def test_date_field_with_string_values_for_min_and_max
+    expected = %{<input id="post_written_on" max="2010-08-15" min="2000-06-15" name="post[written_on]" type="date" value="2004-06-15" />}
+    @post.written_on = DateTime.new(2004, 6, 15)
+    min_value = "2000-06-15"
+    max_value = "2010-08-15"
+    assert_dom_equal(expected, date_field("post", "written_on", min: min_value, max: max_value))
+  end
+
+  def test_date_field_with_invalid_string_values_for_min_and_max
+    expected = %{<input id="post_written_on" name="post[written_on]" type="date" value="2004-06-15" />}
+    @post.written_on = DateTime.new(2004, 6, 15, 1, 2, 3)
+    min_value = "foo"
+    max_value = "bar"
+    assert_dom_equal(expected, date_field("post", "written_on", min: min_value, max: max_value))
+  end
+
   def test_time_field
     expected = %{<input id="post_written_on" name="post[written_on]" type="time" value="00:00:00.000" />}
     assert_dom_equal(expected, time_field("post", "written_on"))
@@ -791,6 +825,22 @@ class FormHelperTest < ActionView::TestCase
     expected = %{<input id="post_written_on" name="post[written_on]" type="time" />}
     @post.written_on = nil
     assert_dom_equal(expected, time_field("post", "written_on"))
+  end
+
+  def test_time_field_with_string_values_for_min_and_max
+    expected = %{<input id="post_written_on" max="10:25:00.000" min="20:45:30.000" name="post[written_on]" type="time" value="01:02:03.000" />}
+    @post.written_on = DateTime.new(2004, 6, 15, 1, 2, 3)
+    min_value = "20:45:30.000"
+    max_value = "10:25:00.000"
+    assert_dom_equal(expected, time_field("post", "written_on", min: min_value, max: max_value))
+  end
+
+  def test_time_field_with_invalid_string_values_for_min_and_max
+    expected = %{<input id="post_written_on" name="post[written_on]" type="time" value="01:02:03.000" />}
+    @post.written_on = DateTime.new(2004, 6, 15, 1, 2, 3)
+    min_value = "foo"
+    max_value = "bar"
+    assert_dom_equal(expected, time_field("post", "written_on", min: min_value, max: max_value))
   end
 
   def test_datetime_field
@@ -834,6 +884,22 @@ class FormHelperTest < ActionView::TestCase
     assert_dom_equal(expected, datetime_field("post", "written_on"))
   end
 
+  def test_datetime_field_with_string_values_for_min_and_max
+    expected = %{<input id="post_written_on" max="2010-08-15T10:25:00.000+0000" min="2000-06-15T20:45:30.000+0000" name="post[written_on]" type="datetime" value="2004-06-15T01:02:03.000+0000" />}
+    @post.written_on = DateTime.new(2004, 6, 15, 1, 2, 3)
+    min_value = "2000-06-15T20:45:30.000+0000"
+    max_value = "2010-08-15T10:25:00.000+0000"
+    assert_dom_equal(expected, datetime_field("post", "written_on", min: min_value, max: max_value))
+  end
+
+  def test_datetime_field_with_invalid_string_values_for_min_and_max
+    expected = %{<input id="post_written_on" name="post[written_on]" type="datetime" value="2004-06-15T01:02:03.000+0000" />}
+    @post.written_on = DateTime.new(2004, 6, 15, 1, 2, 3)
+    min_value = "foo"
+    max_value = "bar"
+    assert_dom_equal(expected, datetime_field("post", "written_on", min: min_value, max: max_value))
+  end
+
   def test_datetime_local_field
     expected = %{<input id="post_written_on" name="post[written_on]" type="datetime-local" value="2004-06-15T00:00:00" />}
     assert_dom_equal(expected, datetime_local_field("post", "written_on"))
@@ -867,6 +933,22 @@ class FormHelperTest < ActionView::TestCase
     expected = %{<input id="post_written_on" name="post[written_on]" type="datetime-local" />}
     @post.written_on = nil
     assert_dom_equal(expected, datetime_local_field("post", "written_on"))
+  end
+
+  def test_datetime_local_field_with_string_values_for_min_and_max
+    expected = %{<input id="post_written_on" max="2010-08-15T10:25:00" min="2000-06-15T20:45:30" name="post[written_on]" type="datetime-local" value="2004-06-15T01:02:03" />}
+    @post.written_on = DateTime.new(2004, 6, 15, 1, 2, 3)
+    min_value = "2000-06-15T20:45:30"
+    max_value = "2010-08-15T10:25:00"
+    assert_dom_equal(expected, datetime_local_field("post", "written_on", min: min_value, max: max_value))
+  end
+
+  def test_datetime_local_field_with_invalid_string_values_for_min_and_max
+    expected = %{<input id="post_written_on" name="post[written_on]" type="datetime-local" value="2004-06-15T01:02:03" />}
+    @post.written_on = DateTime.new(2004, 6, 15, 1, 2, 3)
+    min_value = "foo"
+    max_value = "bar"
+    assert_dom_equal(expected, datetime_local_field("post", "written_on", min: min_value, max: max_value))
   end
 
   def test_month_field
@@ -1420,7 +1502,7 @@ class FormHelperTest < ActionView::TestCase
     expected = whole_form("/posts", "new_post", "new_post") do
       "<input checked='checked' id='post_1_tag_ids_1' name='post[1][tag_ids][]' type='checkbox' value='1' />" +
       "<label for='post_1_tag_ids_1'>Tag 1</label>" +
-      "<input name='post[tag_ids][]' type='hidden' value='' />"
+      "<input name='post[1][tag_ids][]' type='hidden' value='' />"
     end
 
     assert_dom_equal expected, output_buffer
@@ -3020,12 +3102,13 @@ class FormHelperTest < ActionView::TestCase
   protected
 
   def hidden_fields(method = nil)
-    txt =  %{<div style="display:none">}
-    txt << %{<input name="utf8" type="hidden" value="&#x2713;" />}
+    txt = %{<input name="utf8" type="hidden" value="&#x2713;" />}
+
     if method && !%w(get post).include?(method.to_s)
       txt << %{<input name="_method" type="hidden" value="#{method}" />}
     end
-    txt << %{</div>}
+
+    txt
   end
 
   def form_text(action = "/", id = nil, html_class = nil, remote = nil, multipart = nil, method = nil)

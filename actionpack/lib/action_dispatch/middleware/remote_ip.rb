@@ -11,7 +11,7 @@ module ActionDispatch
   # Some Rack servers concatenate repeated headers, like {HTTP RFC 2616}[http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2]
   # requires. Some Rack servers simply drop preceding headers, and only report
   # the value that was {given in the last header}[http://andre.arko.net/2011/12/26/repeated-headers-and-ruby-web-servers].
-  # If you are behind multiple proxy servers (like Nginx to HAProxy to Unicorn)
+  # If you are behind multiple proxy servers (like NGINX to HAProxy to Unicorn)
   # then you should test your Rack server to make sure your data is good.
   #
   # IF YOU DON'T USE A PROXY, THIS MAKES YOU VULNERABLE TO IP SPOOFING.
@@ -31,7 +31,7 @@ module ActionDispatch
     TRUSTED_PROXIES = %r{
       ^127\.0\.0\.1$                | # localhost IPv4
       ^::1$                         | # localhost IPv6
-      ^fc00:                        | # private IPv6 range fc00
+      ^[fF][cCdD]                   | # private IPv6 range fc00::/7
       ^10\.                         | # private IPv4 range 10.x.x.x
       ^172\.(1[6-9]|2[0-9]|3[0-1])\.| # private IPv4 range 172.16.0.0 .. 172.31.255.255
       ^192\.168\.                     # private IPv4 range 192.168.x.x
@@ -118,7 +118,7 @@ module ActionDispatch
       #
       # REMOTE_ADDR will be correct if the request is made directly against the
       # Ruby process, on e.g. Heroku. When the request is proxied by another
-      # server like HAProxy or Nginx, the IP address that made the original
+      # server like HAProxy or NGINX, the IP address that made the original
       # request will be put in an X-Forwarded-For header. If there are multiple
       # proxies, that header may contain a list of IPs. Other proxy services
       # set the Client-Ip header instead, so we check that too.

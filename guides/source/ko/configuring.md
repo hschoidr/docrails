@@ -289,7 +289,6 @@ config.middleware.delete "Rack::MethodOverride"
 
 * `config.active_record.logger`는 Log4r의 인터페이스 또는 새로운 데이터베이스 연결에 전달되는 기본 Ruby Logger 클래스에 부합하는 Logger를 사용할 수 있습니다. 엑티브 레코드 모델 클래스 또는 엑티브 레코드 모델 인스턴스 중 하나로 `logger`을 호출하여 logger를 찾을 수 있습니다. `nil`로 설정시 logging이 비활성화 됩니다. [[[`config.active_record.logger` accepts a logger conforming to the interface of Log4r or the default Ruby Logger class, which is then passed on to any new database connections made. You can retrieve this logger by calling `logger` on either an Active Record model class or an Active Record model instance. Set to `nil` to disable logging.]]]
 
-
 * `config.active_record.primary_key_prefix_type`은 기본 키 컬럼들의 네이밍시 사용합니다. 기본적으로 레일즈는 `id` 라는 이름이 붙여진 컬럼을 기본키로 가정합니다.(이 옵션은 설정할 필요가 없습니다.) 아래에 두개의 선택사항이 있습니다.
 ** `:table_name` Customer 클래스의 기본 키를 만들시 `customerid`
 ** `:table_name_with_underscore` Customer 클래스의 기본 키를 만들시 `customer_id`

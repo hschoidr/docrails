@@ -87,7 +87,7 @@ module Rails
     class << self
       def inherited(base)
         super
-        Rails.application ||= base.instance
+        base.instance
       end
 
       # Makes the +new+ method public.
@@ -116,6 +116,8 @@ module Rails
       @ordered_railties  = nil
       @railties          = nil
       @message_verifiers = {}
+
+      Rails.application ||= self
 
       add_lib_to_load_path!
       ActiveSupport.run_load_hooks(:before_configuration, self)
@@ -151,14 +153,13 @@ module Rails
     def key_generator
       # number of iterations selected based on consultation with the google security
       # team. Details at https://github.com/rails/rails/pull/6952#issuecomment-7661220
-      @caching_key_generator ||= begin
+      @caching_key_generator ||=
         if secrets.secret_key_base
           key_generator = ActiveSupport::KeyGenerator.new(secrets.secret_key_base, iterations: 1000)
           ActiveSupport::CachingKeyGenerator.new(key_generator)
         else
           ActiveSupport::LegacyKeyGenerator.new(config.secret_token)
         end
-      end
     end
 
     # Returns a message verifier object.
@@ -228,6 +229,18 @@ module Rails
     # to the +runner+ method defined in Rails::Railtie.
     def runner(&blk)
       self.class.runner(&blk)
+    end
+
+    # Sends any console called in the instance of a new application up
+    # to the +console+ method defined in Rails::Railtie.
+    def console(&blk)
+      self.class.console(&blk)
+    end
+
+    # Sends any generators called in the instance of a new application up
+    # to the +generators+ method defined in Rails::Railtie.
+    def generators(&blk)
+      self.class.generators(&blk)
     end
 
     # Sends the +isolate_namespace+ method up to the class method.
@@ -332,6 +345,29 @@ module Rails
       config.helpers_paths
     end
 
+    console do
+      require "pp"
+    end
+
+    console do
+      unless ::Kernel.private_method_defined?(:y)
+        if RUBY_VERSION >= '2.0'
+          require "psych/y"
+        else
+          module ::Kernel
+            def y(*objects)
+              puts ::Psych.dump_stream(*objects)
+            end
+            private :y
+          end
+        end
+      end
+    end
+
+    def migration_railties # :nodoc:
+      (ordered_railties & railties_without_main_app).reverse
+    end
+
   protected
 
     alias :build_middleware_stack :app
@@ -360,6 +396,11 @@ module Rails
     def run_console_blocks(app) #:nodoc:
       railties.each { |r| r.run_console_blocks(app) }
       super
+    end
+
+    def railties_without_main_app # :nodoc:
+      @railties_without_main_app ||= Rails::Railtie.subclasses.map(&:instance) +
+        Rails::Engine.subclasses.map(&:instance)
     end
 
     # Returns the ordered railties for this application considering railties_order.

@@ -1,6 +1,7 @@
 require 'active_support/core_ext/kernel/reporting'
 require 'active_support/file_update_checker'
 require 'rails/engine/configuration'
+require 'rails/source_annotation_extractor'
 
 module Rails
   class Application
@@ -91,9 +92,10 @@ module Rails
       # Loads and returns the entire raw configuration of database from
       # values stored in `config/database.yml`.
       def database_configuration
-        yaml = Pathname.new(paths["config/database"].first || "")
+        yaml = Pathname.new(paths["config/database"].existent.first || "")
 
         config = if yaml.exist?
+          require "yaml"
           require "erb"
           YAML.load(ERB.new(yaml.read).result) || {}
         elsif ENV['DATABASE_URL']
@@ -149,6 +151,9 @@ module Rails
         end
       end
 
+      def annotations
+        SourceAnnotationExtractor::Annotation
+      end
     end
   end
 end

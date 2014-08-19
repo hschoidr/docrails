@@ -8,6 +8,12 @@ end
 
 class ::MyOtherMailInterceptor < ::MyMailInterceptor; end
 
+class ::MyPreviewMailInterceptor
+  def self.previewing_email(email); email; end
+end
+
+class ::MyOtherPreviewMailInterceptor < ::MyPreviewMailInterceptor; end
+
 class ::MyMailObserver
   def self.delivered_email(email); email; end
 end
@@ -360,7 +366,7 @@ module ApplicationTests
     test "default method for update can be changed" do
       app_file 'app/models/post.rb', <<-RUBY
       class Post
-        extend ActiveModel::Naming
+        include ActiveModel::Model
         def to_key; [1]; end
         def persisted?; true; end
       end
@@ -460,6 +466,32 @@ module ApplicationTests
       assert_equal [::MyMailInterceptor, ::MyOtherMailInterceptor], ::Mail.send(:class_variable_get, "@@delivery_interceptors")
     end
 
+    test "registers preview interceptors with ActionMailer" do
+      add_to_config <<-RUBY
+        config.action_mailer.preview_interceptors = MyPreviewMailInterceptor
+      RUBY
+
+      require "#{app_path}/config/environment"
+      require "mail"
+
+      _ = ActionMailer::Base
+
+      assert_equal [::MyPreviewMailInterceptor], ActionMailer::Base.preview_interceptors
+    end
+
+    test "registers multiple preview interceptors with ActionMailer" do
+      add_to_config <<-RUBY
+        config.action_mailer.preview_interceptors = [MyPreviewMailInterceptor, "MyOtherPreviewMailInterceptor"]
+      RUBY
+
+      require "#{app_path}/config/environment"
+      require "mail"
+
+      _ = ActionMailer::Base
+
+      assert_equal [MyPreviewMailInterceptor, MyOtherPreviewMailInterceptor], ActionMailer::Base.preview_interceptors
+    end
+
     test "registers observers with ActionMailer" do
       add_to_config <<-RUBY
         config.action_mailer.observers = MyMailObserver
@@ -489,7 +521,7 @@ module ApplicationTests
     test "valid timezone is setup correctly" do
       add_to_config <<-RUBY
         config.root = "#{app_path}"
-          config.time_zone = "Wellington"
+        config.time_zone = "Wellington"
       RUBY
 
       require "#{app_path}/config/environment"
@@ -500,7 +532,7 @@ module ApplicationTests
     test "raises when an invalid timezone is defined in the config" do
       add_to_config <<-RUBY
         config.root = "#{app_path}"
-          config.time_zone = "That big hill over yonder hill"
+        config.time_zone = "That big hill over yonder hill"
       RUBY
 
       assert_raise(ArgumentError) do
@@ -511,7 +543,7 @@ module ApplicationTests
     test "valid beginning of week is setup correctly" do
       add_to_config <<-RUBY
         config.root = "#{app_path}"
-          config.beginning_of_week = :wednesday
+        config.beginning_of_week = :wednesday
       RUBY
 
       require "#{app_path}/config/environment"
@@ -522,7 +554,7 @@ module ApplicationTests
     test "raises when an invalid beginning of week is defined in the config" do
       add_to_config <<-RUBY
         config.root = "#{app_path}"
-          config.beginning_of_week = :invalid
+        config.beginning_of_week = :invalid
       RUBY
 
       assert_raise(ArgumentError) do
@@ -682,6 +714,44 @@ module ApplicationTests
       assert_match "We're sorry, but something went wrong", last_response.body
     end
 
+    test "config.action_controller.always_permitted_parameters are: controller, action by default" do
+      require "#{app_path}/config/environment"
+      assert_equal %w(controller action), ActionController::Parameters.always_permitted_parameters
+    end
+
+    test "config.action_controller.always_permitted_parameters = ['controller', 'action', 'format']" do
+      add_to_config <<-RUBY
+        config.action_controller.always_permitted_parameters = %w( controller action format )
+      RUBY
+      require "#{app_path}/config/environment"
+      assert_equal %w( controller action format ), ActionController::Parameters.always_permitted_parameters
+    end
+
+    test "config.action_controller.always_permitted_parameters = ['controller','action','format'] does not raise exeception" do
+      app_file 'app/controllers/posts_controller.rb', <<-RUBY
+      class PostsController < ActionController::Base
+        def create
+          render text: params.permit(post: [:title])
+        end
+      end
+      RUBY
+
+      add_to_config <<-RUBY
+        routes.prepend do
+          resources :posts
+        end
+        config.action_controller.always_permitted_parameters = %w( controller action format )
+        config.action_controller.action_on_unpermitted_parameters = :raise
+      RUBY
+
+      require "#{app_path}/config/environment"
+
+      assert_equal :raise, ActionController::Parameters.action_on_unpermitted_parameters
+
+      post "/posts", {post: {"title" =>"zomg"}, format: "json"}
+      assert_equal 200, last_response.status
+    end
+
     test "config.action_controller.action_on_unpermitted_parameters is :log by default on development" do
       ENV["RAILS_ENV"] = "development"
 
@@ -792,6 +862,132 @@ module ApplicationTests
       require "#{app_path}/config/environment"
 
       assert ActiveRecord::Base.dump_schema_after_migration
+    end
+
+    test "config.annotations wrapping SourceAnnotationExtractor::Annotation class" do
+      make_basic_app do |app|
+        app.config.annotations.register_extensions("coffee") do |tag|
+          /#\s*(#{tag}):?\s*(.*)$/
+        end
+      end
+
+      assert_not_nil SourceAnnotationExtractor::Annotation.extensions[/\.(coffee)$/]
+    end
+
+    test "rake_tasks block works at instance level" do
+      $ran_block = false
+
+      app_file "config/environments/development.rb", <<-RUBY
+        Rails.application.configure do
+          rake_tasks do
+            $ran_block = true
+          end
+        end
+      RUBY
+
+      require "#{app_path}/config/environment"
+
+      assert !$ran_block
+      require 'rake'
+      require 'rake/testtask'
+      require 'rdoc/task'
+
+      Rails.application.load_tasks
+      assert $ran_block
+    end
+
+    test "generators block works at instance level" do
+      $ran_block = false
+
+      app_file "config/environments/development.rb", <<-RUBY
+        Rails.application.configure do
+          generators do
+            $ran_block = true
+          end
+        end
+      RUBY
+
+      require "#{app_path}/config/environment"
+
+      assert !$ran_block
+      Rails.application.load_generators
+      assert $ran_block
+    end
+
+    test "console block works at instance level" do
+      $ran_block = false
+
+      app_file "config/environments/development.rb", <<-RUBY
+        Rails.application.configure do
+          console do
+            $ran_block = true
+          end
+        end
+      RUBY
+
+      require "#{app_path}/config/environment"
+
+      assert !$ran_block
+      Rails.application.load_console
+      assert $ran_block
+    end
+
+    test "runner block works at instance level" do
+      $ran_block = false
+
+      app_file "config/environments/development.rb", <<-RUBY
+        Rails.application.configure do
+          runner do
+            $ran_block = true
+          end
+        end
+      RUBY
+
+      require "#{app_path}/config/environment"
+
+      assert !$ran_block
+      Rails.application.load_runner
+      assert $ran_block
+    end
+
+    test "loading the first existing database configuration available" do
+      app_file 'config/environments/development.rb', <<-RUBY
+
+      Rails.application.configure do
+        config.paths.add 'config/database', with: 'config/nonexistant.yml'
+        config.paths['config/database'] << 'config/database.yml'
+        end
+      RUBY
+
+      require "#{app_path}/config/environment"
+
+      db_config =  Rails.application.config.database_configuration
+
+      assert db_config.is_a?(Hash)
+    end
+
+    test 'config.action_mailer.show_previews defaults to true in development' do
+      Rails.env = "development"
+      require "#{app_path}/config/environment"
+
+      assert Rails.application.config.action_mailer.show_previews
+    end
+
+    test 'config.action_mailer.show_previews defaults to false in production' do
+      Rails.env = "production"
+      require "#{app_path}/config/environment"
+
+      assert_equal Rails.application.config.action_mailer.show_previews, false
+    end
+
+    test 'config.action_mailer.show_previews can be set in the configuration file' do
+      Rails.env = "production"
+      add_to_config <<-RUBY
+        config.action_mailer.show_previews = true
+      RUBY
+      require "#{app_path}/config/environment"
+
+      assert_equal Rails.application.config.action_mailer.show_previews, true
     end
   end
 end

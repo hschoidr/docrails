@@ -720,6 +720,11 @@ class RenderTest < ActionController::TestCase
     assert_equal "Elastica", @response.body
   end
 
+  def test_render_process
+    get :render_action_hello_world_as_string
+    assert_equal ["Hello world!"], @controller.process(:render_action_hello_world_as_string)
+  end
+
   # :ported:
   def test_render_from_variable
     get :render_hello_world_from_variable
@@ -834,7 +839,7 @@ class RenderTest < ActionController::TestCase
   def test_render_text_with_nil
     get :render_text_with_nil
     assert_response 200
-    assert_equal ' ', @response.body
+    assert_equal '', @response.body
   end
 
   # :ported:
@@ -1022,7 +1027,7 @@ class RenderTest < ActionController::TestCase
 
   def test_rendering_nothing_on_layout
     get :rendering_nothing_on_layout
-    assert_equal " ", @response.body
+    assert_equal '', @response.body
   end
 
   def test_render_to_string_doesnt_break_assigns
@@ -1332,4 +1337,3 @@ class RenderTest < ActionController::TestCase
     assert_equal "Before (Anthony)\nInside from partial (Anthony)\nAfter\nBefore (David)\nInside from partial (David)\nAfter\nBefore (Ramm)\nInside from partial (Ramm)\nAfter", @response.body
   end
 end
-

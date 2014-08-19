@@ -50,7 +50,7 @@ module Rails
     end
 
     def gitignore
-      copy_file "gitignore", ".gitignore"
+      template "gitignore", ".gitignore"
     end
 
     def app
@@ -83,6 +83,16 @@ module Rails
         directory "environments"
         directory "initializers"
         directory "locales"
+      end
+    end
+
+    def config_when_updating
+      cookie_serializer_config_exist = File.exist?('config/initializers/cookies_serializer.rb')
+
+      config
+
+      unless cookie_serializer_config_exist
+        gsub_file 'config/initializers/cookies_serializer.rb', /json/, 'marshal'
       end
     end
 
@@ -188,6 +198,11 @@ module Rails
         build(:config)
       end
 
+      def update_config_files
+        build(:config_when_updating)
+      end
+      remove_task :update_config_files
+
       def create_boot_file
         template "config/boot.rb"
       end
@@ -228,6 +243,12 @@ module Rails
       def delete_js_folder_skipping_javascript
         if options[:skip_javascript]
           remove_dir 'app/assets/javascripts'
+        end
+      end
+
+      def delete_assets_initializer_skipping_sprockets
+        if options[:skip_sprockets]
+          remove_file 'config/initializers/assets.rb'
         end
       end
 

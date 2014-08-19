@@ -56,7 +56,7 @@ These configuration methods are to be called on a `Rails::Railtie` object, such 
     end
     ```
 
-* `config.asset_host` sets the host for the assets. Useful when CDNs are used for hosting assets, or when you want to work around the concurrency constraints builtin in browsers using different domain aliases. Shorter version of `config.action_controller.asset_host`.
+* `config.asset_host` sets the host for the assets. Useful when CDNs are used for hosting assets, or when you want to work around the concurrency constraints built-in in browsers using different domain aliases. Shorter version of `config.action_controller.asset_host`.
 
 * `config.autoload_once_paths` accepts an array of paths from which Rails will autoload constants that won't be wiped per request. Relevant if `config.cache_classes` is false, which is the case in development mode by default. Otherwise, all autoloading happens only once. All elements of this array must also be in `autoload_paths`. Default is an empty array.
 
@@ -110,7 +110,7 @@ numbers. New applications filter out passwords by adding the following `config.f
 
 * `config.log_level` defines the verbosity of the Rails logger. This option defaults to `:debug` for all modes except production, where it defaults to `:info`.
 
-* `config.log_tags` accepts a list of methods that respond to `request` object. This makes it easy to tag log lines with debug information like subdomain and request id - both very helpful in debugging multi-user production applications.
+* `config.log_tags` accepts a list of methods that the `request` object responds to. This makes it easy to tag log lines with debug information like subdomain and request id - both very helpful in debugging multi-user production applications.
 
 * `config.logger` accepts a logger conforming to the interface of Log4r or the default Ruby `Logger` class. Defaults to an instance of `ActiveSupport::Logger`, with auto flushing off in production mode.
 
@@ -120,7 +120,7 @@ numbers. New applications filter out passwords by adding the following `config.f
 
 * `secrets.secret_key_base` is used for specifying a key which allows sessions for the application to be verified against a known secure key to prevent tampering. Applications get `secrets.secret_key_base` initialized to a random key present in `config/secrets.yml`.
 
-* `config.serve_static_assets` configures Rails itself to serve static assets. Defaults to true, but in the production environment is turned off as the server software (e.g. Nginx or Apache) used to run the application should serve static assets instead. Unlike the default setting set this to true when running (absolutely not recommended!) or testing your app in production mode using WEBrick. Otherwise you won't be able use page caching and requests for files that exist regularly under the public directory will anyway hit your Rails app.
+* `config.serve_static_assets` configures Rails itself to serve static assets. Defaults to true, but in the production environment is turned off as the server software (e.g. NGINX or Apache) used to run the application should serve static assets instead. Unlike the default setting set this to true when running (absolutely not recommended!) or testing your app in production mode using WEBrick. Otherwise you won't be able use page caching and requests for files that exist regularly under the public directory will anyway hit your Rails app.
 
 * `config.session_store` is usually set up in `config/initializers/session_store.rb` and specifies what class to use to store the session. Possible values are `:cookie_store` which is the default, `:mem_cache_store`, and `:disabled`. The last one tells Rails not to deal with sessions. Custom session stores can also be specified:
 
@@ -330,6 +330,8 @@ The schema dumper adds one additional configuration option:
 
 * `config.action_controller.action_on_unpermitted_parameters` enables logging or raising an exception if parameters that are not explicitly permitted are found. Set to `:log` or `:raise` to enable. The default value is `:log` in development and test environments, and `false` in all other environments.
 
+* `config.action_controller.always_permitted_parameters` sets a list of whitelisted parameters that are permitted by default. The default values are `['controller', 'action']`.
+
 ### Configuring Action Dispatch
 
 * `config.action_dispatch.session_store` sets the name of the store for session data. The default is `:cookie_store`; other valid options include `:active_record_store`, `:mem_cache_store` or the name of your own custom class.
@@ -388,13 +390,13 @@ encrypted cookies salt value. Defaults to `'signed encrypted cookie'`.
 
 * `config.action_view.embed_authenticity_token_in_remote_forms` allows you to set the default behavior for `authenticity_token` in forms with `:remote => true`. By default it's set to false, which means that remote forms will not include `authenticity_token`, which is helpful when you're fragment-caching the form. Remote forms get the authenticity from the `meta` tag, so embedding is unnecessary unless you support browsers without JavaScript. In such case you can either pass `:authenticity_token => true` as a form option or set this config setting to `true`
 
-* `config.action_view.prefix_partial_path_with_controller_namespace` determines whether or not partials are looked up from a subdirectory in templates rendered from namespaced controllers. For example, consider a controller named `Admin::PostsController` which renders this template:
+* `config.action_view.prefix_partial_path_with_controller_namespace` determines whether or not partials are looked up from a subdirectory in templates rendered from namespaced controllers. For example, consider a controller named `Admin::ArticlesController` which renders this template:
 
     ```erb
-    <%= render @post %>
+    <%= render @article %>
     ```
 
-    The default setting is `true`, which uses the partial at `/admin/posts/_post.erb`. Setting the value to `false` would render `/posts/_post.erb`, which is the same behavior as rendering from a non-namespaced controller such as `PostsController`.
+    The default setting is `true`, which uses the partial at `/admin/articles/_article.erb`. Setting the value to `false` would render `/articles/_article.erb`, which is the same behavior as rendering from a non-namespaced controller such as `ArticlesController`.
 
 * `config.action_view.raise_on_missing_translations` determines whether an error should be raised for missing translations
 
@@ -449,6 +451,18 @@ There are a number of settings available on `config.action_mailer`:
 
     ```ruby
     config.action_mailer.interceptors = ["MailInterceptor"]
+    ```
+
+* `config.action_mailer.preview_path` specifies the location of mailer previews.
+
+    ```ruby
+    config.action_mailer.preview_path = "#{Rails.root}/lib/mailer_previews"
+    ```
+
+* `config.action_mailer.show_previews` enable or disable mailer previews. By default this is `true` in development.
+
+    ```ruby
+    config.action_mailer.show_previews = false
     ```
 
 ### Configuring Active Support
@@ -552,7 +566,7 @@ development:
 $ echo $DATABASE_URL
 postgresql://localhost/my_database
 
-$ rails runner 'puts ActiveRecord::Base.connections'
+$ bin/rails runner 'puts ActiveRecord::Base.configurations'
 {"development"=>{"adapter"=>"postgresql", "host"=>"localhost", "database"=>"my_database"}}
 ```
 
@@ -569,7 +583,7 @@ development:
 $ echo $DATABASE_URL
 postgresql://localhost/my_database
 
-$ rails runner 'puts ActiveRecord::Base.connections'
+$ bin/rails runner 'puts ActiveRecord::Base.configurations'
 {"development"=>{"adapter"=>"postgresql", "host"=>"localhost", "database"=>"my_database", "pool"=>5}}
 ```
 
@@ -580,13 +594,13 @@ The only way to explicitly not use the connection information in `ENV['DATABASE_
 ```
 $ cat config/database.yml
 development:
-  url: sqlite3://localhost/NOT_my_database
+  url: sqlite3:NOT_my_database
 
 $ echo $DATABASE_URL
 postgresql://localhost/my_database
 
-$ rails runner 'puts ActiveRecord::Base.connections'
-{"development"=>{"adapter"=>"sqlite3", "host"=>"localhost", "database"=>"NOT_my_database"}}
+$ bin/rails runner 'puts ActiveRecord::Base.configurations'
+{"development"=>{"adapter"=>"sqlite3", "database"=>"NOT_my_database"}}
 ```
 
 Here the connection information in `ENV['DATABASE_URL']` is ignored, note the different adapter and database name.
@@ -644,17 +658,25 @@ development:
   encoding: unicode
   database: blog_development
   pool: 5
-  username: blog
-  password:
 ```
 
-Prepared Statements can be disabled thus:
+Prepared Statements are enabled by default on PostgreSQL. You can be disable prepared statements by setting `prepared_statements` to `false`:
 
 ```yaml
 production:
   adapter: postgresql
   prepared_statements: false
 ```
+
+If enabled, Active Record will create up to `1000` prepared statements per database connection by default. To modify this behavior you can set `statement_limit` to a different value:
+
+```
+production:
+  adapter: postgresql
+  statement_limit: 200
+```
+
+The more prepared statements in use: the more memory your database will require. If your PostgreSQL database is hitting memory limits, try lowering `statement_limit` or disabling prepared statements.
 
 #### Configuring an SQLite3 Database for JRuby Platform
 
@@ -721,13 +743,47 @@ Rails will now prepend "/app1" when generating links.
 
 #### Using Passenger
 
-Passenger makes it easy to run your application in a subdirectory. You can find
-the relevant configuration in the
-[passenger manual](http://www.modrails.com/documentation/Users%20guide%20Apache.html#deploying_rails_to_sub_uri).
+Passenger makes it easy to run your application in a subdirectory. You can find the relevant configuration in the [Passenger manual](http://www.modrails.com/documentation/Users%20guide%20Apache.html#deploying_rails_to_sub_uri).
 
 #### Using a Reverse Proxy
 
-TODO
+Deploying your application using a reverse proxy has definite advantages over traditional deploys. They allow you to have more control over your server by layering the components required by your application.
+
+Many modern web servers can be used as a proxy server to balance third-party elements such as caching servers or application servers.
+
+One such application server you can use is [Unicorn](http://unicorn.bogomips.org/) to run behind a reverse proxy.
+
+In this case, you would need to configure the proxy server (NGINX, Apache, etc) to accept connections from your application server (Unicorn). By default Unicorn will listen for TCP connections on port 8080, but you can change the port or configure it to use sockets instead.
+
+You can find more information in the [Unicorn readme](http://unicorn.bogomips.org/README.html) and understand the [philosophy](http://unicorn.bogomips.org/PHILOSOPHY.html) behind it.
+
+Once you've configured the application server, you must proxy requests to it by configuring your web server appropriately. For example your NGINX config may include:
+
+```
+upstream application_server {
+  server 0.0.0.0:8080
+}
+
+server {
+  listen 80;
+  server_name localhost;
+
+  root /root/path/to/your_app/public;
+
+  try_files $uri/index.html $uri.html @app;
+
+  location @app {
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Host $http_host;
+    proxy_redirect off;
+    proxy_pass http://application_server;
+  }
+
+  # some other configuration
+}
+```
+
+Be sure to read the [NGINX documentation](http://nginx.org/en/docs/) for the most up-to-date information.
 
 #### Considerations when deploying to a subdirectory
 

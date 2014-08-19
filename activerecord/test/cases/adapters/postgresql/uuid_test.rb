@@ -9,15 +9,6 @@ module PostgresqlUUIDHelper
     @connection ||= ActiveRecord::Base.connection
   end
 
-  def enable_uuid_ossp
-    unless connection.extension_enabled?('uuid-ossp')
-      connection.enable_extension 'uuid-ossp'
-      connection.commit_db_transaction
-    end
-
-    connection.reconnect!
-  end
-
   def drop_table(name)
     connection.execute "drop table if exists #{name}"
   end
@@ -40,8 +31,33 @@ class PostgresqlUUIDTest < ActiveRecord::TestCase
     drop_table "uuid_data_type"
   end
 
+  def test_change_column_default
+    @connection.add_column :uuid_data_type, :thingy, :uuid, null: false, default: "uuid_generate_v1()"
+    UUIDType.reset_column_information
+    column = UUIDType.columns_hash['thingy']
+    assert_equal "uuid_generate_v1()", column.default_function
+
+    @connection.change_column :uuid_data_type, :thingy, :uuid, null: false, default: "uuid_generate_v4()"
+
+    UUIDType.reset_column_information
+    column = UUIDType.columns_hash['thingy']
+    assert_equal "uuid_generate_v4()", column.default_function
+  ensure
+    UUIDType.reset_column_information
+  end
+
   def test_data_type_of_uuid_types
-    assert_equal :uuid, UUIDType.columns_hash["guid"].type
+    column = UUIDType.columns_hash["guid"]
+    assert_equal :uuid, column.type
+    assert_equal "uuid", column.sql_type
+    assert_not column.number?
+    assert_not column.binary?
+    assert_not column.array
+  end
+
+  def test_treat_blank_uuid_as_nil
+    UUIDType.create! guid: ''
+    assert_equal(nil, UUIDType.last.guid)
   end
 
   def test_uuid_formats
@@ -65,7 +81,7 @@ class PostgresqlUUIDGenerationTest < ActiveRecord::TestCase
   end
 
   setup do
-    enable_uuid_ossp
+    enable_uuid_ossp!(connection)
 
     connection.create_table('pg_uuids', id: :uuid, default: 'uuid_generate_v1()') do |t|
       t.string 'name'
@@ -113,7 +129,7 @@ class PostgresqlUUIDTestNilDefault < ActiveRecord::TestCase
   include PostgresqlUUIDHelper
 
   setup do
-    enable_uuid_ossp
+    enable_uuid_ossp!(connection)
 
     connection.create_table('pg_uuids', id: false) do |t|
       t.primary_key :id, :uuid, default: nil
@@ -150,7 +166,7 @@ class PostgresqlUUIDTestInverseOf < ActiveRecord::TestCase
   end
 
   setup do
-    enable_uuid_ossp
+    enable_uuid_ossp!(connection)
 
     connection.transaction do
       connection.create_table('pg_uuid_posts', id: :uuid) do |t|

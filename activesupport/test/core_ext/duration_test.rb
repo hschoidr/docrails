@@ -2,8 +2,11 @@ require 'abstract_unit'
 require 'active_support/inflector'
 require 'active_support/time'
 require 'active_support/json'
+require 'time_zone_test_helpers'
 
 class DurationTest < ActiveSupport::TestCase
+  include TimeZoneTestHelpers
+
   def test_is_a
     d = 1.day
     assert d.is_a?(ActiveSupport::Duration)
@@ -29,6 +32,13 @@ class DurationTest < ActiveSupport::TestCase
     assert 1.day == 1.day.to_i
     assert 1.day.to_i == 1.day
     assert !(1.day == 'foo')
+  end
+
+  def test_eql
+    assert 1.minute.eql?(1.minute)
+    assert 2.days.eql?(48.hours)
+    assert !1.second.eql?(1)
+    assert !1.eql?(1.second)
   end
 
   def test_inspect
@@ -160,12 +170,4 @@ class DurationTest < ActiveSupport::TestCase
     cased = case 1.day when 1.day then "ok" end
     assert_equal cased, "ok"
   end
-
-  protected
-    def with_env_tz(new_tz = 'US/Eastern')
-      old_tz, ENV['TZ'] = ENV['TZ'], new_tz
-      yield
-    ensure
-      old_tz ? ENV['TZ'] = old_tz : ENV.delete('TZ')
-    end
 end

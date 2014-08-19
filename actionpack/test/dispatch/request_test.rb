@@ -152,8 +152,11 @@ class RequestIP < BaseRequestTest
     request = stub_request 'HTTP_X_FORWARDED_FOR' => 'unknown,::1'
     assert_equal nil, request.remote_ip
 
-    request = stub_request 'HTTP_X_FORWARDED_FOR' => '2001:0db8:85a3:0000:0000:8a2e:0370:7334, fe80:0000:0000:0000:0202:b3ff:fe1e:8329, ::1, fc00::'
+    request = stub_request 'HTTP_X_FORWARDED_FOR' => '2001:0db8:85a3:0000:0000:8a2e:0370:7334, fe80:0000:0000:0000:0202:b3ff:fe1e:8329, ::1, fc00::, fc01::, fdff'
     assert_equal 'fe80:0000:0000:0000:0202:b3ff:fe1e:8329', request.remote_ip
+
+    request = stub_request 'HTTP_X_FORWARDED_FOR' => 'FE00::, FDFF::'
+    assert_equal 'FE00::', request.remote_ip
 
     request = stub_request 'HTTP_X_FORWARDED_FOR' => 'not_ip_address'
     assert_equal nil, request.remote_ip
@@ -795,6 +798,12 @@ class RequestFormat < BaseRequestTest
     assert_not request.format.json?
   end
 
+  test "format does not throw exceptions when malformed parameters" do
+    request = stub_request("QUERY_STRING" => "x[y]=1&x[y][][w]=2")
+    assert request.formats
+    assert request.format.html?
+  end
+
   test "formats with xhr request" do
     request = stub_request 'HTTP_X_REQUESTED_WITH' => "XMLHttpRequest"
     request.expects(:parameters).at_least_once.returns({})
@@ -802,6 +811,7 @@ class RequestFormat < BaseRequestTest
   end
 
   test "ignore_accept_header" do
+    old_ignore_accept_header = ActionDispatch::Request.ignore_accept_header
     ActionDispatch::Request.ignore_accept_header = true
 
     begin
@@ -831,7 +841,7 @@ class RequestFormat < BaseRequestTest
       request.expects(:parameters).at_least_once.returns({:format => :json})
       assert_equal [ Mime::JSON ], request.formats
     ensure
-      ActionDispatch::Request.ignore_accept_header = false
+      ActionDispatch::Request.ignore_accept_header = old_ignore_accept_header
     end
   end
 end
@@ -889,15 +899,15 @@ class RequestParameters < BaseRequestTest
     assert_equal({"bar" => 2}, request.query_parameters)
   end
 
-  test "parameters still accessible after rack parse error" do
+  test "parameters not accessible after rack parse error" do
     request = stub_request("QUERY_STRING" => "x[y]=1&x[y][][w]=2")
 
-    assert_raises(ActionController::BadRequest) do
-      # rack will raise a TypeError when parsing this query string
-      request.parameters
+    2.times do
+      assert_raises(ActionController::BadRequest) do
+        # rack will raise a TypeError when parsing this query string
+        request.parameters
+      end
     end
-
-    assert_equal({}, request.parameters)
   end
 
   test "we have access to the original exception" do
@@ -1062,7 +1072,7 @@ class RequestEtag < BaseRequestTest
   end
 end
 
-class RequestVarient < BaseRequestTest
+class RequestVariant < BaseRequestTest
   test "setting variant" do
     request = stub_request
 

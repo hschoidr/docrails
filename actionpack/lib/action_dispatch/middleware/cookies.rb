@@ -176,11 +176,11 @@ module ActionDispatch
     module VerifyAndUpgradeLegacySignedMessage
       def initialize(*args)
         super
-        @legacy_verifier = ActiveSupport::MessageVerifier.new(@options[:secret_token])
+        @legacy_verifier = ActiveSupport::MessageVerifier.new(@options[:secret_token], serializer: NullSerializer)
       end
 
       def verify_and_upgrade_legacy_signed_message(name, signed_message)
-        @legacy_verifier.verify(signed_message).tap do |value|
+        deserialize(name, @legacy_verifier.verify(signed_message)).tap do |value|
           self[name] = { value: value }
         end
       rescue ActiveSupport::MessageVerifier::InvalidSignature
@@ -237,6 +237,15 @@ module ActionDispatch
         @secure = secure
         @options = options
         @cookies = {}
+        @committed = false
+      end
+
+      def committed?; @committed; end
+
+      def commit!
+        @committed = true
+        @set_cookies.freeze
+        @delete_cookies.freeze
       end
 
       def each(&block)
@@ -280,8 +289,8 @@ module ActionDispatch
         end
       end
 
-      # Sets the cookie named +name+. The second argument may be the very cookie
-      # value, or a hash of options as documented above.
+      # Sets the cookie named +name+. The second argument may be the cookie's
+      # value or a hash of options as documented above.
       def []=(name, options)
         if options.is_a?(Hash)
           options.symbolize_keys!
@@ -336,8 +345,8 @@ module ActionDispatch
       end
 
       def recycle! #:nodoc:
-        @set_cookies.clear
-        @delete_cookies.clear
+        @set_cookies = {}
+        @delete_cookies = {}
       end
 
       mattr_accessor :always_write_cookie
@@ -459,7 +468,7 @@ module ActionDispatch
           options = { :value => @verifier.generate(serialize(name, options)) }
         end
 
-        raise CookieOverflow if options[:value].size > MAX_COOKIE_SIZE
+        raise CookieOverflow if options[:value].bytesize > MAX_COOKIE_SIZE
         @parent_jar[name] = options
       end
 
@@ -517,7 +526,7 @@ module ActionDispatch
 
         options[:value] = @encryptor.encrypt_and_sign(serialize(name, options[:value]))
 
-        raise CookieOverflow if options[:value].size > MAX_COOKIE_SIZE
+        raise CookieOverflow if options[:value].bytesize > MAX_COOKIE_SIZE
         @parent_jar[name] = options
       end
 
@@ -551,9 +560,11 @@ module ActionDispatch
       status, headers, body = @app.call(env)
 
       if cookie_jar = env['action_dispatch.cookies']
-        cookie_jar.write(headers)
-        if headers[HTTP_HEADER].respond_to?(:join)
-          headers[HTTP_HEADER] = headers[HTTP_HEADER].join("\n")
+        unless cookie_jar.committed?
+          cookie_jar.write(headers)
+          if headers[HTTP_HEADER].respond_to?(:join)
+            headers[HTTP_HEADER] = headers[HTTP_HEADER].join("\n")
+          end
         end
       end
 

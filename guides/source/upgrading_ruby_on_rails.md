@@ -3,6 +3,8 @@ A Guide for Upgrading Ruby on Rails
 
 This guide provides steps to be followed when you upgrade your applications to a newer version of Ruby on Rails. These steps are also available in individual release guides.
 
+--------------------------------------------------------------------------------
+
 General Advice
 --------------
 
@@ -22,10 +24,37 @@ Rails generally stays close to the latest released Ruby version when it's releas
 
 TIP: Ruby 1.8.7 p248 and p249 have marshaling bugs that crash Rails. Ruby Enterprise Edition has these fixed since the release of 1.8.7-2010.02. On the 1.9 front, Ruby 1.9.1 is not usable because it outright segfaults, so if you want to use 1.9.x, jump straight to 1.9.3 for smooth sailing.
 
-Upgrading from Rails 4.0 to Rails 4.1
+### The Rake Task
+
+Rails provides the `rails:update` rake task. After updating the Rails version
+in the Gemfile, run this rake task.
+This will help you with the creation of new files and changes of old files in a
+interactive session.
+
+```bash
+$ rake rails:update
+   identical  config/boot.rb
+       exist  config
+    conflict  config/routes.rb
+Overwrite /myapp/config/routes.rb? (enter "h" for help) [Ynaqdh]
+       force  config/routes.rb
+    conflict  config/application.rb
+Overwrite /myapp/config/application.rb? (enter "h" for help) [Ynaqdh]
+       force  config/application.rb
+    conflict  config/environment.rb
+...
+```
+
+Don't forget to review the difference, to see if there were any unexpected changes.
+
+Upgrading from Rails 4.1 to Rails 4.2
 -------------------------------------
 
 NOTE: This section is a work in progress.
+
+
+Upgrading from Rails 4.0 to Rails 4.1
+-------------------------------------
 
 ### CSRF protection from remote `<script>` tags
 
@@ -79,11 +108,14 @@ secrets, you need to:
       secret_key_base:
 
     production:
-      secret_key_base:
+      secret_key_base: <%= ENV["SECRET_KEY_BASE"] %>
     ```
 
-2. Copy the existing `secret_key_base` from the `secret_token.rb` initializer to
-   `secrets.yml` under the `production` section.
+2. Use your existing `secret_key_base` from the `secret_token.rb` initializer to
+   set the SECRET_KEY_BASE environment variable for whichever users run the Rails
+   app in production mode. Alternately, you can simply copy the existing
+   `secret_key_base` from the `secret_token.rb` initializer to `secrets.yml`
+   under the `production` section, replacing '<%= ENV["SECRET_KEY_BASE"] %>'.
 
 3. Remove the `secret_token.rb` initializer.
 
@@ -104,18 +136,42 @@ Applications created before Rails 4.1 uses `Marshal` to serialize cookie values 
 the signed and encrypted cookie jars. If you want to use the new `JSON`-based format
 in your application, you can add an initializer file with the following content:
 
-  ```ruby
-  Rails.application.config.cookies_serializer :hybrid
-  ```
+```ruby
+Rails.application.config.action_dispatch.cookies_serializer = :hybrid
+```
 
 This would transparently migrate your existing `Marshal`-serialized cookies into the
 new `JSON`-based format.
+
+When using the `:json` or `:hybrid` serializer, you should beware that not all
+Ruby objects can be serialized as JSON. For example, `Date` and `Time` objects
+will be serialized as strings, and `Hash`es will have their keys stringified.
+
+```ruby
+class CookiesController < ApplicationController
+  def set_cookie
+    cookies.encrypted[:expiration_date] = Date.tomorrow # => Thu, 20 Mar 2014
+    redirect_to action: 'read_cookie'
+  end
+
+  def read_cookie
+    cookies.encrypted[:expiration_date] # => "2014-03-20"
+  end
+end
+```
+
+It's advisable that you only store simple data (strings and numbers) in cookies.
+If you have to store complex objects, you would need to handle the conversion
+manually when reading the values on subsequent requests.
+
+If you use the cookie session store, this would apply to the `session` and
+`flash` hash as well.
 
 ### Flash structure changes
 
 Flash message keys are
 [normalized to strings](https://github.com/rails/rails/commit/a668beffd64106a1e1fedb71cc25eaaa11baf0c1). They
-can still be accessed using either symbols or strings. Lopping through the flash
+can still be accessed using either symbols or strings. Looping through the flash
 will always yield string keys:
 
 ```ruby
@@ -184,6 +240,16 @@ part of the rewrite, the following features have been removed from the encoder:
 If your application depends on one of these features, you can get them back by
 adding the [`activesupport-json_encoder`](https://github.com/rails/activesupport-json_encoder)
 gem to your Gemfile.
+
+#### JSON representation of Time objects
+
+`#as_json` for objects with time component (`Time`, `DateTime`, `ActiveSupport::TimeWithZone`)
+now returns millisecond precision by default. If you need to keep old behavior with no millisecond
+precision, set the following in an initializer:
+
+```
+ActiveSupport::JSON::Encoding.time_precision = 0
+```
 
 ### Usage of `return` within inline callback blocks
 
@@ -284,10 +350,10 @@ authors.compact!
 
 ### Changes on Default Scopes
 
-Default scopes are no longer overriden by chained conditions.
+Default scopes are no longer overridden by chained conditions.
 
 In previous versions when you defined a `default_scope` in a model
-it was overriden by chained conditions in the same field. Now it
+it was overridden by chained conditions in the same field. Now it
 is merged like any other scope.
 
 Before:
@@ -368,6 +434,28 @@ start using the more precise `:plain:`, `:html`, and `:body` options instead.
 Using `render :text` may pose a security risk, as the content is sent as
 `text/html`.
 
+### PostgreSQL json and hstore datatypes
+
+Rails 4.1 will map `json` and `hstore` columns to a string-keyed Ruby `Hash`.
+In earlier versions a `HashWithIndifferentAccess` was used. This means that
+symbol access is no longer supported. This is also the case for
+`store_accessors` based on top of `json` or `hstore` columns. Make sure to use
+string keys consistently.
+
+### Explicit block use for `ActiveSupport::Callbacks`
+
+Rails 4.1 now expects an explicit block to be passed when calling
+`ActiveSupport::Callbacks.set_callback`. This change stems from
+`ActiveSupport::Callbacks` being largely rewritten for the 4.1 release.
+
+```ruby
+# Previously in Rails 4.0
+set_callback :save, :around, ->(r, &block) { stuff; result = block.call; stuff }
+
+# Now in Rails 4.1
+set_callback :save, :around, ->(r, block) { stuff; result = block.call; stuff }
+```
+
 Upgrading from Rails 3.2 to Rails 4.0
 -------------------------------------
 
@@ -439,7 +527,7 @@ being used, you can update your form to use the `PUT` method instead:
 <%= form_for [ :update_name, @user ], method: :put do |f| %>
 ```
 
-For more on PATCH and why this change was made, see [this post](http://weblog.rubyonrails.org/2012/2/26/edge-rails-patch-is-the-new-primary-http-method-for-updates/)
+For more on PATCH and why this change was made, see [this post](http://weblog.rubyonrails.org/2012/2/25/edge-rails-patch-is-the-new-primary-http-method-for-updates/)
 on the Rails blog.
 
 #### A note about media types
@@ -455,7 +543,7 @@ def update
   respond_to do |format|
     format.json do
       # perform a partial update
-      @post.update params[:post]
+      @article.update params[:article]
     end
 
     format.json_patch do
@@ -687,17 +775,18 @@ config.assets.js_compressor = :uglifier
 Upgrading from Rails 3.1 to Rails 3.2
 -------------------------------------
 
-If your application is currently on any version of Rails older than 3.1.x, you should upgrade to Rails 3.1 before attempting an update to Rails 3.2.
+If your application is currently on any version of Rails older than 3.1.x, you
+should upgrade to Rails 3.1 before attempting an update to Rails 3.2.
 
-The following changes are meant for upgrading your application to Rails 3.2.17,
-the last 3.2.x version of Rails.
+The following changes are meant for upgrading your application to the latest
+3.2.x version of Rails.
 
 ### Gemfile
 
 Make the following changes to your `Gemfile`.
 
 ```ruby
-gem 'rails', '3.2.17'
+gem 'rails', '3.2.18'
 
 group :assets do
   gem 'sass-rails',   '~> 3.2.6'
@@ -858,7 +947,7 @@ AppName::Application.config.session_store :cookie_store, key: 'SOMETHINGNEW'
 or
 
 ```bash
-$ rake db:sessions:clear
+$ bin/rake db:sessions:clear
 ```
 
 ### Remove :cache and :concat options in asset helpers references in views
